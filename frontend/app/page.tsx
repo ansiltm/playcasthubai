@@ -29,33 +29,6 @@ export default function Home(): React.JSX.Element {
 
   return (
     <div className="w-full">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-24 pb-32">
-        {/* Background Decorative Bubbles */}
-        <div className="absolute top-0 left-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 mix-blend-multiply" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-secondary/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2 mix-blend-multiply" />
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <h1 className="text-5xl md:text-7xl font-black mb-8 leading-tight">
-            Discover Toys in <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
-              Glorious 3D
-            </span>
-          </h1>
-          <p className="text-xl text-text-muted mb-10 max-w-2xl mx-auto">
-            Experience RC cars, diecast models, and hobby-grade items like never before. Rotate, zoom, and explore before you buy.
-          </p>
-          <div className="flex justify-center gap-4">
-            <Link href="/products" className="bubble-btn text-lg px-8 py-4">
-              Explore Store
-            </Link>
-            <Link href="/categories" className="bubble-btn-secondary text-lg px-8 py-4">
-              View Categories
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* Shop by Category */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <h2 className="text-3xl font-black text-text-main mb-6">Shop by Category</h2>
