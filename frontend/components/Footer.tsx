@@ -21,10 +21,12 @@ export default function Footer() {
           <div>
             <h3 className="font-bold text-gray-900 mb-4">Categories</h3>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><a href="/products?category=Diecast" className="hover:text-primary">Diecast</a></li>
-              <li><a href="/products?category=Diecast RC" className="hover:text-primary">Diecast RC</a></li>
-              <li><a href="/products?category=RC" className="hover:text-primary">RC Cars</a></li>
-              <li><a href="/products?category=Toys" className="hover:text-primary">Toys</a></li>
+              <li><a href="/products?category=Vehicles+%26+Remote-Controlled+%28RC%29" className="hover:text-primary">Vehicles & RC</a></li>
+              <li><a href="/products?category=Action+Figures+%26+Pop-Culture+Collectibles" className="hover:text-primary">Action Figures</a></li>
+              <li><a href="/products?category=Scale+Model+Kits+%26+Hobby+Crafts" className="hover:text-primary">Scale Model Kits</a></li>
+              <li><a href="/products?category=Educational%2C+STEM+%26+STEAM+Toys" className="hover:text-primary">STEM & Educational</a></li>
+              <li><a href="/products?category=Electronic%2C+Smart+%26+Animatronic+Toys" className="hover:text-primary">Smart Toys</a></li>
+              <li><a href="/products?category=Outdoor%2C+Sports+%26+Active+Play" className="hover:text-primary">Outdoor Play</a></li>
             </ul>
           </div>
           <div>

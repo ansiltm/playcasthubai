@@ -158,9 +158,20 @@ export default function AdminPage() {
                   <label className="block text-sm font-bold text-gray-700 mb-2">Category</label>
                   <select required className="bubble-input py-2 px-4" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
                     <option value="">Select...</option>
-                    <option value="Diecast">Diecast</option>
-                    <option value="RC Car">RC Car</option>
-                    <option value="Toys">Toys</option>
+                    <option value="Vehicles & Remote-Controlled (RC)">Vehicles & Remote-Controlled (RC)</option>
+                    <option value="Action Figures & Pop-Culture Collectibles">Action Figures & Pop-Culture Collectibles</option>
+                    <option value="Dolls & Doll Playsets">Dolls & Doll Playsets</option>
+                    <option value="Building Sets & Construction Toys">Building Sets & Construction Toys</option>
+                    <option value="Scale Model Kits & Hobby Crafts">Scale Model Kits & Hobby Crafts</option>
+                    <option value="Games & Puzzles">Games & Puzzles</option>
+                    <option value="Plush, Soft & Fabric Toys">Plush, Soft & Fabric Toys</option>
+                    <option value="Educational, STEM & STEAM Toys">Educational, STEM & STEAM Toys</option>
+                    <option value="Infant, Toddler & Preschool Toys">Infant, Toddler & Preschool Toys</option>
+                    <option value="Arts, Crafts & Creative Activities">Arts, Crafts & Creative Activities</option>
+                    <option value="Pretend Play, Role Play & Dress-Up">Pretend Play, Role Play & Dress-Up</option>
+                    <option value="Outdoor, Sports & Active Play">Outdoor, Sports & Active Play</option>
+                    <option value="Electronic, Smart & Animatronic Toys">Electronic, Smart & Animatronic Toys</option>
+                    <option value="Novelty, Fidget & Sensory Toys">Novelty, Fidget & Sensory Toys</option>
                   </select>
                 </div>
                 <div>
