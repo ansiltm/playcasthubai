@@ -146,7 +146,27 @@ export default function AdminPage() {
   };
 
   const productColumns: Column<any>[] = [
-    { header: 'Product Name', accessorKey: 'name', renderCell: (p) => <span className="font-bold truncate max-w-[250px] inline-block">{p.name}</span> },
+    { 
+      header: 'Product Name', 
+      accessorKey: 'name', 
+      renderCell: (p) => {
+        const firstMedia = p.media?.[0] || 'https://via.placeholder.com/300';
+        const isVideo = firstMedia.match(/\.(mp4|webm|mov|ogg)$/i) !== null;
+        
+        return (
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-[var(--radius-pill)] overflow-hidden bg-bubble-input shrink-0">
+              {isVideo ? (
+                <video src={firstMedia} className="w-full h-full object-cover" muted />
+              ) : (
+                <img src={firstMedia} alt={p.name} className="w-full h-full object-cover" />
+              )}
+            </div>
+            <span className="font-bold truncate max-w-[200px]">{p.name}</span>
+          </div>
+        );
+      }
+    },
     { header: 'Category', accessorKey: 'category' },
     { header: 'Grade', renderCell: (p) => <span className="px-3 py-1 bg-bubble-input rounded-full text-[10px] font-bold uppercase tracking-wider">{p.grade}</span> },
     { header: 'Cost (Wholesale)', renderCell: (p) => <span className="font-bold text-orange-500">₹{p.wholesalePrice?.toFixed(2) || '0.00'}</span> },
