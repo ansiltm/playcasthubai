@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { Order, OrderItem, Product } from '../models';
+import { Order, OrderItem, Product, User } from '../models';
 import { authenticate, authorizeAdmin } from '../middleware/auth';
 
 const router = Router();
@@ -88,7 +88,16 @@ router.get('/', authenticate, async (req: any, res: Response) => {
 
 router.get('/all', authenticate, authorizeAdmin, async (req: any, res: Response) => {
   try {
-    const orders = await Order.findAll({ include: [OrderItem] });
+    const orders = await Order.findAll({ 
+      include: [
+        { 
+          model: OrderItem,
+          include: [{ model: Product, attributes: ['id', 'name', 'images'] }]
+        },
+        { model: User, attributes: ['id', 'name', 'email', 'phone', 'address', 'pincode'] }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
     res.json(orders);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
@@ -107,6 +116,32 @@ router.put('/:id/status', authenticate, authorizeAdmin, async (req: any, res: Re
     await order.update({ status });
     
     res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
+
+// Delete order (Admin)
+router.delete('/:id', authenticate, authorizeAdmin, async (req: any, res: Response) => {
+  try {
+    const order = await Order.findByPk(req.params.id, { include: [OrderItem] });
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    
+    // Optionally restore stock if cancelled/deleted
+    if (order.status !== 'cancelled') {
+      const items = await OrderItem.findAll({ where: { orderId: order.id } });
+      for (const item of items) {
+        const product = await Product.findByPk(item.productId);
+        if (product) {
+          await product.update({ stock: product.stock + item.quantity });
+        }
+      }
+    }
+    
+    await order.destroy();
+    res.json({ message: 'Order deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
