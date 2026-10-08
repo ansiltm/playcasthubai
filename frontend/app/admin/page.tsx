@@ -147,7 +147,7 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 relative">
-      <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-8">Super Admin Dashboard</h1>
+      <h1 className="text-3xl md:text-4xl font-black text-text-main mb-8">Super Admin Dashboard</h1>
       
       {/* Tabs */}
       <div className="flex space-x-4 mb-8">
@@ -156,7 +156,7 @@ export default function AdminPage() {
       </div>
 
       {activeTab === 'products' && (
-        <div className="bubble-card bg-white p-6 md:p-8 overflow-hidden flex flex-col">
+        <div className="bubble-card bg-bubble-surface p-6 md:p-8 overflow-hidden flex flex-col">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h2 className="text-2xl font-bold">Inventory Table</h2>
             
@@ -180,7 +180,7 @@ export default function AdminPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
-                <tr className="border-b-2 border-gray-100 text-gray-500 uppercase text-xs">
+                <tr className="border-b-2 border-border-main text-text-muted uppercase text-xs">
                   <th className="py-4 font-bold">Product Name</th>
                   <th className="py-4 font-bold">Category</th>
                   <th className="py-4 font-bold">Grade</th>
@@ -191,10 +191,10 @@ export default function AdminPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredProducts.map(p => (
-                  <tr key={p.id} className="hover:bg-blue-50/50 transition-colors">
-                    <td className="py-4 font-bold text-gray-900 truncate max-w-[250px]">{p.name}</td>
-                    <td className="py-4 text-sm text-gray-600">{p.category}</td>
-                    <td className="py-4 text-gray-600">
+                  <tr key={p.id} className="hover:bg-bubble-input transition-colors">
+                    <td className="py-4 font-bold text-text-main truncate max-w-[250px]">{p.name}</td>
+                    <td className="py-4 text-sm text-text-muted">{p.category}</td>
+                    <td className="py-4 text-text-muted">
                       <span className="px-3 py-1 bg-gray-100 rounded-full text-[10px] font-bold uppercase tracking-wider">{p.grade}</span>
                     </td>
                     <td className="py-4 font-bold text-primary text-sm">₹{p.price.toFixed(2)}</td>
@@ -204,13 +204,13 @@ export default function AdminPage() {
                       </span>
                     </td>
                     <td className="py-4 flex justify-end space-x-2">
-                      <button onClick={() => openEditModal(p)} className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors" title="Edit"><Edit size={16} /></button>
+                      <button onClick={() => openEditModal(p)} className="p-2 bg-bubble-input text-blue-600 rounded-full hover:bg-blue-100 transition-colors" title="Edit"><Edit size={16} /></button>
                       <button onClick={() => { setProductToDelete(p.id); setIsDeleteModalOpen(true); }} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors" title="Delete"><Trash2 size={16} /></button>
                     </td>
                   </tr>
                 ))}
                 {filteredProducts.length === 0 && (
-                  <tr><td colSpan={6} className="py-8 text-center text-gray-500 font-bold">No products found matching your search.</td></tr>
+                  <tr><td colSpan={6} className="py-8 text-center text-text-muted font-bold">No products found matching your search.</td></tr>
                 )}
               </tbody>
             </table>
@@ -219,12 +219,12 @@ export default function AdminPage() {
       )}
 
       {activeTab === 'orders' && (
-        <div className="bubble-card bg-white p-6 md:p-8 overflow-hidden">
+        <div className="bubble-card bg-bubble-surface p-6 md:p-8 overflow-hidden">
           <h2 className="text-2xl font-bold mb-6">Customer Orders</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
-                <tr className="border-b-2 border-gray-100 text-gray-500 uppercase text-xs">
+                <tr className="border-b-2 border-border-main text-text-muted uppercase text-xs">
                   <th className="py-4 font-bold">Order ID</th>
                   <th className="py-4 font-bold">Date</th>
                   <th className="py-4 font-bold">Total</th>
@@ -235,11 +235,11 @@ export default function AdminPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {orders.map((o: any) => (
-                  <tr key={o.id} className="hover:bg-blue-50/50 transition-colors">
-                    <td className="py-4 font-bold text-gray-900">#{o.id}</td>
-                    <td className="py-4 text-sm text-gray-600">{new Date(o.createdAt).toLocaleDateString()}</td>
+                  <tr key={o.id} className="hover:bg-bubble-input transition-colors">
+                    <td className="py-4 font-bold text-text-main">#{o.id}</td>
+                    <td className="py-4 text-sm text-text-muted">{new Date(o.createdAt).toLocaleDateString()}</td>
                     <td className="py-4 font-bold text-primary">₹{o.totalAmount.toFixed(2)}</td>
-                    <td className="py-4 text-sm text-gray-600">
+                    <td className="py-4 text-sm text-text-muted">
                       {o.OrderItems?.map((i:any) => `${i.quantity}x (ID:${i.productId})`).join(', ')}
                     </td>
                     <td className="py-4">
@@ -262,7 +262,7 @@ export default function AdminPage() {
                   </tr>
                 ))}
                 {orders.length === 0 && (
-                  <tr><td colSpan={6} className="py-8 text-center text-gray-500 font-bold">No orders yet</td></tr>
+                  <tr><td colSpan={6} className="py-8 text-center text-text-muted font-bold">No orders yet</td></tr>
                 )}
               </tbody>
             </table>
@@ -273,23 +273,23 @@ export default function AdminPage() {
       {/* PRODUCT ADD/EDIT MODAL */}
       {isProductModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto bubble-card animate-in fade-in zoom-in-95 duration-200">
-            <div className="sticky top-0 bg-white/90 backdrop-blur-md p-6 border-b border-gray-100 flex justify-between items-center z-10">
-              <h2 className="text-2xl font-black text-gray-900">{editingId ? 'Edit Product' : 'Add New Product'}</h2>
-              <button onClick={closeProductModal} className="p-2 bg-gray-100 text-gray-500 rounded-full hover:bg-gray-200 hover:text-gray-900 transition-colors">
+          <div className="bg-bubble-surface rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto bubble-card animate-in fade-in zoom-in-95 duration-200">
+            <div className="sticky top-0 bg-bubble-surface/90 backdrop-blur-md p-6 border-b border-border-main flex justify-between items-center z-10">
+              <h2 className="text-2xl font-black text-text-main">{editingId ? 'Edit Product' : 'Add New Product'}</h2>
+              <button onClick={closeProductModal} className="p-2 bg-gray-100 text-text-muted rounded-full hover:bg-gray-200 hover:text-text-main transition-colors">
                 <X size={20} />
               </button>
             </div>
             
             <form onSubmit={handleProductSubmit} className="p-6 space-y-6">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Product Name</label>
+                <label className="block text-sm font-bold text-text-main mb-2">Product Name</label>
                 <input required type="text" className="bubble-input py-3" placeholder="Enter product name..." value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Category</label>
+                  <label className="block text-sm font-bold text-text-main mb-2">Category</label>
                   <select required className="bubble-input py-3 px-4" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
                     <option value="">Select Category...</option>
                     <option value="Vehicles & Remote-Controlled (RC)">Vehicles & Remote-Controlled (RC)</option>
@@ -309,7 +309,7 @@ export default function AdminPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Grade</label>
+                  <label className="block text-sm font-bold text-text-main mb-2">Grade</label>
                   <select required className="bubble-input py-3 px-4" value={formData.grade} onChange={e => setFormData({...formData, grade: e.target.value})}>
                     <option value="">Select Grade...</option>
                     <option value="Toy-Grade">Toy-Grade</option>
@@ -324,24 +324,24 @@ export default function AdminPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Price (₹)</label>
+                  <label className="block text-sm font-bold text-text-main mb-2">Price (₹)</label>
                   <input required type="number" step="0.01" placeholder="0.00" className="bubble-input py-3" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Stock Quantity</label>
+                  <label className="block text-sm font-bold text-text-main mb-2">Stock Quantity</label>
                   <input required type="number" placeholder="0" className="bubble-input py-3" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Detailed Description</label>
+                <label className="block text-sm font-bold text-text-main mb-2">Detailed Description</label>
                 <textarea required rows={4} className="bubble-input py-3" placeholder="Write a detailed description of the product..." value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
               </div>
 
-              <div className="space-y-4 p-6 bg-blue-50/50 rounded-2xl border border-blue-100">
+              <div className="space-y-4 p-6 bg-bubble-input rounded-2xl border border-border-main">
                 <h3 className="font-bold text-primary mb-4">Media Upload (Images & Videos)</h3>
                 <div className="w-full">
-                  <label className="block text-xs font-bold text-gray-600 mb-2">Select Images and/or Videos</label>
+                  <label className="block text-xs font-bold text-text-muted mb-2">Select Images and/or Videos</label>
                   <input type="file" multiple accept="image/*,video/*" onChange={e => setMediaFiles(e.target.files)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200" />
                 </div>
                 {editingId && <p className="text-xs text-orange-600 font-bold mt-4 flex items-center gap-1"><AlertTriangle size={14}/> Note: Selecting new files will override existing media.</p>}
@@ -360,12 +360,12 @@ export default function AdminPage() {
       {/* DELETE CONFIRMATION MODAL */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-bubble-surface rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center animate-in fade-in zoom-in-95 duration-200">
             <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash2 size={32} />
             </div>
-            <h3 className="text-2xl font-black text-gray-900 mb-2">Delete Product?</h3>
-            <p className="text-gray-500 mb-8">This action cannot be undone. Are you sure you want to completely remove this product?</p>
+            <h3 className="text-2xl font-black text-text-main mb-2">Delete Product?</h3>
+            <p className="text-text-muted mb-8">This action cannot be undone. Are you sure you want to completely remove this product?</p>
             <div className="flex space-x-4">
               <button onClick={() => { setIsDeleteModalOpen(false); setProductToDelete(null); }} className="flex-1 bubble-btn-secondary py-3">
                 Cancel

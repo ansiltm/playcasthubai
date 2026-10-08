@@ -81,7 +81,7 @@ export default function ProductDetails() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Media Viewer Carousel Area */}
         <div className="space-y-4">
-          <div className="bubble-card p-2 bg-white h-[500px] flex items-center justify-center overflow-hidden relative group">
+          <div className="bubble-card p-2 bg-bubble-surface h-[500px] flex items-center justify-center overflow-hidden relative group">
             
             {product.media && product.media.length > 0 ? (
               <>
@@ -107,13 +107,13 @@ export default function ProductDetails() {
                   <>
                     <button 
                       onClick={prevMedia} 
-                      className="absolute left-4 p-3 bg-white/80 backdrop-blur-sm text-gray-800 hover:text-primary rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute left-4 p-3 bg-bubble-surface/80 backdrop-blur-sm text-text-main hover:text-primary rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <ChevronLeft size={24} />
                     </button>
                     <button 
                       onClick={nextMedia} 
-                      className="absolute right-4 p-3 bg-white/80 backdrop-blur-sm text-gray-800 hover:text-primary rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute right-4 p-3 bg-bubble-surface/80 backdrop-blur-sm text-text-main hover:text-primary rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <ChevronRight size={24} />
                     </button>
@@ -163,19 +163,19 @@ export default function ProductDetails() {
             <div className="flex items-center gap-3 mb-2">
               <div className="text-sm font-bold text-secondary uppercase tracking-wider">{product.category}</div>
               {product.grade && (
-                <div className="text-xs font-bold bg-blue-50 text-primary px-3 py-1 rounded-full uppercase tracking-wider">
+                <div className="text-xs font-bold bg-bubble-input text-primary px-3 py-1 rounded-full uppercase tracking-wider">
                   {product.grade}
                 </div>
               )}
             </div>
-            <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">{product.name}</h1>
+            <h1 className="text-4xl md:text-5xl font-black text-text-main mb-4">{product.name}</h1>
             <div className="text-4xl font-black text-primary mb-6">₹{product.price.toFixed(2)}</div>
-            <p className="text-lg text-gray-600 leading-relaxed">{product.description}</p>
+            <p className="text-lg text-text-muted leading-relaxed">{product.description}</p>
           </div>
 
-          <div className="p-6 bg-blue-50 rounded-[var(--radius-bubble)] border border-blue-100">
+          <div className="p-6 bg-bubble-input rounded-[var(--radius-bubble)] border border-border-main">
             <div className="flex items-center justify-between mb-4">
-              <span className="font-bold text-gray-700">Availability:</span>
+              <span className="font-bold text-text-main">Availability:</span>
               <span className={`font-bold ${product.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
                 {product.stock > 0 ? `In Stock (${product.stock})` : 'Out of Stock'}
               </span>

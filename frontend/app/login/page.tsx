@@ -28,9 +28,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bubble-card p-10 bg-white">
+      <div className="max-w-md w-full space-y-8 bubble-card p-10 bg-bubble-surface">
         <div>
-          <h2 className="text-center text-3xl font-black text-gray-900">Sign in to your account</h2>
+          <h2 className="text-center text-3xl font-black text-text-main">Sign in to your account</h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           {error && <div className="text-red-500 text-sm font-bold text-center">{error}</div>}
@@ -66,7 +66,7 @@ export default function LoginPage() {
           </div>
           
           <div className="text-center">
-            <span className="text-sm text-gray-600">Don't have an account? </span>
+            <span className="text-sm text-text-muted">Don't have an account? </span>
             <Link href="/register" className="font-bold text-primary hover:text-primary-dark">
               Register here
             </Link>

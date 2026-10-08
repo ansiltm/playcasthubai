@@ -48,10 +48,10 @@ function ProductsList() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-2">
+        <h1 className="text-3xl md:text-4xl font-black text-text-main mb-2">
           {searchQuery ? `Search Results for "${searchQuery}"` : categoryQuery ? categoryQuery : gradeQuery ? gradeQuery : 'All Products'}
         </h1>
-        <p className="text-gray-500">Showing {products.length} products</p>
+        <p className="text-text-muted">Showing {products.length} products</p>
       </div>
 
       {loading ? (
@@ -65,9 +65,9 @@ function ProductsList() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-20 bg-white bubble-card">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">No products found</h2>
-          <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
+        <div className="text-center py-20 bg-bubble-surface bubble-card">
+          <h2 className="text-2xl font-bold text-text-main mb-2">No products found</h2>
+          <p className="text-text-muted">Try adjusting your search or filter criteria.</p>
         </div>
       )}
     </div>

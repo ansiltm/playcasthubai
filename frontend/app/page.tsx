@@ -42,7 +42,7 @@ export default function Home(): React.JSX.Element {
               Glorious 3D
             </span>
           </h1>
-          <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+          <p className="text-xl text-text-muted mb-10 max-w-2xl mx-auto">
             Experience RC cars, diecast models, and hobby-grade items like never before. Rotate, zoom, and explore before you buy.
           </p>
           <div className="flex justify-center gap-4">
@@ -60,8 +60,8 @@ export default function Home(): React.JSX.Element {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="flex justify-between items-end mb-12">
           <div>
-            <h2 className="text-4xl font-black text-gray-900 mb-4">Trending Now</h2>
-            <p className="text-gray-500">Our most popular models this week.</p>
+            <h2 className="text-4xl font-black text-text-main mb-4">Trending Now</h2>
+            <p className="text-text-muted">Our most popular models this week.</p>
           </div>
           <Link href="/products" className="text-primary font-bold hover:text-primary-dark hover:underline">
             View All →
@@ -76,17 +76,17 @@ export default function Home(): React.JSX.Element {
       </section>
 
       {/* Features Banner */}
-      <section className="bg-white py-20 border-y border-gray-100">
+      <section className="bg-bubble-surface py-20 border-y border-border-main">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
             <div className="flex flex-col items-center">
-              <div className="w-16 h-16 bg-blue-50 rounded-[var(--radius-pill)] flex items-center justify-center text-primary mb-6">
+              <div className="w-16 h-16 bg-bubble-input rounded-[var(--radius-pill)] flex items-center justify-center text-primary mb-6">
                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               <h3 className="text-xl font-bold mb-2">Premium Quality</h3>
-              <p className="text-gray-500">Only the best hobby-grade items.</p>
+              <p className="text-text-muted">Only the best hobby-grade items.</p>
             </div>
             <div className="flex flex-col items-center">
               <div className="w-16 h-16 bg-pink-50 rounded-[var(--radius-pill)] flex items-center justify-center text-secondary mb-6">
@@ -95,7 +95,7 @@ export default function Home(): React.JSX.Element {
                 </svg>
               </div>
               <h3 className="text-xl font-bold mb-2">Interactive 3D</h3>
-              <p className="text-gray-500">View models from every angle.</p>
+              <p className="text-text-muted">View models from every angle.</p>
             </div>
             <div className="flex flex-col items-center">
               <div className="w-16 h-16 bg-purple-50 rounded-[var(--radius-pill)] flex items-center justify-center text-purple-600 mb-6">
@@ -104,7 +104,7 @@ export default function Home(): React.JSX.Element {
                 </svg>
               </div>
               <h3 className="text-xl font-bold mb-2">Fast Shipping</h3>
-              <p className="text-gray-500">Get your toys delivered quickly.</p>
+              <p className="text-text-muted">Get your toys delivered quickly.</p>
             </div>
           </div>
         </div>

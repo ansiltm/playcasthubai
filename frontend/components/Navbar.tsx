@@ -4,16 +4,23 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuthStore } from '../store/useAuthStore';
 import { useCartStore } from '../store/useCartStore';
-import { ShoppingCart, Search, LogOut, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { ShoppingCart, Search, LogOut, Menu, X, Sun, Moon } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 
 export default function Navbar() {
   const { user, logout } = useAuthStore();
   const { items } = useCartStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +66,18 @@ export default function Navbar() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-6">
-            <Link href="/cart" className="relative p-2 text-gray-600 hover:text-primary transition-colors">
+            
+            {mounted && (
+              <button 
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="p-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-gray-100 "
+                aria-label="Toggle Theme"
+              >
+                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
+            )}
+
+            <Link href="/cart" className="relative p-2 text-text-muted hover:text-primary transition-colors">
               <ShoppingCart size={24} />
               {items.length > 0 && (
                 <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-secondary rounded-full">
@@ -76,8 +94,8 @@ export default function Navbar() {
                   </Link>
                 )}
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-700 truncate max-w-[100px]">Hi, {user.name}</span>
-                  <button onClick={handleLogout} className="p-2 text-gray-600 hover:text-red-500 transition-colors">
+                  <span className="text-sm font-medium text-text-main truncate max-w-[100px]">Hi, {user.name}</span>
+                  <button onClick={handleLogout} className="p-2 text-text-muted hover:text-red-500 transition-colors">
                     <LogOut size={20} />
                   </button>
                 </div>
@@ -91,7 +109,18 @@ export default function Navbar() {
 
           {/* Mobile Menu Button & Cart */}
           <div className="flex items-center space-x-4 md:hidden">
-            <Link href="/cart" className="relative p-2 text-gray-600">
+            
+            {mounted && (
+              <button 
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="p-2 text-text-muted hover:text-primary transition-colors"
+                aria-label="Toggle Theme"
+              >
+                {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+              </button>
+            )}
+
+            <Link href="/cart" className="relative p-2 text-text-muted dark:text-gray-300">
               <ShoppingCart size={24} />
               {items.length > 0 && (
                 <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-secondary rounded-full">
@@ -101,7 +130,7 @@ export default function Navbar() {
             </Link>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 text-gray-600 hover:text-primary focus:outline-none"
+              className="p-2 text-text-muted hover:text-primary focus:outline-none"
             >
               {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
@@ -111,7 +140,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-white border-b border-gray-100 shadow-lg absolute w-full left-0 top-20 flex flex-col p-4 space-y-4">
+        <div className="md:hidden bg-bubble-surface border-b border-border-main shadow-lg absolute w-full left-0 top-20 flex flex-col p-4 space-y-4">
           <form onSubmit={handleSearch} className="relative w-full">
             <input
               type="text"
@@ -123,10 +152,10 @@ export default function Navbar() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           </form>
           
-          <div className="flex flex-col space-y-4 pt-2 border-t border-gray-100">
+          <div className="flex flex-col space-y-4 pt-2 border-t border-border-main">
             {user ? (
               <>
-                <div className="font-bold text-gray-800">Hi, {user.name}</div>
+                <div className="font-bold text-text-main">Hi, {user.name}</div>
                 {user.role === 'admin' && (
                   <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="text-primary font-bold">
                     Super Admin Dashboard

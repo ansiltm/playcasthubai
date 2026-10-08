@@ -32,8 +32,8 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center">
-        <h1 className="text-4xl font-black text-gray-900 mb-4">Your Cart is Empty</h1>
-        <p className="text-gray-500 mb-8 max-w-md">Looks like you haven't added anything to your cart yet. Discover our amazing collection of RC cars and toys.</p>
+        <h1 className="text-4xl font-black text-text-main mb-4">Your Cart is Empty</h1>
+        <p className="text-text-muted mb-8 max-w-md">Looks like you haven't added anything to your cart yet. Discover our amazing collection of RC cars and toys.</p>
         <Link href="/" className="bubble-btn">
           Start Shopping
         </Link>
@@ -43,29 +43,29 @@ export default function CartPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-4xl font-black text-gray-900 mb-8">Shopping Cart</h1>
+      <h1 className="text-4xl font-black text-text-main mb-8">Shopping Cart</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2 space-y-6">
           {items.map((item) => (
-            <div key={item.productId} className="bubble-card bg-white p-6 flex flex-col sm:flex-row items-center gap-6">
-              <img src={item.imageUrl} alt={item.name} className="w-32 h-32 object-cover rounded-2xl bg-gray-50" />
+            <div key={item.productId} className="bubble-card bg-bubble-surface p-6 flex flex-col sm:flex-row items-center gap-6">
+              <img src={item.imageUrl} alt={item.name} className="w-32 h-32 object-cover rounded-2xl bg-bubble-bg" />
               <div className="flex-1 text-center sm:text-left">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{item.name}</h3>
+                <h3 className="text-xl font-bold text-text-main mb-2">{item.name}</h3>
                 <div className="text-2xl font-black text-primary">₹{item.price.toFixed(2)}</div>
               </div>
               <div className="flex items-center gap-4">
-                <div className="flex items-center bg-gray-50 rounded-full border border-gray-200">
+                <div className="flex items-center bg-bubble-bg rounded-full border border-gray-200">
                   <button 
                     onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))}
-                    className="p-3 text-gray-500 hover:text-primary transition-colors"
+                    className="p-3 text-text-muted hover:text-primary transition-colors"
                   >
                     <Minus size={16} />
                   </button>
                   <span className="font-bold w-8 text-center">{item.quantity}</span>
                   <button 
                     onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                    className="p-3 text-gray-500 hover:text-primary transition-colors"
+                    className="p-3 text-text-muted hover:text-primary transition-colors"
                   >
                     <Plus size={16} />
                   </button>
@@ -82,23 +82,23 @@ export default function CartPage() {
         </div>
         
         <div className="lg:col-span-1">
-          <div className="bubble-card bg-white p-8 sticky top-24">
-            <h2 className="text-2xl font-black text-gray-900 mb-6">Order Summary</h2>
-            <div className="space-y-4 mb-6 text-gray-600">
+          <div className="bubble-card bg-bubble-surface p-8 sticky top-24">
+            <h2 className="text-2xl font-black text-text-main mb-6">Order Summary</h2>
+            <div className="space-y-4 mb-6 text-text-muted">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span className="font-bold text-gray-900">₹{getTotal().toFixed(2)}</span>
+                <span className="font-bold text-text-main">₹{getTotal().toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
-                <span className="font-bold text-gray-900">Free</span>
+                <span className="font-bold text-text-main">Free</span>
               </div>
               <div className="flex justify-between">
                 <span>Tax</span>
-                <span className="font-bold text-gray-900">₹{(getTotal() * 0.1).toFixed(2)}</span>
+                <span className="font-bold text-text-main">₹{(getTotal() * 0.1).toFixed(2)}</span>
               </div>
               <div className="border-t pt-4 flex justify-between text-xl">
-                <span className="font-black text-gray-900">Total</span>
+                <span className="font-black text-text-main">Total</span>
                 <span className="font-black text-primary">₹{(getTotal() * 1.1).toFixed(2)}</span>
               </div>
             </div>

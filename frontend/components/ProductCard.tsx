@@ -35,9 +35,9 @@ export default function ProductCard({ product }: { product: Product }) {
 
   return (
     <Link href={`/products/${product.id}`} className="group block">
-      <div className="bubble-card overflow-hidden bg-white h-full flex flex-col">
+      <div className="bubble-card overflow-hidden bg-bubble-surface h-full flex flex-col">
         {/* Image/Video Container */}
-        <div className="relative aspect-square overflow-hidden bg-gray-50 shrink-0">
+        <div className="relative aspect-square overflow-hidden bg-bubble-bg shrink-0">
           {isVideo ? (
             <video
               src={firstMedia}
@@ -70,12 +70,12 @@ export default function ProductCard({ product }: { product: Product }) {
               {product.category}
             </div>
             {product.grade && (
-              <div className="text-[10px] font-bold bg-blue-50 text-primary px-2 py-1 rounded-full uppercase tracking-wider">
+              <div className="text-[10px] font-bold bg-bubble-input text-primary px-2 py-1 rounded-full uppercase tracking-wider">
                 {product.grade}
               </div>
             )}
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-4 line-clamp-2 flex-1">
+          <h3 className="text-lg font-bold text-text-main mb-4 line-clamp-2 flex-1">
             {product.name}
           </h3>
           <div className="flex items-center justify-between mt-auto">
