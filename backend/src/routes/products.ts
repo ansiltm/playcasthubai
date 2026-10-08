@@ -64,7 +64,7 @@ router.post(
         name: req.body.name,
         description: req.body.description,
         category: req.body.category,
-        grade: req.body.grade || 'Toy Grade',
+        grade: req.body.grade || 'Toy-Grade',
         price: parseFloat(req.body.price),
         stock: parseInt(req.body.stock),
         images: images,

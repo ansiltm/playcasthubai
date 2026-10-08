@@ -43,7 +43,7 @@ Product.init(
     name: { type: DataTypes.STRING, allowNull: false },
     description: { type: DataTypes.TEXT, allowNull: false },
     category: { type: DataTypes.STRING, allowNull: false },
-    grade: { type: DataTypes.STRING, allowNull: false, defaultValue: 'Toy Grade' },
+    grade: { type: DataTypes.STRING, allowNull: false, defaultValue: 'Toy-Grade' },
     price: { type: DataTypes.FLOAT, allowNull: false },
     stock: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     imageUrl: { type: DataTypes.STRING, allowNull: true },
