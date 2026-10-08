@@ -26,6 +26,7 @@ export default function AdminPage() {
   
   const [isManualOrderModalOpen, setIsManualOrderModalOpen] = useState(false);
   const [manualOrderData, setManualOrderData] = useState({ productId: '', quantity: '1', price: '' });
+  const [isCustomPrice, setIsCustomPrice] = useState(false);
 
   // Form State
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -133,6 +134,7 @@ export default function AdminPage() {
       toast.success('Manual order created successfully!');
       setIsManualOrderModalOpen(false);
       setManualOrderData({ productId: '', quantity: '1', price: '' });
+      setIsCustomPrice(false);
       fetchOrders();
       fetchProducts(); // refresh stock
     } catch (err: any) {
@@ -559,8 +561,29 @@ export default function AdminPage() {
                   <input required type="number" min="1" className="bubble-input py-3 w-full" value={manualOrderData.quantity} onChange={e => setManualOrderData({...manualOrderData, quantity: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-text-main mb-2">Custom Price (₹)</label>
-                  <input required type="number" step="0.01" className="bubble-input py-3 w-full" value={manualOrderData.price} onChange={e => setManualOrderData({...manualOrderData, price: e.target.value})} placeholder="Auto-filled" />
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-bold text-text-main">Custom Price?</label>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const prod = products.find(p => p.id.toString() === manualOrderData.productId);
+                        if (!isCustomPrice && prod) {
+                          setManualOrderData({...manualOrderData, price: prod.price.toString()});
+                        }
+                        setIsCustomPrice(!isCustomPrice);
+                      }}
+                      className={`w-10 h-6 rounded-full transition-colors relative ${isCustomPrice ? 'bg-primary' : 'bg-gray-300'}`}
+                    >
+                      <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${isCustomPrice ? 'translate-x-5' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                  {isCustomPrice ? (
+                    <input required type="number" step="0.01" className="bubble-input py-3 w-full" value={manualOrderData.price} onChange={e => setManualOrderData({...manualOrderData, price: e.target.value})} placeholder="Custom rate (₹)" />
+                  ) : (
+                    <div className="bubble-input py-3 w-full bg-gray-50 text-text-muted cursor-not-allowed">
+                      ₹{manualOrderData.price || '0.00'} (Default)
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="bg-bubble-input p-4 rounded-xl border border-border-main">
