@@ -44,6 +44,39 @@ router.post('/', authenticate, async (req: any, res: Response) => {
   }
 });
 
+// Create manual order (Admin only)
+router.post('/manual', authenticate, authorizeAdmin, async (req: any, res: Response) => {
+  try {
+    const { productId, quantity, price } = req.body;
+    
+    if (!productId || !quantity) {
+      return res.status(400).json({ message: 'Missing product or quantity' });
+    }
+
+    const product = await Product.findByPk(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    if (product.stock < quantity) {
+      return res.status(400).json({ message: `Insufficient stock for ${product.name}` });
+    }
+
+    const actualPrice = price ? parseFloat(price) : product.price;
+    const totalAmount = actualPrice * quantity;
+
+    // Create Order (assign to admin's ID since they created it on behalf of someone)
+    const order = await Order.create({ userId: req.user.id, totalAmount, status: 'confirmed' });
+    
+    await OrderItem.create({ orderId: order.id, productId: product.id, quantity: quantity, price: actualPrice });
+    await product.update({ stock: product.stock - quantity });
+    
+    res.status(201).json(order);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
+
 router.get('/', authenticate, async (req: any, res: Response) => {
   try {
     const orders = await Order.findAll({ where: { userId: req.user.id }, include: [OrderItem] });
