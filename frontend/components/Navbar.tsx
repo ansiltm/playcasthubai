@@ -4,9 +4,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuthStore } from '../store/useAuthStore';
 import { useCartStore } from '../store/useCartStore';
-import { ShoppingCart, Search, LogOut, Menu, X, Sun, Moon } from 'lucide-react';
+import { ShoppingCart, Search, LogOut, Menu, X, Sun, Moon, ArrowLeft } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 
 export default function Navbar() {
@@ -16,6 +16,7 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
@@ -40,15 +41,27 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 w-full bg-bubble-surface/90 backdrop-blur-md border-b border-blue-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3 shrink-0">
-            <div className="relative w-12 h-12 overflow-hidden rounded-[var(--radius-pill)] shadow-[var(--shadow-bubble)] border-2 border-white">
-              <Image src="/logo.jpeg" alt="PlaycastHub Logo" fill className="object-cover" />
-            </div>
-            <span className="text-xl md:text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary hidden sm:block">
-              PlaycastHub
-            </span>
-          </Link>
+          {/* Back Button & Logo */}
+          <div className="flex items-center space-x-2 md:space-x-4 shrink-0">
+            {mounted && pathname !== '/' && (
+              <button 
+                onClick={() => router.back()} 
+                className="p-2 md:p-2.5 bg-bubble-input hover:bg-gray-200 dark:hover:bg-gray-700 text-text-muted hover:text-primary rounded-full transition-colors shadow-sm border border-border-main"
+                aria-label="Go Back"
+              >
+                <ArrowLeft size={20} />
+              </button>
+            )}
+            
+            <Link href="/" className="flex items-center space-x-3 shrink-0">
+              <div className="relative w-12 h-12 overflow-hidden rounded-[var(--radius-pill)] shadow-[var(--shadow-bubble)] border-2 border-white">
+                <Image src="/logo.jpeg" alt="PlaycastHub Logo" fill className="object-cover" />
+              </div>
+              <span className="text-xl md:text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary hidden sm:block">
+                PlaycastHub
+              </span>
+            </Link>
+          </div>
 
           {/* Desktop Search */}
           <div className="hidden md:block flex-1 max-w-2xl mx-8">
