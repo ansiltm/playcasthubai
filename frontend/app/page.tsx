@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Home() {
+export default function Home(): React.JSX.Element {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-24">
       <h1 className="text-6xl font-bold text-blue-600 mb-4">
