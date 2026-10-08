@@ -5,13 +5,14 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import api from '../../lib/api';
 import toast from 'react-hot-toast';
-import { Trash2, Edit, CheckCircle, Plus, Search, X, AlertTriangle } from 'lucide-react';
+import { Trash2, Edit, CheckCircle, Plus, Search, X, AlertTriangle, TrendingUp, DollarSign, Package } from 'lucide-react';
 import DataTable, { Column } from '../../components/DataTable';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function AdminPage() {
   const { user, isAdmin, token } = useAuthStore();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'analytics'>('products');
   const [mounted, setMounted] = useState(false);
   
   const [products, setProducts] = useState<any[]>([]);
@@ -52,7 +53,8 @@ export default function AdminPage() {
   const fetchOrders = async () => {
     try {
       const res = await api.get('/orders/all');
-      setOrders(res.data);
+      const sorted = res.data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setOrders(sorted);
     } catch (err) {}
   };
 
@@ -241,14 +243,47 @@ export default function AdminPage() {
     )}
   ];
 
+  // Analytics Calculation
+  let totalRevenue = 0;
+  let totalProfit = 0;
+  let totalItemsSold = 0;
+  const monthlyDataMap = new Map();
+
+  orders.forEach(o => {
+    if (o.status === 'cancelled') return;
+    
+    totalRevenue += o.totalAmount;
+    
+    const d = new Date(o.createdAt);
+    const month = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+    if (!monthlyDataMap.has(month)) {
+      monthlyDataMap.set(month, { name: month, sales: 0, profit: 0 });
+    }
+    const m = monthlyDataMap.get(month);
+    m.sales += o.totalAmount;
+    
+    let orderProfit = 0;
+    o.OrderItems?.forEach((item: any) => {
+      const p = products.find(prod => prod.id === item.productId);
+      const wholesale = p?.wholesalePrice || 0;
+      orderProfit += (item.price - wholesale) * item.quantity;
+      totalItemsSold += item.quantity;
+    });
+    
+    m.profit += orderProfit;
+    totalProfit += orderProfit;
+  });
+
+  const chartData = Array.from(monthlyDataMap.values()).reverse(); // Older first, assuming orders are DESC
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 relative">
       <h1 className="text-3xl md:text-4xl font-black text-text-main mb-8">Super Admin Dashboard</h1>
       
-      {/* Tabs */}
-      <div className="flex space-x-4 mb-8">
-        <button onClick={() => setActiveTab('products')} className={`bubble-btn ${activeTab === 'products' ? '' : 'bubble-btn-secondary'}`}>Manage Inventory</button>
-        <button onClick={() => setActiveTab('orders')} className={`bubble-btn ${activeTab === 'orders' ? '' : 'bubble-btn-secondary'}`}>Manage Orders</button>
+      <div className="flex space-x-4 mb-8 overflow-x-auto pb-2">
+        <button onClick={() => setActiveTab('products')} className={`bubble-btn whitespace-nowrap ${activeTab === 'products' ? '' : 'bubble-btn-secondary'}`}>Manage Inventory</button>
+        <button onClick={() => setActiveTab('orders')} className={`bubble-btn whitespace-nowrap ${activeTab === 'orders' ? '' : 'bubble-btn-secondary'}`}>Manage Orders</button>
+        <button onClick={() => setActiveTab('analytics')} className={`bubble-btn whitespace-nowrap ${activeTab === 'analytics' ? '' : 'bubble-btn-secondary'}`}>Analytics Dashboard</button>
       </div>
 
       {activeTab === 'products' && (
@@ -294,6 +329,60 @@ export default function AdminPage() {
             emptyMessage="No orders found."
             itemsPerPage={10}
           />
+        </div>
+      )}
+
+      {activeTab === 'analytics' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bubble-card bg-bubble-surface p-6 flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-[var(--radius-pill)] flex items-center justify-center mb-4">
+                <DollarSign size={32} />
+              </div>
+              <h3 className="text-text-muted font-bold uppercase tracking-wider text-sm mb-1">Total Revenue</h3>
+              <p className="text-3xl font-black text-text-main">₹{totalRevenue.toFixed(2)}</p>
+            </div>
+            
+            <div className="bubble-card bg-bubble-surface p-6 flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-green-100 text-green-600 rounded-[var(--radius-pill)] flex items-center justify-center mb-4">
+                <TrendingUp size={32} />
+              </div>
+              <h3 className="text-text-muted font-bold uppercase tracking-wider text-sm mb-1">Total Profit</h3>
+              <p className="text-3xl font-black text-text-main">₹{totalProfit.toFixed(2)}</p>
+            </div>
+            
+            <div className="bubble-card bg-bubble-surface p-6 flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-[var(--radius-pill)] flex items-center justify-center mb-4">
+                <Package size={32} />
+              </div>
+              <h3 className="text-text-muted font-bold uppercase tracking-wider text-sm mb-1">Items Sold</h3>
+              <p className="text-3xl font-black text-text-main">{totalItemsSold}</p>
+            </div>
+          </div>
+
+          <div className="bubble-card bg-bubble-surface p-6 md:p-8">
+            <h2 className="text-2xl font-bold mb-8">Monthly Sales & Profit</h2>
+            {chartData.length > 0 ? (
+              <div className="h-[400px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
+                    <XAxis dataKey="name" tick={{fill: 'var(--color-text-muted)'}} />
+                    <YAxis tick={{fill: 'var(--color-text-muted)'}} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'var(--color-bubble-surface)', borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                      itemStyle={{ fontWeight: 'bold' }}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: '20px', fontWeight: 'bold' }} />
+                    <Bar dataKey="sales" name="Revenue (₹)" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="profit" name="Profit (₹)" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-text-muted font-bold">No data available to display.</div>
+            )}
+          </div>
         </div>
       )}
 
