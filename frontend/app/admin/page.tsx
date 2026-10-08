@@ -42,7 +42,7 @@ export default function AdminPage() {
       fetchProducts();
       fetchOrders();
     }
-  }, [isAdmin]);
+  }, [isAdmin, user]);
 
   const fetchProducts = async () => {
     try {
