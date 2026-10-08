@@ -285,19 +285,19 @@ export default function AdminPage() {
                       {o.OrderItems?.map((i:any) => `${i.quantity}x (ID:${i.productId})`).join(', ')}
                     </td>
                     <td className="py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${o.status === 'Pending' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${o.status === 'pending' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
                         {o.status}
                       </span>
                     </td>
                     <td className="py-4 flex justify-end space-x-2">
-                      {o.status === 'Pending' && (
-                        <button onClick={() => updateOrderStatus(o.id, 'Confirmed')} className="flex items-center space-x-1 px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full hover:bg-green-600">
+                      {o.status === 'pending' && (
+                        <button onClick={() => updateOrderStatus(o.id, 'confirmed')} className="flex items-center space-x-1 px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full hover:bg-green-600">
                           <CheckCircle size={14} /> <span>Confirm</span>
                         </button>
                       )}
-                      {(o.status === 'Confirmed' || o.status === 'Shipped') && (
-                        <button onClick={() => updateOrderStatus(o.id, o.status === 'Confirmed' ? 'Shipped' : 'Delivered')} className="px-3 py-1 bg-primary text-white text-xs font-bold rounded-full hover:bg-primary-dark">
-                          Mark {o.status === 'Confirmed' ? 'Shipped' : 'Delivered'}
+                      {(o.status === 'confirmed' || o.status === 'shipped') && (
+                        <button onClick={() => updateOrderStatus(o.id, o.status === 'confirmed' ? 'shipped' : 'delivered')} className="px-3 py-1 bg-primary text-white text-xs font-bold rounded-full hover:bg-primary-dark">
+                          Mark {o.status === 'confirmed' ? 'Shipped' : 'Delivered'}
                         </button>
                       )}
                     </td>
