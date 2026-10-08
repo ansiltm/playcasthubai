@@ -136,7 +136,7 @@ export default function ProductDetails() {
               )}
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">{product.name}</h1>
-            <div className="text-4xl font-black text-primary mb-6">${product.price.toFixed(2)}</div>
+            <div className="text-4xl font-black text-primary mb-6">₹{product.price.toFixed(2)}</div>
             <p className="text-lg text-gray-600 leading-relaxed">{product.description}</p>
           </div>
 

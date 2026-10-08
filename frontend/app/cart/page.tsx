@@ -16,7 +16,7 @@ export default function CartPage() {
       // In real app, redirect to login
       return;
     }
-    alert('Proceeding to checkout! Order total: $' + getTotal().toFixed(2));
+    alert('Proceeding to checkout! Order total: ₹' + getTotal().toFixed(2));
     clearCart();
   };
 
@@ -43,7 +43,7 @@ export default function CartPage() {
               <img src={item.imageUrl} alt={item.name} className="w-32 h-32 object-cover rounded-2xl bg-gray-50" />
               <div className="flex-1 text-center sm:text-left">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">{item.name}</h3>
-                <div className="text-2xl font-black text-primary">${item.price.toFixed(2)}</div>
+                <div className="text-2xl font-black text-primary">₹{item.price.toFixed(2)}</div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center bg-gray-50 rounded-full border border-gray-200">
@@ -78,7 +78,7 @@ export default function CartPage() {
             <div className="space-y-4 mb-6 text-gray-600">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span className="font-bold text-gray-900">${getTotal().toFixed(2)}</span>
+                <span className="font-bold text-gray-900">₹{getTotal().toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
@@ -86,11 +86,11 @@ export default function CartPage() {
               </div>
               <div className="flex justify-between">
                 <span>Tax</span>
-                <span className="font-bold text-gray-900">${(getTotal() * 0.1).toFixed(2)}</span>
+                <span className="font-bold text-gray-900">₹{(getTotal() * 0.1).toFixed(2)}</span>
               </div>
               <div className="border-t pt-4 flex justify-between text-xl">
                 <span className="font-black text-gray-900">Total</span>
-                <span className="font-black text-primary">${(getTotal() * 1.1).toFixed(2)}</span>
+                <span className="font-black text-primary">₹{(getTotal() * 1.1).toFixed(2)}</span>
               </div>
             </div>
             

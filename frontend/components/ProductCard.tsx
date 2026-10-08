@@ -73,7 +73,7 @@ export default function ProductCard({ product }: { product: Product }) {
           </h3>
           <div className="flex items-center justify-between mt-auto">
             <span className="text-xl font-black text-primary">
-              ${product.price.toFixed(2)}
+              ₹{product.price.toFixed(2)}
             </span>
           </div>
         </div>

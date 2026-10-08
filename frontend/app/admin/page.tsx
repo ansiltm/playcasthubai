@@ -114,7 +114,7 @@ export default function AdminPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Price ($)</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Price (₹)</label>
                 <input required type="number" step="0.01" className="bubble-input py-2" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
               </div>
               <div>
@@ -171,7 +171,7 @@ export default function AdminPage() {
                     <td className="py-4 text-gray-600">
                       <span className="px-2 py-1 bg-gray-100 rounded-full text-xs font-bold">{p.grade}</span>
                     </td>
-                    <td className="py-4 font-bold text-primary">${p.price.toFixed(2)}</td>
+                    <td className="py-4 font-bold text-primary">₹{p.price.toFixed(2)}</td>
                     <td className="py-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-bold ${p.stock > 10 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                         {p.stock} units
