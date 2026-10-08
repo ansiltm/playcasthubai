@@ -6,6 +6,7 @@ interface ProductAttributes {
   name: string;
   description: string;
   category: string;
+  grade: string;
   price: number;
   stock: number;
   imageUrl?: string;
@@ -16,7 +17,7 @@ interface ProductAttributes {
   updatedAt?: Date;
 }
 
-type ProductCreationAttributes = Optional<ProductAttributes, 'id' | 'imageUrl' | 'images' | 'videoUrl' | 'model3dUrl'>;
+type ProductCreationAttributes = Optional<ProductAttributes, 'id' | 'imageUrl' | 'images' | 'videoUrl' | 'model3dUrl' | 'grade'>;
 
 class Product extends Model<ProductAttributes, ProductCreationAttributes>
   implements ProductAttributes {
@@ -24,6 +25,7 @@ class Product extends Model<ProductAttributes, ProductCreationAttributes>
   public name!: string;
   public description!: string;
   public category!: string;
+  public grade!: string;
   public price!: number;
   public stock!: number;
   public imageUrl!: string;
@@ -39,6 +41,7 @@ Product.init(
     name: { type: DataTypes.STRING, allowNull: false },
     description: { type: DataTypes.TEXT, allowNull: false },
     category: { type: DataTypes.STRING, allowNull: false },
+    grade: { type: DataTypes.STRING, allowNull: false, defaultValue: 'Toy Grade' },
     price: { type: DataTypes.FLOAT, allowNull: false },
     stock: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     imageUrl: { type: DataTypes.STRING, allowNull: true },

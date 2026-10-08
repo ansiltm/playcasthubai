@@ -1,32 +1,38 @@
+import Image from 'next/image';
+
 export default function Footer() {
   return (
     <footer className="bg-white border-t border-gray-100 mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
-            <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-              PlaycastHub
-            </span>
+            <div className="flex items-center space-x-3">
+              <div className="relative w-12 h-12 overflow-hidden rounded-[var(--radius-pill)] shadow-sm">
+                <Image src="/logo.jpeg" alt="PlaycastHub Logo" fill className="object-cover" />
+              </div>
+              <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+                PlaycastHub
+              </span>
+            </div>
             <p className="text-gray-500 text-sm">
-              Your ultimate destination for RC, Toys, Diecast, and Hobby-grade items. Experience products in full 3D before you buy.
+              Your ultimate destination for Toy Grade, Hobby Grade, and Semi Toy Grade items. Experience products in full 3D before you buy.
             </p>
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 mb-4">Shop Categories</h3>
+            <h3 className="font-bold text-gray-900 mb-4">Categories</h3>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><a href="/products?category=RC Cars" className="hover:text-primary">RC Cars</a></li>
-              <li><a href="/products?category=Diecast Models" className="hover:text-primary">Diecast Models</a></li>
-              <li><a href="/products?category=Action Figures" className="hover:text-primary">Action Figures</a></li>
-              <li><a href="/products?category=Educational Toys" className="hover:text-primary">Educational Toys</a></li>
+              <li><a href="/products?category=Diecast" className="hover:text-primary">Diecast</a></li>
+              <li><a href="/products?category=Diecast RC" className="hover:text-primary">Diecast RC</a></li>
+              <li><a href="/products?category=RC" className="hover:text-primary">RC Cars</a></li>
+              <li><a href="/products?category=Toys" className="hover:text-primary">Toys</a></li>
             </ul>
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 mb-4">Customer Service</h3>
+            <h3 className="font-bold text-gray-900 mb-4">Grades</h3>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><a href="#" className="hover:text-primary">Contact Us</a></li>
-              <li><a href="#" className="hover:text-primary">Shipping Policy</a></li>
-              <li><a href="#" className="hover:text-primary">Returns & Exchanges</a></li>
-              <li><a href="#" className="hover:text-primary">FAQs</a></li>
+              <li><a href="/products?grade=Toy Grade" className="hover:text-primary">Toy Grade</a></li>
+              <li><a href="/products?grade=Hobby Grade" className="hover:text-primary">Hobby Grade</a></li>
+              <li><a href="/products?grade=Semi Toy Grade" className="hover:text-primary">Semi Toy Grade</a></li>
             </ul>
           </div>
           <div>

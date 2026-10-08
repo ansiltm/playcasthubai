@@ -10,6 +10,7 @@ interface Product {
   name: string;
   price: number;
   category: string;
+  grade?: string;
   images: string[];
   is3D?: boolean;
 }
@@ -31,9 +32,9 @@ export default function ProductCard({ product }: { product: Product }) {
 
   return (
     <Link href={`/products/${product.id}`} className="group block">
-      <div className="bubble-card overflow-hidden bg-white">
+      <div className="bubble-card overflow-hidden bg-white h-full flex flex-col">
         {/* Image Container */}
-        <div className="relative aspect-square overflow-hidden bg-gray-50">
+        <div className="relative aspect-square overflow-hidden bg-gray-50 shrink-0">
           <img
             src={product.images?.[0] || 'https://via.placeholder.com/300'}
             alt={product.name}
@@ -56,14 +57,21 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          <div className="text-xs font-bold text-secondary mb-2 uppercase tracking-wider">
-            {product.category}
+        <div className="p-6 flex-1 flex flex-col">
+          <div className="flex justify-between items-start mb-2">
+            <div className="text-xs font-bold text-secondary uppercase tracking-wider">
+              {product.category}
+            </div>
+            {product.grade && (
+              <div className="text-[10px] font-bold bg-blue-50 text-primary px-2 py-1 rounded-full uppercase tracking-wider">
+                {product.grade}
+              </div>
+            )}
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2 truncate">
+          <h3 className="text-lg font-bold text-gray-900 mb-4 line-clamp-2 flex-1">
             {product.name}
           </h3>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-auto">
             <span className="text-xl font-black text-primary">
               ${product.price.toFixed(2)}
             </span>

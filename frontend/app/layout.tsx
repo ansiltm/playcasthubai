@@ -6,6 +6,11 @@ import Footer from '../components/Footer';
 export const metadata: Metadata = {
   title: 'PlaycasthubAI',
   description: 'The ultimate store for RC, Diecast, and Hobby items',
+  icons: {
+    icon: '/logo.jpeg',
+    shortcut: '/logo.jpeg',
+    apple: '/logo.jpeg',
+  },
 };
 
 export default function RootLayout({

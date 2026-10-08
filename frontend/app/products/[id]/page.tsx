@@ -127,7 +127,14 @@ export default function ProductDetails() {
         {/* Product Info Area */}
         <div className="space-y-8">
           <div>
-            <div className="text-sm font-bold text-secondary mb-2 uppercase tracking-wider">{product.category}</div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="text-sm font-bold text-secondary uppercase tracking-wider">{product.category}</div>
+              {product.grade && (
+                <div className="text-xs font-bold bg-blue-50 text-primary px-3 py-1 rounded-full uppercase tracking-wider">
+                  {product.grade}
+                </div>
+              )}
+            </div>
             <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">{product.name}</h1>
             <div className="text-4xl font-black text-primary mb-6">${product.price.toFixed(2)}</div>
             <p className="text-lg text-gray-600 leading-relaxed">{product.description}</p>

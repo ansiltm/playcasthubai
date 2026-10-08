@@ -8,13 +8,16 @@ const router: Router = Router();
 // GET all products
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { search, category } = req.query;
+    const { search, category, grade } = req.query;
     const whereClause: any = {};
     if (search) {
       whereClause.name = { [Op.like]: `%${search}%` };
     }
     if (category) {
       whereClause.category = category;
+    }
+    if (grade) {
+      whereClause.grade = grade;
     }
     const products = await Product.findAll({ where: whereClause });
     res.json(products);
@@ -30,6 +33,7 @@ router.post('/', authenticate, authorizeAdmin, async (req: Request, res: Respons
       name: req.body.name,
       description: req.body.description,
       category: req.body.category,
+      grade: req.body.grade || 'Toy Grade',
       price: req.body.price,
       stock: req.body.stock,
       imageUrl: req.body.imageUrl,
