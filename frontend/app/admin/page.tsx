@@ -7,6 +7,7 @@ import api from '../../lib/api';
 import toast from 'react-hot-toast';
 import { Trash2, Edit, CheckCircle, Plus, Search, X, AlertTriangle, TrendingUp, DollarSign, Package } from 'lucide-react';
 import DataTable, { Column } from '../../components/DataTable';
+import SearchableSelect from '../../components/SearchableSelect';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function AdminPage() {
@@ -342,14 +343,19 @@ export default function AdminPage() {
             <div className="flex flex-col md:flex-row w-full md:w-auto items-start md:items-center gap-4">
               <div className="flex items-center space-x-2 w-full md:w-auto">
                 <label className="text-sm font-bold text-text-muted whitespace-nowrap">Status:</label>
-                <select className="bubble-input py-2 text-sm w-full md:w-auto" value={orderStatusFilter} onChange={(e) => setOrderStatusFilter(e.target.value)}>
-                  <option value="all">All</option>
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="shipped">Shipped</option>
-                  <option value="delivered">Delivered</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
+                <SearchableSelect
+                  options={[
+                    { label: 'All', value: 'all' },
+                    { label: 'Pending', value: 'pending' },
+                    { label: 'Confirmed', value: 'confirmed' },
+                    { label: 'Shipped', value: 'shipped' },
+                    { label: 'Delivered', value: 'delivered' },
+                    { label: 'Cancelled', value: 'cancelled' },
+                  ]}
+                  value={orderStatusFilter}
+                  onChange={(val) => setOrderStatusFilter(val)}
+                  className="w-full md:w-48"
+                />
               </div>
               
               <div className="flex items-center space-x-2 w-full md:w-auto">
@@ -474,35 +480,45 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-bold text-text-main mb-2">Category</label>
-                  <select required className="bubble-input py-3 px-4" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
-                    <option value="">Select Category...</option>
-                    <option value="Vehicles & Remote-Controlled (RC)">Vehicles & Remote-Controlled (RC)</option>
-                    <option value="Action Figures & Pop-Culture Collectibles">Action Figures & Pop-Culture Collectibles</option>
-                    <option value="Dolls & Doll Playsets">Dolls & Doll Playsets</option>
-                    <option value="Building Sets & Construction Toys">Building Sets & Construction Toys</option>
-                    <option value="Scale Model Kits & Hobby Crafts">Scale Model Kits & Hobby Crafts</option>
-                    <option value="Games & Puzzles">Games & Puzzles</option>
-                    <option value="Plush, Soft & Fabric Toys">Plush, Soft & Fabric Toys</option>
-                    <option value="Educational, STEM & STEAM Toys">Educational, STEM & STEAM Toys</option>
-                    <option value="Infant, Toddler & Preschool Toys">Infant, Toddler & Preschool Toys</option>
-                    <option value="Arts, Crafts & Creative Activities">Arts, Crafts & Creative Activities</option>
-                    <option value="Pretend Play, Role Play & Dress-Up">Pretend Play, Role Play & Dress-Up</option>
-                    <option value="Outdoor, Sports & Active Play">Outdoor, Sports & Active Play</option>
-                    <option value="Electronic, Smart & Animatronic Toys">Electronic, Smart & Animatronic Toys</option>
-                    <option value="Novelty, Fidget & Sensory Toys">Novelty, Fidget & Sensory Toys</option>
-                  </select>
+                  <SearchableSelect
+                    options={[
+                      { label: 'Vehicles & Remote-Controlled (RC)', value: 'Vehicles & Remote-Controlled (RC)' },
+                      { label: 'Action Figures & Pop-Culture Collectibles', value: 'Action Figures & Pop-Culture Collectibles' },
+                      { label: 'Dolls & Doll Playsets', value: 'Dolls & Doll Playsets' },
+                      { label: 'Building Sets & Construction Toys', value: 'Building Sets & Construction Toys' },
+                      { label: 'Scale Model Kits & Hobby Crafts', value: 'Scale Model Kits & Hobby Crafts' },
+                      { label: 'Games & Puzzles', value: 'Games & Puzzles' },
+                      { label: 'Plush, Soft & Fabric Toys', value: 'Plush, Soft & Fabric Toys' },
+                      { label: 'Educational, STEM & STEAM Toys', value: 'Educational, STEM & STEAM Toys' },
+                      { label: 'Infant, Toddler & Preschool Toys', value: 'Infant, Toddler & Preschool Toys' },
+                      { label: 'Arts, Crafts & Creative Activities', value: 'Arts, Crafts & Creative Activities' },
+                      { label: 'Pretend Play, Role Play & Dress-Up', value: 'Pretend Play, Role Play & Dress-Up' },
+                      { label: 'Outdoor, Sports & Active Play', value: 'Outdoor, Sports & Active Play' },
+                      { label: 'Electronic, Smart & Animatronic Toys', value: 'Electronic, Smart & Animatronic Toys' },
+                      { label: 'Novelty, Fidget & Sensory Toys', value: 'Novelty, Fidget & Sensory Toys' },
+                    ]}
+                    value={formData.category}
+                    onChange={(val) => setFormData({...formData, category: val})}
+                    placeholder="Select Category..."
+                    className="w-full"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-text-main mb-2">Grade</label>
-                  <select required className="bubble-input py-3 px-4" value={formData.grade} onChange={e => setFormData({...formData, grade: e.target.value})}>
-                    <option value="">Select Grade...</option>
-                    <option value="Toy-Grade">Toy-Grade</option>
-                    <option value="Semi-Hobby / Prosumer Grade">Semi-Hobby / Prosumer Grade</option>
-                    <option value="Hobby-Grade">Hobby-Grade</option>
-                    <option value="Collector-Grade / Display-Grade">Collector-Grade / Display-Grade</option>
-                    <option value="Institutional / Commercial Grade">Institutional / Commercial Grade</option>
-                    <option value="Artisan / Designer Grade">Artisan / Designer Grade</option>
-                  </select>
+                  <SearchableSelect
+                    options={[
+                      { label: 'Toy-Grade', value: 'Toy-Grade' },
+                      { label: 'Semi-Hobby / Prosumer Grade', value: 'Semi-Hobby / Prosumer Grade' },
+                      { label: 'Hobby-Grade', value: 'Hobby-Grade' },
+                      { label: 'Collector-Grade / Display-Grade', value: 'Collector-Grade / Display-Grade' },
+                      { label: 'Institutional / Commercial Grade', value: 'Institutional / Commercial Grade' },
+                      { label: 'Artisan / Designer Grade', value: 'Artisan / Designer Grade' },
+                    ]}
+                    value={formData.grade}
+                    onChange={(val) => setFormData({...formData, grade: val})}
+                    placeholder="Select Grade..."
+                    className="w-full"
+                  />
                 </div>
               </div>
 
@@ -606,20 +622,19 @@ export default function AdminPage() {
             <form onSubmit={handleManualOrderSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-bold text-text-main mb-2">Select Product</label>
-                <select 
-                  required 
-                  className="bubble-input py-3 px-4 w-full"
-                  value={manualOrderData.productId} 
-                  onChange={e => {
-                    const prod = products.find(p => p.id.toString() === e.target.value);
-                    setManualOrderData({ ...manualOrderData, productId: e.target.value, price: prod ? prod.price.toString() : '' });
+                <SearchableSelect
+                  options={products.map(p => ({
+                    label: `${p.name} (Stock: ${p.stock} | Price: ₹${p.price})`,
+                    value: p.id.toString()
+                  }))}
+                  value={manualOrderData.productId}
+                  onChange={(val) => {
+                    const prod = products.find(p => p.id.toString() === val);
+                    setManualOrderData({ ...manualOrderData, productId: val, price: prod ? prod.price.toString() : '' });
                   }}
-                >
-                  <option value="">-- Choose a Product --</option>
-                  {products.map(p => (
-                    <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock} | Price: ₹{p.price})</option>
-                  ))}
-                </select>
+                  placeholder="-- Choose a Product --"
+                  className="w-full"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
