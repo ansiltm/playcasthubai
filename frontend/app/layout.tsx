@@ -23,7 +23,7 @@ export default function RootLayout({
 }): React.JSX.Element {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-bubble-bg text-text-main min-h-screen flex flex-col transition-colors duration-300">
+      <body className="bg-bubble-bg text-text-main min-h-screen flex flex-col transition-colors duration-300" suppressHydrationWarning>
         <ThemeProvider>
           <Toaster position="top-center" />
           <Navbar />

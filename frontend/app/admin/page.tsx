@@ -11,6 +11,7 @@ export default function AdminPage() {
   const { user, isAdmin, token } = useAuthStore();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products');
+  const [mounted, setMounted] = useState(false);
   
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -29,6 +30,7 @@ export default function AdminPage() {
   const [mediaFiles, setMediaFiles] = useState<FileList | null>(null);
 
   useEffect(() => {
+    setMounted(true);
     if (isAdmin()) {
       fetchProducts();
       fetchOrders();
@@ -48,6 +50,8 @@ export default function AdminPage() {
       setOrders(res.data);
     } catch (err) {}
   };
+
+  if (!mounted) return null;
 
   if (!isAdmin()) {
     return (
