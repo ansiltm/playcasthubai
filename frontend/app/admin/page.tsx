@@ -36,6 +36,11 @@ export default function AdminPage() {
   const [manualOrderData, setManualOrderData] = useState({ productId: '', quantity: '1', price: '' });
   const [isCustomPrice, setIsCustomPrice] = useState(false);
 
+  const [isOrderViewModalOpen, setIsOrderViewModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [isOrderDeleteModalOpen, setIsOrderDeleteModalOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<number | null>(null);
+
   // Form State
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
@@ -126,6 +131,21 @@ export default function AdminPage() {
     } catch (err: any) {
       if (err.response?.status !== 401 && err.response?.status !== 403) {
         toast.error('Failed to delete product');
+      }
+    }
+  };
+
+  const confirmOrderDelete = async () => {
+    if (!orderToDelete) return;
+    try {
+      await api.delete(`/orders/${orderToDelete}`);
+      toast.success('Order deleted successfully!');
+      setIsOrderDeleteModalOpen(false);
+      setOrderToDelete(null);
+      fetchOrders();
+    } catch (err: any) {
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        toast.error('Failed to delete order');
       }
     }
   };
@@ -228,27 +248,36 @@ export default function AdminPage() {
   ];
 
   const orderColumns: Column<any>[] = [
-    { header: 'Order ID', renderCell: (o) => <span className="font-bold whitespace-nowrap">#{o.id}</span> },
+    { header: 'Order ID', renderCell: (o) => <span className="font-bold whitespace-nowrap">{o.orderNumber || `#${o.id}`}</span> },
     { header: 'Date', renderCell: (o) => <span className="whitespace-nowrap">{new Date(o.createdAt).toLocaleDateString()}</span> },
+    { header: 'Customer', renderCell: (o) => <span className="whitespace-nowrap">{o.User?.name || 'Unknown'}</span> },
     { header: 'Total', renderCell: (o) => <span className="font-bold text-primary whitespace-nowrap">₹{o.totalAmount.toFixed(2)}</span> },
-    { header: 'Items', renderCell: (o) => <span className="truncate max-w-[200px] inline-block">{o.OrderItems?.map((i:any) => `${i.quantity}x (ID:${i.productId})`).join(', ')}</span> },
     { header: 'Status', renderCell: (o) => (
-        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block whitespace-nowrap ${o.status === 'pending' ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400' : 'bg-green-500/20 text-green-600 dark:text-green-400'}`}>
-          {o.status}
-        </span>
+        <select 
+          className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap outline-none cursor-pointer ${
+            o.status === 'pending' ? 'bg-orange-500/20 text-orange-600' : 
+            o.status === 'cancelled' ? 'bg-red-500/20 text-red-600' :
+            'bg-green-500/20 text-green-600'
+          }`}
+          value={o.status}
+          onChange={(e) => updateOrderStatus(o.id, e.target.value)}
+        >
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="shipped">Shipped</option>
+          <option value="delivered">Delivered</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
     )},
     { header: 'Actions', renderCell: (o) => (
         <div className="flex justify-end space-x-2">
-          {o.status === 'pending' && (
-            <button onClick={() => updateOrderStatus(o.id, 'confirmed')} className="flex items-center space-x-1 px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full hover:bg-green-600 shadow-sm">
-              <CheckCircle size={14} /> <span>Confirm</span>
-            </button>
-          )}
-          {(o.status === 'confirmed' || o.status === 'shipped') && (
-            <button onClick={() => updateOrderStatus(o.id, o.status === 'confirmed' ? 'shipped' : 'delivered')} className="px-3 py-1 bg-primary text-white text-xs font-bold rounded-full hover:bg-primary-dark shadow-sm">
-              Mark {o.status === 'confirmed' ? 'Shipped' : 'Delivered'}
-            </button>
-          )}
+          <button onClick={() => { setSelectedOrder(o); setIsOrderViewModalOpen(true); }} className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors" title="View Details">
+            <Package size={16} />
+          </button>
+          <button onClick={() => { setOrderToDelete(o.id); setIsOrderDeleteModalOpen(true); }} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors" title="Delete">
+            <Trash2 size={16} />
+          </button>
         </div>
     )}
   ];
@@ -602,6 +631,91 @@ export default function AdminPage() {
                 Cancel
               </button>
               <button onClick={confirmDelete} className="flex-1 bg-red-500 text-white font-bold rounded-[var(--radius-pill)] hover:bg-red-600 shadow-lg hover:shadow-red-500/20 transition-all py-3">
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+        {/* ORDER VIEW MODAL */}
+      {isOrderViewModalOpen && selectedOrder && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-bubble-surface rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-border-main">
+              <h3 className="text-2xl font-black text-text-main">Order Details {selectedOrder.orderNumber ? `(${selectedOrder.orderNumber})` : `(#${selectedOrder.id})`}</h3>
+              <button onClick={() => { setIsOrderViewModalOpen(false); setSelectedOrder(null); }} className="p-2 bg-gray-100 text-text-muted rounded-full hover:bg-gray-200 hover:text-text-main transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-grow">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                  <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-2">Customer Info</h4>
+                  <div className="bg-bubble-input p-4 rounded-[var(--radius-bubble)]">
+                    <p className="font-bold">{selectedOrder.User?.name || 'Unknown'}</p>
+                    <p className="text-sm text-text-muted">{selectedOrder.User?.email}</p>
+                    <p className="text-sm text-text-muted mt-2">Phone: {selectedOrder.User?.phone || 'N/A'}</p>
+                    <p className="text-sm text-text-muted">Pincode: {selectedOrder.User?.pincode || 'N/A'}</p>
+                    <p className="text-sm text-text-muted mt-1 whitespace-pre-wrap">{selectedOrder.User?.address}</p>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-2">Order Summary</h4>
+                  <div className="bg-bubble-input p-4 rounded-[var(--radius-bubble)]">
+                    <p className="text-sm flex justify-between"><span>Date:</span> <span className="font-bold">{new Date(selectedOrder.createdAt).toLocaleDateString()}</span></p>
+                    <p className="text-sm flex justify-between mt-2"><span>Status:</span> <span className="font-bold uppercase">{selectedOrder.status}</span></p>
+                    <p className="text-sm flex justify-between mt-2 text-primary font-black text-lg"><span>Total Amount:</span> <span>₹{selectedOrder.totalAmount?.toFixed(2)}</span></p>
+                  </div>
+                </div>
+              </div>
+
+              <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Items Ordered</h4>
+              <div className="space-y-4">
+                {selectedOrder.OrderItems?.map((item: any) => (
+                  <div key={item.id} className="flex items-center space-x-4 bg-bubble-input p-4 rounded-[var(--radius-bubble)]">
+                    <div className="w-16 h-16 bg-white rounded-lg overflow-hidden shrink-0">
+                      {item.Product?.images?.[0] ? (
+                        item.Product.images[0].match(/\.(mp4|webm|mov|ogg)$/i) ? 
+                          <video src={item.Product.images[0]} className="w-full h-full object-cover" /> :
+                          <img src={item.Product.images[0]} alt={item.Product.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400"><Package size={24} /></div>
+                      )}
+                    </div>
+                    <div className="flex-grow">
+                      <p className="font-bold text-text-main">{item.Product?.name || `Product ID: ${item.productId}`}</p>
+                      <p className="text-sm text-text-muted">Quantity: {item.quantity}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-black text-primary">₹{(item.price * item.quantity).toFixed(2)}</p>
+                      <p className="text-xs text-text-muted">₹{item.price.toFixed(2)} each</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="p-6 border-t border-border-main flex justify-end">
+              <button onClick={() => { setIsOrderViewModalOpen(false); setSelectedOrder(null); }} className="bubble-btn py-2 px-8">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ORDER DELETE CONFIRMATION MODAL */}
+      {isOrderDeleteModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-bubble-surface rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center animate-in zoom-in-95 duration-200">
+            <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle size={40} />
+            </div>
+            <h3 className="text-2xl font-black text-text-main mb-2">Delete Order?</h3>
+            <p className="text-text-muted mb-8">This action cannot be undone. Are you sure you want to completely remove this order?</p>
+            <div className="flex space-x-4">
+              <button onClick={() => { setIsOrderDeleteModalOpen(false); setOrderToDelete(null); }} className="flex-1 bubble-btn-secondary py-3">
+                Cancel
+              </button>
+              <button onClick={confirmOrderDelete} className="flex-1 bg-red-500 text-white font-bold rounded-[var(--radius-pill)] hover:bg-red-600 shadow-lg hover:shadow-red-500/20 transition-all py-3">
                 Yes, Delete
               </button>
             </div>
