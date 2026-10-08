@@ -97,7 +97,23 @@ router.put(
       }
 
       const files = req.files as Express.Multer.File[];
-      const mediaUrls = files ? files.map(f => formatFileUrl(req, f.filename)) : [];
+      const newMediaUrls = files ? files.map(f => formatFileUrl(req, f.filename)) : [];
+
+      let finalMedia = product.media;
+
+      if (req.body.existingMedia !== undefined) {
+        // If frontend sends existingMedia (even if empty array), we honor it.
+        let existingMedia: string[] = [];
+        if (Array.isArray(req.body.existingMedia)) {
+          existingMedia = req.body.existingMedia;
+        } else if (typeof req.body.existingMedia === 'string' && req.body.existingMedia.trim() !== '') {
+          existingMedia = [req.body.existingMedia];
+        }
+        finalMedia = [...existingMedia, ...newMediaUrls];
+      } else if (newMediaUrls.length > 0) {
+        // Fallback for old requests
+        finalMedia = newMediaUrls;
+      }
 
       await product.update({
         name: req.body.name || product.name,
@@ -107,7 +123,7 @@ router.put(
         price: req.body.price ? parseFloat(req.body.price) : product.price,
         wholesalePrice: req.body.wholesalePrice ? parseFloat(req.body.wholesalePrice) : product.wholesalePrice,
         stock: req.body.stock ? parseInt(req.body.stock) : product.stock,
-        media: mediaUrls.length > 0 ? mediaUrls : product.media
+        media: finalMedia
       });
 
       res.json(product);
