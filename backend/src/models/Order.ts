@@ -5,7 +5,7 @@ interface OrderAttributes {
   id?: number;
   userId: number;
   totalAmount: number;
-  status: 'pending' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
   createdAt?: Date;
   updatedAt?: Date;
 }
