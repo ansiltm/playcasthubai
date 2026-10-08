@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #3b82f6;
-  --color-primary-light: #60a5fa;
-  --color-primary-dark: #2563eb;
+  --color-primary: #04b4ec;
+  --color-primary-light: #52eadb;
+  --color-primary-dark: #19597a;
   
-  --color-secondary: #ec4899;
-  --color-secondary-light: #f472b6;
+  --color-secondary: #00d2ff;
+  --color-secondary-light: #73f2ff;
   
-  --color-bubble-bg: #f0f9ff;
+  --color-bubble-bg: #f2fbff;
   --color-bubble-surface: #ffffff;
 
-  --shadow-bubble: 0 10px 25px -5px rgba(59, 130, 246, 0.15), 0 8px 10px -6px rgba(59, 130, 246, 0.1);
-  --shadow-bubble-hover: 0 20px 25px -5px rgba(59, 130, 246, 0.25), 0 10px 10px -5px rgba(59, 130, 246, 0.1);
+  --shadow-bubble: 0 10px 25px -5px rgba(4, 180, 236, 0.15), 0 8px 10px -6px rgba(4, 180, 236, 0.1);
+  --shadow-bubble-hover: 0 20px 25px -5px rgba(4, 180, 236, 0.25), 0 10px 10px -5px rgba(4, 180, 236, 0.1);
   --shadow-bubble-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
 
   --radius-bubble: 2rem;
