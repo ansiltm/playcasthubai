@@ -14,7 +14,7 @@ interface UserAttributes {
   updatedAt?: Date;
 }
 
-type UserCreationAttributes = Optional<UserAttributes, 'id' | 'role'>;
+type UserCreationAttributes = Optional<UserAttributes, 'id' | 'role' | 'phone' | 'address' | 'pincode'>;
 
 class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: number;
