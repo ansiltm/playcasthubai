@@ -5,19 +5,28 @@ import Link from 'next/link';
 import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Trash2, Plus, Minus, ArrowRight } from 'lucide-react';
+import toast from 'react-hot-toast';
+import axios from 'axios';
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!user) {
-      alert('Please login to checkout');
-      // In real app, redirect to login
+      toast.error('Please login to checkout');
       return;
     }
-    alert('Proceeding to checkout! Order total: ₹' + getTotal().toFixed(2));
-    clearCart();
+    
+    try {
+      await axios.post('http://localhost:5000/api/orders', { items }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Order placed successfully!');
+      clearCart();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Checkout failed');
+    }
   };
 
   if (items.length === 0) {

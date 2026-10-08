@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useCartStore } from '../../../store/useCartStore';
 import { ShoppingCart, Heart, Share2, Box, Image as ImageIcon, Video } from 'lucide-react';
+import toast from 'react-hot-toast';
 import axios from 'axios';
 import '@google/model-viewer'; // Import the web component
 
@@ -30,8 +31,8 @@ export default function ProductDetails() {
           description: 'Experience the ultimate off-road adventure with the RC Buggy Pro X1. Features 4WD, independent suspension, and a top speed of 50mph. This is a hobby-grade masterpiece built for extreme bashers.',
           stock: 15,
           images: ['https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=1200'],
-          model3dUrl: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', // Sample 3D model
-          videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+          models3d: ['https://modelviewer.dev/shared-assets/models/Astronaut.glb'], // Sample 3D model
+          videos: ['https://www.w3schools.com/html/mov_bbb.mp4'],
           is3D: true
         });
       } finally {
@@ -58,7 +59,7 @@ export default function ProductDetails() {
       quantity: 1,
       imageUrl: product.images?.[0]
     });
-    alert('Added to cart!');
+    toast.success('Added to cart!');
   };
 
   return (
@@ -67,9 +68,9 @@ export default function ProductDetails() {
         {/* Media Viewer Area */}
         <div className="space-y-6">
           <div className="bubble-card p-2 bg-white h-[500px] flex items-center justify-center overflow-hidden relative">
-            {activeTab === '3d' && product.model3dUrl && (
+            {activeTab === '3d' && product.models3d?.[0] && (
               <model-viewer
-                src={product.model3dUrl}
+                src={product.models3d[0]}
                 auto-rotate
                 camera-controls
                 shadow-intensity="1"
@@ -85,9 +86,9 @@ export default function ProductDetails() {
               />
             )}
 
-            {activeTab === 'video' && product.videoUrl && (
+            {activeTab === 'video' && product.videos?.[0] && (
               <video 
-                src={product.videoUrl} 
+                src={product.videos[0]} 
                 controls 
                 className="w-full h-full object-cover rounded-[var(--radius-bubble-sm)]"
               />
@@ -96,7 +97,7 @@ export default function ProductDetails() {
 
           {/* Media Tabs */}
           <div className="flex gap-4 justify-center">
-            {product.model3dUrl && (
+            {product.models3d?.[0] && (
               <button 
                 onClick={() => setActiveTab('3d')}
                 className={`flex items-center space-x-2 px-6 py-3 rounded-[var(--radius-pill)] font-bold transition-all ${activeTab === '3d' ? 'bg-primary text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
@@ -112,7 +113,7 @@ export default function ProductDetails() {
               <ImageIcon size={20} />
               <span>Images</span>
             </button>
-            {product.videoUrl && (
+            {product.videos?.[0] && (
               <button 
                 onClick={() => setActiveTab('video')}
                 className={`flex items-center space-x-2 px-6 py-3 rounded-[var(--radius-pill)] font-bold transition-all ${activeTab === 'video' ? 'bg-primary text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
