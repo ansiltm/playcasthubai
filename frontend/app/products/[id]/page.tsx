@@ -1,17 +1,16 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useCartStore } from '../../../store/useCartStore';
-import { ShoppingCart, Heart, Share2, Box, Image as ImageIcon, Video } from 'lucide-react';
+import { ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import '@google/model-viewer'; // Import the web component
 
 export default function ProductDetails() {
   const { id } = useParams();
   const [product, setProduct] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'3d' | 'image' | 'video'>('3d');
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const addItem = useCartStore((state) => state.addItem);
 
@@ -27,13 +26,13 @@ export default function ProductDetails() {
           id: Number(id),
           name: 'RC Buggy Pro X1 Extreme Edition',
           price: 199.99,
-          category: 'RC Cars',
-          description: 'Experience the ultimate off-road adventure with the RC Buggy Pro X1. Features 4WD, independent suspension, and a top speed of 50mph. This is a hobby-grade masterpiece built for extreme bashers.',
+          category: 'Vehicles & Remote-Controlled (RC)',
+          description: 'Experience the ultimate off-road adventure with the RC Buggy Pro X1. Features 4WD, independent suspension, and a top speed of 50mph.',
           stock: 15,
-          images: ['https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=1200'],
-          models3d: ['https://modelviewer.dev/shared-assets/models/Astronaut.glb'], // Sample 3D model
-          videos: ['https://www.w3schools.com/html/mov_bbb.mp4'],
-          is3D: true
+          media: [
+            'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=1200',
+            'https://www.w3schools.com/html/mov_bbb.mp4'
+          ]
         });
       } finally {
         setLoading(false);
@@ -43,11 +42,11 @@ export default function ProductDetails() {
   }, [id]);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center font-bold">Loading product...</div>;
   }
 
   if (!product) {
-    return <div className="min-h-screen flex items-center justify-center">Product not found.</div>;
+    return <div className="min-h-screen flex items-center justify-center font-bold text-red-500">Product not found.</div>;
   }
 
   const handleAddToCart = () => {
@@ -57,72 +56,105 @@ export default function ProductDetails() {
       name: product.name,
       price: product.price,
       quantity: 1,
-      imageUrl: product.images?.[0]
+      imageUrl: product.media?.[0]
     });
     toast.success('Added to cart!');
   };
 
+  const nextMedia = () => {
+    if (product.media && product.media.length > 0) {
+      setCurrentIndex((prev) => (prev + 1) % product.media.length);
+    }
+  };
+
+  const prevMedia = () => {
+    if (product.media && product.media.length > 0) {
+      setCurrentIndex((prev) => (prev - 1 + product.media.length) % product.media.length);
+    }
+  };
+
+  const currentMediaUrl = product.media?.[currentIndex];
+  const isVideo = currentMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) !== null;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Media Viewer Area */}
-        <div className="space-y-6">
-          <div className="bubble-card p-2 bg-white h-[500px] flex items-center justify-center overflow-hidden relative">
-            {activeTab === '3d' && product.models3d?.[0] && (
-              <model-viewer
-                src={product.models3d[0]}
-                auto-rotate
-                camera-controls
-                shadow-intensity="1"
-                className="w-full h-full outline-none"
-              ></model-viewer>
-            )}
+        {/* Media Viewer Carousel Area */}
+        <div className="space-y-4">
+          <div className="bubble-card p-2 bg-white h-[500px] flex items-center justify-center overflow-hidden relative group">
             
-            {activeTab === 'image' && (
-              <img 
-                src={product.images?.[0]} 
-                alt={product.name} 
-                className="w-full h-full object-contain rounded-[var(--radius-bubble-sm)]"
-              />
-            )}
+            {product.media && product.media.length > 0 ? (
+              <>
+                {isVideo ? (
+                  <video 
+                    key={currentMediaUrl}
+                    src={currentMediaUrl} 
+                    controls 
+                    autoPlay 
+                    className="w-full h-full object-contain rounded-[var(--radius-bubble-sm)] animate-in fade-in duration-300"
+                  />
+                ) : (
+                  <img 
+                    key={currentMediaUrl}
+                    src={currentMediaUrl} 
+                    alt={product.name} 
+                    className="w-full h-full object-contain rounded-[var(--radius-bubble-sm)] animate-in fade-in duration-300"
+                  />
+                )}
 
-            {activeTab === 'video' && product.videos?.[0] && (
-              <video 
-                src={product.videos[0]} 
-                controls 
-                className="w-full h-full object-cover rounded-[var(--radius-bubble-sm)]"
-              />
+                {/* Carousel Controls */}
+                {product.media.length > 1 && (
+                  <>
+                    <button 
+                      onClick={prevMedia} 
+                      className="absolute left-4 p-3 bg-white/80 backdrop-blur-sm text-gray-800 hover:text-primary rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <ChevronLeft size={24} />
+                    </button>
+                    <button 
+                      onClick={nextMedia} 
+                      className="absolute right-4 p-3 bg-white/80 backdrop-blur-sm text-gray-800 hover:text-primary rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <ChevronRight size={24} />
+                    </button>
+                    {/* Dots */}
+                    <div className="absolute bottom-4 flex gap-2">
+                      {product.media.map((_: any, idx: number) => (
+                        <div 
+                          key={idx} 
+                          className={`w-2.5 h-2.5 rounded-full transition-all ${idx === currentIndex ? 'bg-primary scale-125' : 'bg-gray-300'}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <div className="text-gray-400 font-bold">No media available</div>
             )}
           </div>
-
-          {/* Media Tabs */}
-          <div className="flex gap-4 justify-center">
-            {product.models3d?.[0] && (
-              <button 
-                onClick={() => setActiveTab('3d')}
-                className={`flex items-center space-x-2 px-6 py-3 rounded-[var(--radius-pill)] font-bold transition-all ${activeTab === '3d' ? 'bg-primary text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-              >
-                <Box size={20} />
-                <span>3D Model</span>
-              </button>
-            )}
-            <button 
-              onClick={() => setActiveTab('image')}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-[var(--radius-pill)] font-bold transition-all ${activeTab === 'image' ? 'bg-primary text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-            >
-              <ImageIcon size={20} />
-              <span>Images</span>
-            </button>
-            {product.videos?.[0] && (
-              <button 
-                onClick={() => setActiveTab('video')}
-                className={`flex items-center space-x-2 px-6 py-3 rounded-[var(--radius-pill)] font-bold transition-all ${activeTab === 'video' ? 'bg-primary text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-              >
-                <Video size={20} />
-                <span>Video</span>
-              </button>
-            )}
-          </div>
+          
+          {/* Thumbnails */}
+          {product.media && product.media.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-2 px-1">
+              {product.media.map((url: string, idx: number) => {
+                const isThumbVideo = url.match(/\.(mp4|webm|mov|ogg)$/i) !== null;
+                return (
+                  <button 
+                    key={idx} 
+                    onClick={() => setCurrentIndex(idx)}
+                    className={`flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border-4 transition-all ${idx === currentIndex ? 'border-primary opacity-100' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                  >
+                    {isThumbVideo ? (
+                      <video src={url} className="w-full h-full object-cover" />
+                    ) : (
+                      <img src={url} className="w-full h-full object-cover" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Product Info Area */}
@@ -153,7 +185,7 @@ export default function ProductDetails() {
               <button 
                 onClick={handleAddToCart}
                 disabled={product.stock <= 0}
-                className="flex-1 bubble-btn py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                className="flex-1 bubble-btn py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-lg"
               >
                 <ShoppingCart size={24} />
                 <span>Add to Cart</span>

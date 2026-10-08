@@ -26,9 +26,7 @@ export default function AdminPage() {
   const [formData, setFormData] = useState({
     name: '', price: '', category: '', grade: '', description: '', stock: ''
   });
-  const [images, setImages] = useState<FileList | null>(null);
-  const [videos, setVideos] = useState<FileList | null>(null);
-  const [models, setModels] = useState<FileList | null>(null);
+  const [mediaFiles, setMediaFiles] = useState<FileList | null>(null);
 
   useEffect(() => {
     if (isAdmin()) {
@@ -75,9 +73,7 @@ export default function AdminPage() {
     data.append('description', formData.description);
     data.append('stock', formData.stock);
     
-    if (images) Array.from(images).forEach(f => data.append('images', f));
-    if (videos) Array.from(videos).forEach(f => data.append('videos', f));
-    if (models) Array.from(models).forEach(f => data.append('model3d', f));
+    if (mediaFiles) Array.from(mediaFiles).forEach(f => data.append('media', f));
 
     try {
       if (editingId) {
@@ -116,7 +112,7 @@ export default function AdminPage() {
   const openAddModal = () => {
     setEditingId(null);
     setFormData({ name: '', price: '', category: '', grade: '', description: '', stock: '' });
-    setImages(null); setVideos(null); setModels(null);
+    setMediaFiles(null);
     setIsProductModalOpen(true);
   };
 
@@ -126,7 +122,7 @@ export default function AdminPage() {
       name: p.name, price: p.price.toString(), category: p.category, 
       grade: p.grade, description: p.description, stock: p.stock.toString()
     });
-    setImages(null); setVideos(null); setModels(null);
+    setMediaFiles(null);
     setIsProductModalOpen(true);
   };
 
@@ -347,20 +343,10 @@ export default function AdminPage() {
               </div>
 
               <div className="space-y-4 p-6 bg-blue-50/50 rounded-2xl border border-blue-100">
-                <h3 className="font-bold text-primary mb-4">Media Uploads (Unlimited Size)</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-2">Images (Multiple)</label>
-                    <input type="file" multiple accept="image/*" onChange={e => setImages(e.target.files)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-2">Videos (Multiple)</label>
-                    <input type="file" multiple accept="video/*" onChange={e => setVideos(e.target.files)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-2">3D Models (.glb)</label>
-                    <input type="file" multiple accept=".glb,.gltf" onChange={e => setModels(e.target.files)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200" />
-                  </div>
+                <h3 className="font-bold text-primary mb-4">Media Upload (Images & Videos)</h3>
+                <div className="w-full">
+                  <label className="block text-xs font-bold text-gray-600 mb-2">Select Images and/or Videos</label>
+                  <input type="file" multiple accept="image/*,video/*" onChange={e => setMediaFiles(e.target.files)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200" />
                 </div>
                 {editingId && <p className="text-xs text-orange-600 font-bold mt-4 flex items-center gap-1"><AlertTriangle size={14}/> Note: Selecting new files will override existing media.</p>}
               </div>
