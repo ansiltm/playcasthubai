@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { Op } from 'sequelize';
 import Product from '../models/Product';
-import { authenticate, authorizeAdmin } from '../middleware/auth';
+import { authenticate, authorizeAdmin, optionalAuthenticate } from '../middleware/auth';
 import { upload } from '../middleware/upload';
 
 const router: Router = Router();
@@ -12,7 +12,7 @@ const formatFileUrl = (req: Request, filename: string) => {
 };
 
 // GET all products
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get('/', optionalAuthenticate, async (req: any, res: Response): Promise<void> => {
   try {
     const { search, category, grade } = req.query;
     const whereClause: any = {};
@@ -25,7 +25,12 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     if (grade) {
       whereClause.grade = grade;
     }
-    const products = await Product.findAll({ where: whereClause });
+    
+    // Determine attributes to fetch based on role
+    const isAdmin = req.user && req.user.role === 'admin';
+    const attributes = isAdmin ? undefined : { exclude: ['wholesalePrice'] };
+
+    const products = await Product.findAll({ where: whereClause, attributes });
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: (err as Error).message });
@@ -33,9 +38,12 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 });
 
 // GET single product
-router.get('/:id', async (req: Request, res: Response): Promise<void> => {
+router.get('/:id', optionalAuthenticate, async (req: any, res: Response): Promise<void> => {
   try {
-    const product = await Product.findByPk(req.params.id);
+    const isAdmin = req.user && req.user.role === 'admin';
+    const attributes = isAdmin ? undefined : { exclude: ['wholesalePrice'] };
+
+    const product = await Product.findByPk(req.params.id, { attributes });
     if (!product) {
       res.status(404).json({ message: 'Product not found' });
       return;
@@ -63,6 +71,7 @@ router.post(
         category: req.body.category,
         grade: req.body.grade || 'Toy-Grade',
         price: parseFloat(req.body.price),
+        wholesalePrice: req.body.wholesalePrice ? parseFloat(req.body.wholesalePrice) : 0,
         stock: parseInt(req.body.stock),
         media: mediaUrls
       });
@@ -96,6 +105,7 @@ router.put(
         category: req.body.category || product.category,
         grade: req.body.grade || product.grade,
         price: req.body.price ? parseFloat(req.body.price) : product.price,
+        wholesalePrice: req.body.wholesalePrice ? parseFloat(req.body.wholesalePrice) : product.wholesalePrice,
         stock: req.body.stock ? parseInt(req.body.stock) : product.stock,
         media: mediaUrls.length > 0 ? mediaUrls : product.media
       });
