@@ -18,6 +18,13 @@ export default function AdminPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   
+  // Filter States
+  const [orderStatusFilter, setOrderStatusFilter] = useState('all');
+  const [orderStartDate, setOrderStartDate] = useState('');
+  const [orderEndDate, setOrderEndDate] = useState('');
+  const [analyticsStartDate, setAnalyticsStartDate] = useState('');
+  const [analyticsEndDate, setAnalyticsEndDate] = useState('');
+  
 
   // Modal States
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -245,13 +252,29 @@ export default function AdminPage() {
     )}
   ];
 
+  // Filtering Logic
+  const filteredOrders = orders.filter(o => {
+    let keep = true;
+    if (orderStatusFilter !== 'all' && o.status !== orderStatusFilter) keep = false;
+    if (orderStartDate && new Date(o.createdAt) < new Date(orderStartDate)) keep = false;
+    if (orderEndDate && new Date(o.createdAt) > new Date(orderEndDate + 'T23:59:59')) keep = false;
+    return keep;
+  });
+
+  const analyticsFilteredOrders = orders.filter(o => {
+    let keep = true;
+    if (analyticsStartDate && new Date(o.createdAt) < new Date(analyticsStartDate)) keep = false;
+    if (analyticsEndDate && new Date(o.createdAt) > new Date(analyticsEndDate + 'T23:59:59')) keep = false;
+    return keep;
+  });
+
   // Analytics Calculation
   let totalRevenue = 0;
   let totalProfit = 0;
   let totalItemsSold = 0;
   const monthlyDataMap = new Map();
 
-  orders.forEach(o => {
+  analyticsFilteredOrders.forEach(o => {
     if (o.status === 'cancelled') return;
     
     totalRevenue += o.totalAmount;
@@ -316,16 +339,38 @@ export default function AdminPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h2 className="text-2xl font-bold">Customer Orders</h2>
             
-            <div className="flex w-full md:w-auto space-x-4">
-              <button onClick={() => setIsManualOrderModalOpen(true)} className="bubble-btn py-2 flex items-center space-x-2 whitespace-nowrap">
-                <Plus size={18} /> <span>Create Order Manually</span>
+            <div className="flex flex-col md:flex-row w-full md:w-auto items-start md:items-center gap-4">
+              <div className="flex items-center space-x-2 w-full md:w-auto">
+                <label className="text-sm font-bold text-text-muted whitespace-nowrap">Status:</label>
+                <select className="bubble-input py-2 text-sm w-full md:w-auto" value={orderStatusFilter} onChange={(e) => setOrderStatusFilter(e.target.value)}>
+                  <option value="all">All</option>
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="shipped">Shipped</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              
+              <div className="flex items-center space-x-2 w-full md:w-auto">
+                <label className="text-sm font-bold text-text-muted whitespace-nowrap">From:</label>
+                <input type="date" className="bubble-input py-2 text-sm w-full md:w-auto" value={orderStartDate} onChange={(e) => setOrderStartDate(e.target.value)} />
+              </div>
+
+              <div className="flex items-center space-x-2 w-full md:w-auto">
+                <label className="text-sm font-bold text-text-muted whitespace-nowrap">To:</label>
+                <input type="date" className="bubble-input py-2 text-sm w-full md:w-auto" value={orderEndDate} onChange={(e) => setOrderEndDate(e.target.value)} />
+              </div>
+
+              <button onClick={() => setIsManualOrderModalOpen(true)} className="bubble-btn py-2 flex items-center justify-center space-x-2 w-full md:w-auto whitespace-nowrap">
+                <Plus size={18} /> <span>Manual Order</span>
               </button>
             </div>
           </div>
           
           <DataTable 
             columns={orderColumns} 
-            data={orders} 
+            data={filteredOrders} 
             searchKeys={['id', 'status']} 
             searchPlaceholder="Search orders by ID or status..."
             emptyMessage="No orders found."
@@ -336,6 +381,27 @@ export default function AdminPage() {
 
       {activeTab === 'analytics' && (
         <div className="space-y-6">
+          
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-bubble-surface bubble-card p-4 gap-4">
+            <h2 className="text-xl font-bold">Analytics Filter</h2>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-bold text-text-muted whitespace-nowrap">From:</label>
+                <input type="date" className="bubble-input py-2 text-sm" value={analyticsStartDate} onChange={(e) => setAnalyticsStartDate(e.target.value)} />
+              </div>
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-bold text-text-muted whitespace-nowrap">To:</label>
+                <input type="date" className="bubble-input py-2 text-sm" value={analyticsEndDate} onChange={(e) => setAnalyticsEndDate(e.target.value)} />
+              </div>
+              <button 
+                onClick={() => { setAnalyticsStartDate(''); setAnalyticsEndDate(''); }} 
+                className="bubble-btn-secondary py-2 text-sm whitespace-nowrap"
+              >
+                All Dates
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bubble-card bg-bubble-surface p-6 flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-[var(--radius-pill)] flex items-center justify-center mb-4">
