@@ -56,6 +56,52 @@ export default function Home(): React.JSX.Element {
         </div>
       </section>
 
+      {/* Shop by Category */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <h2 className="text-3xl font-black text-text-main mb-6">Shop by Category</h2>
+        <div className="flex gap-4 overflow-x-auto pb-6 snap-x hide-scrollbar">
+          {[
+            { name: 'Vehicles & RC', query: 'Vehicles & Remote-Controlled (RC)', icon: '🏎️' },
+            { name: 'Action Figures', query: 'Action Figures & Pop-Culture Collectibles', icon: '🦸‍♂️' },
+            { name: 'Model Kits', query: 'Scale Model Kits & Hobby Crafts', icon: '🛠️' },
+            { name: 'STEM & Tech', query: 'Educational, STEM & STEAM Toys', icon: '🔬' },
+            { name: 'Smart Toys', query: 'Electronic, Smart & Animatronic Toys', icon: '🤖' },
+            { name: 'Outdoor Play', query: 'Outdoor, Sports & Active Play', icon: '⛺' }
+          ].map((cat, i) => (
+            <Link 
+              key={i} 
+              href={`/products?category=${encodeURIComponent(cat.query)}`}
+              className="bubble-card flex-shrink-0 w-48 p-6 flex flex-col items-center justify-center text-center gap-4 snap-start hover:bg-primary hover:text-white transition-all group"
+            >
+              <div className="text-4xl group-hover:scale-110 transition-transform">{cat.icon}</div>
+              <h3 className="font-bold">{cat.name}</h3>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Shop by Grade */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <h2 className="text-3xl font-black text-text-main mb-6">Shop by Grade</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { name: 'Toy-Grade', query: 'Toy-Grade', desc: 'Entry-level fun for everyone' },
+            { name: 'Semi-Hobby', query: 'Semi-Hobby / Prosumer Grade', desc: 'Step up your game' },
+            { name: 'Hobby-Grade', query: 'Hobby-Grade', desc: 'Pro modular & repairable builds' },
+            { name: 'Collector', query: 'Collector-Grade / Display-Grade', desc: 'Extreme scale display fidelity' }
+          ].map((grade, i) => (
+            <Link 
+              key={i} 
+              href={`/products?grade=${encodeURIComponent(grade.query)}`}
+              className="bubble-card p-6 border-l-4 hover:border-l-primary hover:shadow-lg transition-all"
+            >
+              <h3 className="font-black text-xl mb-2">{grade.name}</h3>
+              <p className="text-sm text-text-muted">{grade.desc}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* Featured Products */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="flex justify-between items-end mb-12">

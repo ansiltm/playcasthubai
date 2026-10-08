@@ -54,13 +54,13 @@
 
 @layer base {
   body {
-    @apply bg-bubble-bg text-gray-800 antialiased selection:bg-primary-light selection:text-white;
+    @apply bg-bubble-bg text-text-main antialiased selection:bg-primary-light selection:text-white;
   }
 }
 
 @layer components {
   .bubble-card {
-    @apply bg-bubble-surface rounded-[var(--radius-bubble)] shadow-[var(--shadow-bubble)] border border-blue-50/50 backdrop-blur-sm transition-all duration-300;
+    @apply bg-bubble-surface rounded-[var(--radius-bubble)] shadow-[var(--shadow-bubble)] border border-border-main backdrop-blur-sm transition-all duration-300;
   }
   .bubble-card:hover {
     @apply shadow-[var(--shadow-bubble-hover)] -translate-y-1;
@@ -71,11 +71,19 @@
   }
 
   .bubble-btn-secondary {
-    @apply inline-flex items-center justify-center px-6 py-3 font-bold text-primary bg-white rounded-[var(--radius-pill)] shadow-[var(--shadow-bubble)] transition-all duration-300 hover:shadow-[var(--shadow-bubble-hover)] hover:-translate-y-1 active:translate-y-0 active:shadow-[var(--shadow-bubble-inner)] border-2 border-primary-light;
+    @apply inline-flex items-center justify-center px-6 py-3 font-bold text-primary bg-bubble-surface rounded-[var(--radius-pill)] shadow-[var(--shadow-bubble)] transition-all duration-300 hover:shadow-[var(--shadow-bubble-hover)] hover:-translate-y-1 active:translate-y-0 active:shadow-[var(--shadow-bubble-inner)] border-2 border-primary-light;
   }
 
   .bubble-input {
-    @apply w-full px-6 py-4 rounded-[var(--radius-pill)] border-2 border-transparent bg-white shadow-[var(--shadow-bubble-inner)] focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/20 transition-all duration-300;
+    @apply w-full px-6 py-4 rounded-[var(--radius-pill)] border-2 border-border-main bg-bubble-input text-text-main shadow-[var(--shadow-bubble-inner)] focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/20 transition-all duration-300;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }
 
