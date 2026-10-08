@@ -11,13 +11,14 @@ interface ProductAttributes {
   stock: number;
   imageUrl?: string;
   images?: string[];
-  videoUrl?: string;
-  model3dUrl?: string;
+  videos?: string[];
+  models3d?: string[];
+  is3D?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-type ProductCreationAttributes = Optional<ProductAttributes, 'id' | 'imageUrl' | 'images' | 'videoUrl' | 'model3dUrl' | 'grade'>;
+type ProductCreationAttributes = Optional<ProductAttributes, 'id' | 'imageUrl' | 'images' | 'videos' | 'models3d' | 'grade' | 'is3D'>;
 
 class Product extends Model<ProductAttributes, ProductCreationAttributes>
   implements ProductAttributes {
@@ -30,8 +31,9 @@ class Product extends Model<ProductAttributes, ProductCreationAttributes>
   public stock!: number;
   public imageUrl!: string;
   public images!: string[];
-  public videoUrl!: string;
-  public model3dUrl!: string;
+  public videos!: string[];
+  public models3d!: string[];
+  public is3D!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -46,8 +48,8 @@ Product.init(
     stock: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     imageUrl: { type: DataTypes.STRING, allowNull: true },
     images: { type: DataTypes.JSON, allowNull: true },
-    videoUrl: { type: DataTypes.STRING, allowNull: true },
-    model3dUrl: { type: DataTypes.STRING, allowNull: true },
+    videos: { type: DataTypes.JSON, allowNull: true },
+    models3d: { type: DataTypes.JSON, allowNull: true },
   },
   { sequelize, modelName: 'Product' }
 );

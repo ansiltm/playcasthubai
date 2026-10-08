@@ -1,6 +1,7 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import { sequelize } from './models';
 import authRoutes from './routes/auth';
 import productRoutes from './routes/products';
@@ -14,6 +15,8 @@ const PORT: number = parseInt(process.env.PORT || '5000', 10);
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Sync MariaDB/MySQL Database
 sequelize.sync({ alter: true }).then(() => {
