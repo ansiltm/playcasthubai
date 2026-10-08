@@ -29,6 +29,7 @@ export default function AdminPage() {
     name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: ''
   });
   const [mediaFiles, setMediaFiles] = useState<FileList | null>(null);
+  const [existingMedia, setExistingMedia] = useState<string[]>([]);
 
   useEffect(() => {
     setMounted(true);
@@ -73,6 +74,10 @@ export default function AdminPage() {
     data.append('description', formData.description);
     data.append('stock', formData.stock);
     
+    // We send mediaUpdated=true to tell the backend we are sending existingMedia (which could be empty).
+    data.append('mediaUpdated', 'true');
+    existingMedia.forEach(url => data.append('existingMedia', url));
+    
     if (mediaFiles) Array.from(mediaFiles).forEach(f => data.append('media', f));
 
     try {
@@ -115,6 +120,7 @@ export default function AdminPage() {
     setEditingId(null);
     setFormData({ name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '' });
     setMediaFiles(null);
+    setExistingMedia([]);
     setIsProductModalOpen(true);
   };
 
@@ -125,6 +131,7 @@ export default function AdminPage() {
       grade: p.grade, description: p.description, stock: p.stock.toString()
     });
     setMediaFiles(null);
+    setExistingMedia(p.media || []);
     setIsProductModalOpen(true);
   };
 
@@ -331,12 +338,39 @@ export default function AdminPage() {
               </div>
 
               <div className="space-y-4 p-6 bg-bubble-input rounded-2xl border border-border-main">
-                <h3 className="font-bold text-primary mb-4">Media Upload (Images & Videos)</h3>
+                <h3 className="font-bold text-primary mb-2">Media Upload (Images & Videos)</h3>
+                
+                {existingMedia.length > 0 && (
+                  <div className="mb-4">
+                    <label className="block text-xs font-bold text-text-muted mb-2">Currently Uploaded Media</label>
+                    <div className="flex flex-wrap gap-3">
+                      {existingMedia.map((url, idx) => {
+                        const isVideo = url.match(/\.(mp4|webm|mov|ogg)$/i) !== null;
+                        return (
+                          <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border-main group">
+                            {isVideo ? (
+                              <video src={url} className="w-full h-full object-cover" muted />
+                            ) : (
+                              <img src={url} alt="product" className="w-full h-full object-cover" />
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setExistingMedia(existingMedia.filter(m => m !== url))}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="w-full">
-                  <label className="block text-xs font-bold text-text-muted mb-2">Select Images and/or Videos</label>
+                  <label className="block text-xs font-bold text-text-muted mb-2">Add New Files (Optional)</label>
                   <input type="file" multiple accept="image/*,video/*" onChange={e => setMediaFiles(e.target.files)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200" />
                 </div>
-                {editingId && <p className="text-xs text-orange-600 font-bold mt-4 flex items-center gap-1"><AlertTriangle size={14}/> Note: Selecting new files will override existing media.</p>}
               </div>
 
               <div className="flex space-x-4 pt-4">
