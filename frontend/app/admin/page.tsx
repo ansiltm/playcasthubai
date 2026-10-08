@@ -24,7 +24,7 @@ export default function AdminPage() {
   // Form State
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
-    name: '', price: '', category: '', grade: '', description: '', stock: ''
+    name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: ''
   });
   const [mediaFiles, setMediaFiles] = useState<FileList | null>(null);
 
@@ -62,6 +62,7 @@ export default function AdminPage() {
     const data = new FormData();
     data.append('name', formData.name);
     data.append('price', formData.price);
+    data.append('wholesalePrice', formData.wholesalePrice);
     data.append('category', formData.category);
     data.append('grade', formData.grade);
     data.append('description', formData.description);
@@ -107,7 +108,7 @@ export default function AdminPage() {
 
   const openAddModal = () => {
     setEditingId(null);
-    setFormData({ name: '', price: '', category: '', grade: '', description: '', stock: '' });
+    setFormData({ name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '' });
     setMediaFiles(null);
     setIsProductModalOpen(true);
   };
@@ -115,7 +116,7 @@ export default function AdminPage() {
   const openEditModal = (p: any) => {
     setEditingId(p.id);
     setFormData({
-      name: p.name, price: p.price.toString(), category: p.category, 
+      name: p.name, price: p.price.toString(), wholesalePrice: p.wholesalePrice?.toString() || '0', category: p.category, 
       grade: p.grade, description: p.description, stock: p.stock.toString()
     });
     setMediaFiles(null);
@@ -184,7 +185,8 @@ export default function AdminPage() {
                   <th className="py-4 font-bold">Product Name</th>
                   <th className="py-4 font-bold">Category</th>
                   <th className="py-4 font-bold">Grade</th>
-                  <th className="py-4 font-bold">Price</th>
+                  <th className="py-4 font-bold">Cost (Wholesale)</th>
+                  <th className="py-4 font-bold">Selling Price</th>
                   <th className="py-4 font-bold">Stock</th>
                   <th className="py-4 font-bold text-right">Actions</th>
                 </tr>
@@ -197,6 +199,7 @@ export default function AdminPage() {
                     <td className="py-4 text-text-muted">
                       <span className="px-3 py-1 bg-gray-100 rounded-full text-[10px] font-bold uppercase tracking-wider">{p.grade}</span>
                     </td>
+                    <td className="py-4 font-bold text-orange-500 text-sm">₹{p.wholesalePrice?.toFixed(2) || '0.00'}</td>
                     <td className="py-4 font-bold text-primary text-sm">₹{p.price.toFixed(2)}</td>
                     <td className="py-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-bold ${p.stock > 10 ? 'bg-green-100 text-green-700' : p.stock > 0 ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
@@ -322,9 +325,13 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-sm font-bold text-text-main mb-2">Price (₹)</label>
+                  <label className="block text-sm font-bold text-text-main mb-2">Cost (Wholesale Rate) (₹)</label>
+                  <input required type="number" step="0.01" placeholder="0.00" className="bubble-input py-3 !border-orange-300 focus:ring-orange-500/20" value={formData.wholesalePrice} onChange={e => setFormData({...formData, wholesalePrice: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-text-main mb-2">Selling Price (₹)</label>
                   <input required type="number" step="0.01" placeholder="0.00" className="bubble-input py-3" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
                 </div>
                 <div>
