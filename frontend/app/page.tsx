@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import ProductCard from '../components/ProductCard';
-import axios from 'axios';
+import api from '../lib/api';
 
 export default function Home(): React.JSX.Element {
   const [products, setProducts] = useState<any[]>([]);
@@ -12,15 +12,15 @@ export default function Home(): React.JSX.Element {
     // Fetch products from backend (fallback to dummy if backend fails)
     const fetchProducts = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/products');
+        const res = await api.get('/products');
         setProducts(res.data);
       } catch (error) {
         console.error('Failed to fetch products', error);
         // Fallback dummy data for visual testing
         setProducts([
-          { id: 1, name: 'RC Buggy Pro X1', price: 199.99, category: 'RC Cars', images: ['https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=800'], is3D: true },
-          { id: 2, name: 'Diecast Ford Mustang', price: 45.00, category: 'Diecast Models', images: ['https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?auto=format&fit=crop&q=80&w=800'], is3D: true },
-          { id: 3, name: 'Drone Master 5000', price: 299.00, category: 'Drones', images: ['https://images.unsplash.com/photo-1579829366248-204fe8413f31?auto=format&fit=crop&q=80&w=800'], is3D: false },
+          { id: 1, name: 'RC Buggy Pro X1', price: 199.99, category: 'Vehicles & Remote-Controlled (RC)', media: ['https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=800'] },
+          { id: 2, name: 'Diecast Ford Mustang', price: 45.00, category: 'Vehicles & Remote-Controlled (RC)', media: ['https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?auto=format&fit=crop&q=80&w=800'] },
+          { id: 3, name: 'Drone Master 5000', price: 299.00, category: 'Vehicles & Remote-Controlled (RC)', media: ['https://images.unsplash.com/photo-1579829366248-204fe8413f31?auto=format&fit=crop&q=80&w=800'] },
         ]);
       }
     };

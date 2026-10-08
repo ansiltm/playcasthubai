@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { useCartStore } from '../../../store/useCartStore';
 import { ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import api from '../../../lib/api';
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -17,7 +17,7 @@ export default function ProductDetails() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/products/${id}`);
+        const res = await api.get(`/products/${id}`);
         setProduct(res.data);
       } catch (err) {
         console.error(err);

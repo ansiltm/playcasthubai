@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import api from '../../lib/api';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -16,19 +16,13 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // In real app, call backend
-      // const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
-      // login(res.data.user, res.data.token);
-      
-      // Mock login for now
-      if (email === 'admin@playcasthub.com') {
-        login({ id: 1, name: 'Admin User', email, role: 'admin' }, 'mock-token');
-      } else {
-        login({ id: 2, name: 'Test User', email, role: 'user' }, 'mock-token');
-      }
+      const res = await api.post('/auth/login', { email, password });
+      login(res.data.user, res.data.token);
       router.push('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        setError(err.response?.data?.message || 'Login failed');
+      }
     }
   };
 

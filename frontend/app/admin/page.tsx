@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import api from '../../lib/api';
 import toast from 'react-hot-toast';
 import { Trash2, Edit, CheckCircle, Plus, Search, X, AlertTriangle } from 'lucide-react';
 
@@ -37,22 +37,16 @@ export default function AdminPage() {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/products');
+      const res = await api.get('/products');
       setProducts(res.data);
-    } catch (err) {
-      toast.error('Failed to fetch products');
-    }
+    } catch (err) {}
   };
 
   const fetchOrders = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/orders/all', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/orders/all');
       setOrders(res.data);
-    } catch (err) {
-      // Ignore
-    }
+    } catch (err) {}
   };
 
   if (!isAdmin()) {
@@ -77,35 +71,37 @@ export default function AdminPage() {
 
     try {
       if (editingId) {
-        await axios.put(`http://localhost:5000/api/products/${editingId}`, data, {
-          headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
+        await api.put(`/products/${editingId}`, data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
         toast.success('Product updated successfully!');
       } else {
-        await axios.post('http://localhost:5000/api/products', data, {
-          headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
+        await api.post('/products', data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
         toast.success('New product added successfully!');
       }
       closeProductModal();
       fetchProducts();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error saving product');
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        toast.error(err.response?.data?.message || 'Error saving product');
+      }
     }
   };
 
   const confirmDelete = async () => {
     if (!productToDelete) return;
     try {
-      await axios.delete(`http://localhost:5000/api/products/${productToDelete}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/products/${productToDelete}`);
       toast.success('Product deleted successfully!');
       setIsDeleteModalOpen(false);
       setProductToDelete(null);
       fetchProducts();
-    } catch (err) {
-      toast.error('Failed to delete product');
+    } catch (err: any) {
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        toast.error('Failed to delete product');
+      }
     }
   };
 
@@ -133,13 +129,13 @@ export default function AdminPage() {
 
   const updateOrderStatus = async (id: number, status: string) => {
     try {
-      await axios.put(`http://localhost:5000/api/orders/${id}/status`, { status }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put(`/orders/${id}/status`, { status });
       toast.success(`Order status updated to ${status}!`);
       fetchOrders();
-    } catch (err) {
-      toast.error('Failed to update order status');
+    } catch (err: any) {
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        toast.error('Failed to update order status');
+      }
     }
   };
 

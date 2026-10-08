@@ -6,11 +6,11 @@ import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Trash2, Plus, Minus, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import api from '../../lib/api';
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
-  const { user, token } = useAuthStore();
+  const { user } = useAuthStore();
 
   const handleCheckout = async () => {
     if (!user) {
@@ -19,13 +19,13 @@ export default function CartPage() {
     }
     
     try {
-      await axios.post('http://localhost:5000/api/orders', { items }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.post('/orders', { items });
       toast.success('Order placed successfully!');
       clearCart();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Checkout failed');
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        toast.error(err.response?.data?.message || 'Checkout failed');
+      }
     }
   };
 

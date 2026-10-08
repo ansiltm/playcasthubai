@@ -11,8 +11,7 @@ interface Product {
   price: number;
   category: string;
   grade?: string;
-  images: string[];
-  is3D?: boolean;
+  media?: string[];
 }
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -26,25 +25,33 @@ export default function ProductCard({ product }: { product: Product }) {
       name: product.name,
       price: product.price,
       quantity: 1,
-      imageUrl: product.images?.[0] || 'https://via.placeholder.com/300'
+      imageUrl: product.media?.[0] || 'https://via.placeholder.com/300'
     });
   };
+
+  // Determine if the first media item is a video
+  const firstMedia = product.media?.[0] || 'https://via.placeholder.com/300';
+  const isVideo = firstMedia.match(/\.(mp4|webm|mov|ogg)$/i) !== null;
 
   return (
     <Link href={`/products/${product.id}`} className="group block">
       <div className="bubble-card overflow-hidden bg-white h-full flex flex-col">
-        {/* Image Container */}
+        {/* Image/Video Container */}
         <div className="relative aspect-square overflow-hidden bg-gray-50 shrink-0">
-          <img
-            src={product.images?.[0] || 'https://via.placeholder.com/300'}
-            alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-          {product.is3D && (
-            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-primary shadow-sm flex items-center space-x-1">
-              <Eye size={14} />
-              <span>3D View</span>
-            </div>
+          {isVideo ? (
+            <video
+              src={firstMedia}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              muted
+              loop
+              playsInline
+            />
+          ) : (
+            <img
+              src={firstMedia}
+              alt={product.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
           )}
           <div className="absolute bottom-4 right-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
             <button

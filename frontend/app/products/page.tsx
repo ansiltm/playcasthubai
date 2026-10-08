@@ -3,7 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ProductCard from '../../components/ProductCard';
-import axios from 'axios';
+import api from '../../lib/api';
 
 function ProductsList() {
   const searchParams = useSearchParams();
@@ -18,7 +18,7 @@ function ProductsList() {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        let url = 'http://localhost:5000/api/products';
+        let url = '/products';
         const params = new URLSearchParams();
         if (searchQuery) params.append('search', searchQuery);
         if (categoryQuery) params.append('category', categoryQuery);
@@ -28,14 +28,14 @@ function ProductsList() {
           url += `?${params.toString()}`;
         }
         
-        const res = await axios.get(url);
+        const res = await api.get(url);
         setProducts(res.data);
       } catch (err) {
         console.error(err);
         // Fallback for visual testing if backend isn't ready
         setProducts([
-          { id: 1, name: 'RC Buggy Pro X1', price: 199.99, category: 'RC', grade: 'Hobby Grade', images: ['https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=800'], is3D: true },
-          { id: 2, name: 'Diecast Ford Mustang', price: 45.00, category: 'Diecast Models', grade: 'Toy Grade', images: ['https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?auto=format&fit=crop&q=80&w=800'], is3D: true },
+          { id: 1, name: 'RC Buggy Pro X1', price: 199.99, category: 'RC', grade: 'Hobby Grade', media: ['https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=800'] },
+          { id: 2, name: 'Diecast Ford Mustang', price: 45.00, category: 'Diecast Models', grade: 'Toy Grade', media: ['https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?auto=format&fit=crop&q=80&w=800'] },
         ]);
       } finally {
         setLoading(false);

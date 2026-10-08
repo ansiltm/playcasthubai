@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import api from '../../lib/api';
+import toast from 'react-hot-toast';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -15,9 +16,8 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // In real app, call backend
-      // await axios.post('http://localhost:5000/api/auth/register', { name, email, password });
-      alert('Registration successful! Please login.');
+      await api.post('/auth/register', { name, email, password });
+      toast.success('Registration successful! Please login.');
       router.push('/login');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
