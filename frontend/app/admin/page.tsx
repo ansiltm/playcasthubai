@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import api from '../../lib/api';
 import toast from 'react-hot-toast';
 import { Trash2, Edit, CheckCircle, Plus, Search, X, AlertTriangle } from 'lucide-react';
+import DataTable, { Column } from '../../components/DataTable';
 
 export default function AdminPage() {
   const { user, isAdmin, token } = useAuthStore();
@@ -15,7 +16,7 @@ export default function AdminPage() {
   
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  
 
   // Modal States
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -144,11 +145,50 @@ export default function AdminPage() {
     }
   };
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.grade.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const productColumns: Column<any>[] = [
+    { header: 'Product Name', accessorKey: 'name', renderCell: (p) => <span className="font-bold truncate max-w-[250px] inline-block">{p.name}</span> },
+    { header: 'Category', accessorKey: 'category' },
+    { header: 'Grade', renderCell: (p) => <span className="px-3 py-1 bg-bubble-input rounded-full text-[10px] font-bold uppercase tracking-wider">{p.grade}</span> },
+    { header: 'Cost (Wholesale)', renderCell: (p) => <span className="font-bold text-orange-500">₹{p.wholesalePrice?.toFixed(2) || '0.00'}</span> },
+    { header: 'Selling Price', renderCell: (p) => <span className="font-bold text-primary">₹{p.price.toFixed(2)}</span> },
+    { header: 'Stock', renderCell: (p) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-bold ${p.stock > 10 ? 'bg-green-100 text-green-700' : p.stock > 0 ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
+          {p.stock} units
+        </span>
+    )},
+    { header: 'Actions', renderCell: (p) => (
+        <div className="flex justify-end space-x-2">
+          <button onClick={() => openEditModal(p)} className="p-2 bg-bubble-input text-blue-600 rounded-full hover:bg-blue-100 transition-colors" title="Edit"><Edit size={16} /></button>
+          <button onClick={() => { setProductToDelete(p.id); setIsDeleteModalOpen(true); }} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors" title="Delete"><Trash2 size={16} /></button>
+        </div>
+    )}
+  ];
+
+  const orderColumns: Column<any>[] = [
+    { header: 'Order ID', renderCell: (o) => <span className="font-bold">#{o.id}</span> },
+    { header: 'Date', renderCell: (o) => new Date(o.createdAt).toLocaleDateString() },
+    { header: 'Total', renderCell: (o) => <span className="font-bold text-primary">₹{o.totalAmount.toFixed(2)}</span> },
+    { header: 'Items', renderCell: (o) => o.OrderItems?.map((i:any) => `${i.quantity}x (ID:${i.productId})`).join(', ') },
+    { header: 'Status', renderCell: (o) => (
+        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${o.status === 'pending' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+          {o.status}
+        </span>
+    )},
+    { header: 'Actions', renderCell: (o) => (
+        <div className="flex justify-end space-x-2">
+          {o.status === 'pending' && (
+            <button onClick={() => updateOrderStatus(o.id, 'confirmed')} className="flex items-center space-x-1 px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full hover:bg-green-600 shadow-sm">
+              <CheckCircle size={14} /> <span>Confirm</span>
+            </button>
+          )}
+          {(o.status === 'confirmed' || o.status === 'shipped') && (
+            <button onClick={() => updateOrderStatus(o.id, o.status === 'confirmed' ? 'shipped' : 'delivered')} className="px-3 py-1 bg-primary text-white text-xs font-bold rounded-full hover:bg-primary-dark shadow-sm">
+              Mark {o.status === 'confirmed' ? 'Shipped' : 'Delivered'}
+            </button>
+          )}
+        </div>
+    )}
+  ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 relative">
@@ -166,114 +206,35 @@ export default function AdminPage() {
             <h2 className="text-2xl font-bold">Inventory Table</h2>
             
             <div className="flex w-full md:w-auto space-x-4">
-              <div className="relative flex-1 md:w-72">
-                <input 
-                  type="text" 
-                  placeholder="Search products..." 
-                  className="bubble-input py-2 pl-10 w-full"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                />
-                <Search className="absolute left-3 top-3 text-gray-400" size={18} />
-              </div>
               <button onClick={openAddModal} className="bubble-btn py-2 flex items-center space-x-2 whitespace-nowrap">
                 <Plus size={18} /> <span>Add Product</span>
               </button>
             </div>
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[800px]">
-              <thead>
-                <tr className="border-b-2 border-border-main text-text-muted uppercase text-xs">
-                  <th className="py-4 font-bold">Product Name</th>
-                  <th className="py-4 font-bold">Category</th>
-                  <th className="py-4 font-bold">Grade</th>
-                  <th className="py-4 font-bold">Cost (Wholesale)</th>
-                  <th className="py-4 font-bold">Selling Price</th>
-                  <th className="py-4 font-bold">Stock</th>
-                  <th className="py-4 font-bold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredProducts.map(p => (
-                  <tr key={p.id} className="hover:bg-bubble-input transition-colors">
-                    <td className="py-4 font-bold text-text-main truncate max-w-[250px]">{p.name}</td>
-                    <td className="py-4 text-sm text-text-muted">{p.category}</td>
-                    <td className="py-4 text-text-muted">
-                      <span className="px-3 py-1 bg-gray-100 rounded-full text-[10px] font-bold uppercase tracking-wider">{p.grade}</span>
-                    </td>
-                    <td className="py-4 font-bold text-orange-500 text-sm">₹{p.wholesalePrice?.toFixed(2) || '0.00'}</td>
-                    <td className="py-4 font-bold text-primary text-sm">₹{p.price.toFixed(2)}</td>
-                    <td className="py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${p.stock > 10 ? 'bg-green-100 text-green-700' : p.stock > 0 ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
-                        {p.stock} units
-                      </span>
-                    </td>
-                    <td className="py-4 flex justify-end space-x-2">
-                      <button onClick={() => openEditModal(p)} className="p-2 bg-bubble-input text-blue-600 rounded-full hover:bg-blue-100 transition-colors" title="Edit"><Edit size={16} /></button>
-                      <button onClick={() => { setProductToDelete(p.id); setIsDeleteModalOpen(true); }} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors" title="Delete"><Trash2 size={16} /></button>
-                    </td>
-                  </tr>
-                ))}
-                {filteredProducts.length === 0 && (
-                  <tr><td colSpan={6} className="py-8 text-center text-text-muted font-bold">No products found matching your search.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          
+          <DataTable 
+            columns={productColumns} 
+            data={products} 
+            searchKeys={['name', 'category', 'grade']} 
+            searchPlaceholder="Search products by name, category, or grade..."
+            emptyMessage="No products found in the inventory."
+            itemsPerPage={10}
+          />
         </div>
       )}
 
       {activeTab === 'orders' && (
-        <div className="bubble-card bg-bubble-surface p-6 md:p-8 overflow-hidden">
+        <div className="bubble-card bg-bubble-surface p-6 md:p-8 overflow-hidden flex flex-col">
           <h2 className="text-2xl font-bold mb-6">Customer Orders</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[800px]">
-              <thead>
-                <tr className="border-b-2 border-border-main text-text-muted uppercase text-xs">
-                  <th className="py-4 font-bold">Order ID</th>
-                  <th className="py-4 font-bold">Date</th>
-                  <th className="py-4 font-bold">Total</th>
-                  <th className="py-4 font-bold">Items</th>
-                  <th className="py-4 font-bold">Status</th>
-                  <th className="py-4 font-bold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {orders.map((o: any) => (
-                  <tr key={o.id} className="hover:bg-bubble-input transition-colors">
-                    <td className="py-4 font-bold text-text-main">#{o.id}</td>
-                    <td className="py-4 text-sm text-text-muted">{new Date(o.createdAt).toLocaleDateString()}</td>
-                    <td className="py-4 font-bold text-primary">₹{o.totalAmount.toFixed(2)}</td>
-                    <td className="py-4 text-sm text-text-muted">
-                      {o.OrderItems?.map((i:any) => `${i.quantity}x (ID:${i.productId})`).join(', ')}
-                    </td>
-                    <td className="py-4">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${o.status === 'pending' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
-                        {o.status}
-                      </span>
-                    </td>
-                    <td className="py-4 flex justify-end space-x-2">
-                      {o.status === 'pending' && (
-                        <button onClick={() => updateOrderStatus(o.id, 'confirmed')} className="flex items-center space-x-1 px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full hover:bg-green-600 shadow-sm">
-                          <CheckCircle size={14} /> <span>Confirm</span>
-                        </button>
-                      )}
-                      {(o.status === 'confirmed' || o.status === 'shipped') && (
-                        <button onClick={() => updateOrderStatus(o.id, o.status === 'confirmed' ? 'shipped' : 'delivered')} className="px-3 py-1 bg-primary text-white text-xs font-bold rounded-full hover:bg-primary-dark shadow-sm">
-                          Mark {o.status === 'confirmed' ? 'Shipped' : 'Delivered'}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {orders.length === 0 && (
-                  <tr><td colSpan={6} className="py-8 text-center text-text-muted font-bold">No orders yet</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          
+          <DataTable 
+            columns={orderColumns} 
+            data={orders} 
+            searchKeys={['id', 'status']} 
+            searchPlaceholder="Search orders by ID or status..."
+            emptyMessage="No orders found."
+            itemsPerPage={10}
+          />
         </div>
       )}
 
