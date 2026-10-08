@@ -15,7 +15,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-text-muted text-sm">
-              Your ultimate destination for Toy Grade, Hobby Grade, and Semi Toy Grade items. Experience products in full 3D before you buy.
+              Your ultimate destination for Toy Grade, Hobby Grade, and Collector items. Experience products through rich media before you buy.
             </p>
           </div>
           <div>
