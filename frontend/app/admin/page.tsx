@@ -180,7 +180,7 @@ export default function AdminPage() {
     { header: 'Selling Price', renderCell: (p) => <span className="font-bold text-primary whitespace-nowrap">₹{p.price.toFixed(2)}</span> },
     { header: 'Stock', renderCell: (p) => (
         <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block whitespace-nowrap ${p.stock > 10 ? 'bg-green-500/20 text-green-600 dark:text-green-400' : p.stock > 0 ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400' : 'bg-red-500/20 text-red-600 dark:text-red-400'}`}>
-          {p.stock} units
+          {p.stock}
         </span>
     )},
     { header: 'Actions', renderCell: (p) => (
