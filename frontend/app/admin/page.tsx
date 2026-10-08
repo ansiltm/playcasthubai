@@ -167,9 +167,12 @@ export default function AdminPage() {
                   <label className="block text-sm font-bold text-gray-700 mb-2">Grade</label>
                   <select required className="bubble-input py-2 px-4" value={formData.grade} onChange={e => setFormData({...formData, grade: e.target.value})}>
                     <option value="">Select...</option>
-                    <option value="Toy Grade">Toy Grade</option>
-                    <option value="Semi Toy Grade">Semi Toy Grade</option>
-                    <option value="Hobby Grade">Hobby Grade</option>
+                    <option value="Toy-Grade">Toy-Grade</option>
+                    <option value="Semi-Hobby / Prosumer Grade">Semi-Hobby / Prosumer Grade</option>
+                    <option value="Hobby-Grade">Hobby-Grade</option>
+                    <option value="Collector-Grade / Display-Grade">Collector-Grade / Display-Grade</option>
+                    <option value="Institutional / Commercial Grade">Institutional / Commercial Grade</option>
+                    <option value="Artisan / Designer Grade">Artisan / Designer Grade</option>
                   </select>
                 </div>
               </div>

@@ -30,9 +30,12 @@ export default function Footer() {
           <div>
             <h3 className="font-bold text-gray-900 mb-4">Grades</h3>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><a href="/products?grade=Toy Grade" className="hover:text-primary">Toy Grade</a></li>
-              <li><a href="/products?grade=Hobby Grade" className="hover:text-primary">Hobby Grade</a></li>
-              <li><a href="/products?grade=Semi Toy Grade" className="hover:text-primary">Semi Toy Grade</a></li>
+              <li><a href="/products?grade=Toy-Grade" className="hover:text-primary">Toy-Grade</a></li>
+              <li><a href="/products?grade=Semi-Hobby+%2F+Prosumer+Grade" className="hover:text-primary">Semi-Hobby Grade</a></li>
+              <li><a href="/products?grade=Hobby-Grade" className="hover:text-primary">Hobby-Grade</a></li>
+              <li><a href="/products?grade=Collector-Grade+%2F+Display-Grade" className="hover:text-primary">Collector-Grade</a></li>
+              <li><a href="/products?grade=Institutional+%2F+Commercial+Grade" className="hover:text-primary">Commercial Grade</a></li>
+              <li><a href="/products?grade=Artisan+%2F+Designer+Grade" className="hover:text-primary">Artisan Grade</a></li>
             </ul>
           </div>
           <div>
