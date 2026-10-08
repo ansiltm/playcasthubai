@@ -9,11 +9,14 @@ interface ProductAttributes {
   price: number;
   stock: number;
   imageUrl?: string;
+  images?: string[];
+  videoUrl?: string;
+  model3dUrl?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-type ProductCreationAttributes = Optional<ProductAttributes, 'id' | 'imageUrl'>;
+type ProductCreationAttributes = Optional<ProductAttributes, 'id' | 'imageUrl' | 'images' | 'videoUrl' | 'model3dUrl'>;
 
 class Product extends Model<ProductAttributes, ProductCreationAttributes>
   implements ProductAttributes {
@@ -24,6 +27,9 @@ class Product extends Model<ProductAttributes, ProductCreationAttributes>
   public price!: number;
   public stock!: number;
   public imageUrl!: string;
+  public images!: string[];
+  public videoUrl!: string;
+  public model3dUrl!: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -36,6 +42,9 @@ Product.init(
     price: { type: DataTypes.FLOAT, allowNull: false },
     stock: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     imageUrl: { type: DataTypes.STRING, allowNull: true },
+    images: { type: DataTypes.JSON, allowNull: true },
+    videoUrl: { type: DataTypes.STRING, allowNull: true },
+    model3dUrl: { type: DataTypes.STRING, allowNull: true },
   },
   { sequelize, modelName: 'Product' }
 );

@@ -1,8 +1,11 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import sequelize from './config/database';
+import { sequelize } from './models';
+import authRoutes from './routes/auth';
 import productRoutes from './routes/products';
+import cartRoutes from './routes/cart';
+import orderRoutes from './routes/orders';
 
 dotenv.config();
 
@@ -13,14 +16,17 @@ app.use(cors());
 app.use(express.json());
 
 // Sync MariaDB/MySQL Database
-sequelize.sync().then(() => {
+sequelize.sync({ alter: true }).then(() => {
   console.log('Database synced successfully');
 }).catch((err: Error) => {
   console.error('Error syncing database:', err);
 });
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
 
 app.get('/', (req: Request, res: Response): void => {
   res.json({ message: 'PlaycasthubAI API is running!' });

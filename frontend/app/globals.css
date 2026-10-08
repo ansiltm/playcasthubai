@@ -1,1 +1,57 @@
 @import "tailwindcss";
+
+@theme {
+  --color-primary: #3b82f6;
+  --color-primary-light: #60a5fa;
+  --color-primary-dark: #2563eb;
+  
+  --color-secondary: #ec4899;
+  --color-secondary-light: #f472b6;
+  
+  --color-bubble-bg: #f0f9ff;
+  --color-bubble-surface: #ffffff;
+
+  --shadow-bubble: 0 10px 25px -5px rgba(59, 130, 246, 0.15), 0 8px 10px -6px rgba(59, 130, 246, 0.1);
+  --shadow-bubble-hover: 0 20px 25px -5px rgba(59, 130, 246, 0.25), 0 10px 10px -5px rgba(59, 130, 246, 0.1);
+  --shadow-bubble-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+
+  --radius-bubble: 2rem;
+  --radius-bubble-sm: 1rem;
+  --radius-bubble-lg: 3rem;
+  --radius-pill: 9999px;
+}
+
+@layer base {
+  body {
+    @apply bg-bubble-bg text-gray-800 antialiased selection:bg-primary-light selection:text-white;
+  }
+}
+
+@layer components {
+  .bubble-card {
+    @apply bg-bubble-surface rounded-[var(--radius-bubble)] shadow-[var(--shadow-bubble)] border border-blue-50/50 backdrop-blur-sm transition-all duration-300;
+  }
+  .bubble-card:hover {
+    @apply shadow-[var(--shadow-bubble-hover)] -translate-y-1;
+  }
+
+  .bubble-btn {
+    @apply inline-flex items-center justify-center px-6 py-3 font-bold text-white bg-gradient-to-r from-primary to-primary-dark rounded-[var(--radius-pill)] shadow-[var(--shadow-bubble)] transition-all duration-300 hover:shadow-[var(--shadow-bubble-hover)] hover:-translate-y-1 active:translate-y-0 active:shadow-[var(--shadow-bubble-inner)];
+  }
+
+  .bubble-btn-secondary {
+    @apply inline-flex items-center justify-center px-6 py-3 font-bold text-primary bg-white rounded-[var(--radius-pill)] shadow-[var(--shadow-bubble)] transition-all duration-300 hover:shadow-[var(--shadow-bubble-hover)] hover:-translate-y-1 active:translate-y-0 active:shadow-[var(--shadow-bubble-inner)] border-2 border-primary-light;
+  }
+
+  .bubble-input {
+    @apply w-full px-6 py-4 rounded-[var(--radius-pill)] border-2 border-transparent bg-white shadow-[var(--shadow-bubble-inner)] focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/20 transition-all duration-300;
+  }
+}
+
+/* 3D Model Viewer Custom Styles */
+model-viewer {
+  width: 100%;
+  height: 400px;
+  background-color: transparent;
+  --poster-color: transparent;
+}
