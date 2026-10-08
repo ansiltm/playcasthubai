@@ -168,11 +168,11 @@ export default function AdminPage() {
       }
     },
     { header: 'Category', accessorKey: 'category' },
-    { header: 'Grade', renderCell: (p) => <span className="px-3 py-1 bg-bubble-input rounded-full text-[10px] font-bold uppercase tracking-wider">{p.grade}</span> },
-    { header: 'Cost (Wholesale)', renderCell: (p) => <span className="font-bold text-orange-500">₹{p.wholesalePrice?.toFixed(2) || '0.00'}</span> },
-    { header: 'Selling Price', renderCell: (p) => <span className="font-bold text-primary">₹{p.price.toFixed(2)}</span> },
+    { header: 'Grade', renderCell: (p) => <span className="px-3 py-1 bg-bubble-input rounded-full text-[10px] font-bold uppercase tracking-wider inline-block whitespace-nowrap">{p.grade}</span> },
+    { header: 'Cost (Wholesale)', renderCell: (p) => <span className="font-bold text-orange-500 whitespace-nowrap">₹{p.wholesalePrice?.toFixed(2) || '0.00'}</span> },
+    { header: 'Selling Price', renderCell: (p) => <span className="font-bold text-primary whitespace-nowrap">₹{p.price.toFixed(2)}</span> },
     { header: 'Stock', renderCell: (p) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-bold ${p.stock > 10 ? 'bg-green-100 text-green-700' : p.stock > 0 ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
+        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block whitespace-nowrap ${p.stock > 10 ? 'bg-green-500/20 text-green-600 dark:text-green-400' : p.stock > 0 ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400' : 'bg-red-500/20 text-red-600 dark:text-red-400'}`}>
           {p.stock} units
         </span>
     )},
@@ -185,12 +185,12 @@ export default function AdminPage() {
   ];
 
   const orderColumns: Column<any>[] = [
-    { header: 'Order ID', renderCell: (o) => <span className="font-bold">#{o.id}</span> },
-    { header: 'Date', renderCell: (o) => new Date(o.createdAt).toLocaleDateString() },
-    { header: 'Total', renderCell: (o) => <span className="font-bold text-primary">₹{o.totalAmount.toFixed(2)}</span> },
-    { header: 'Items', renderCell: (o) => o.OrderItems?.map((i:any) => `${i.quantity}x (ID:${i.productId})`).join(', ') },
+    { header: 'Order ID', renderCell: (o) => <span className="font-bold whitespace-nowrap">#{o.id}</span> },
+    { header: 'Date', renderCell: (o) => <span className="whitespace-nowrap">{new Date(o.createdAt).toLocaleDateString()}</span> },
+    { header: 'Total', renderCell: (o) => <span className="font-bold text-primary whitespace-nowrap">₹{o.totalAmount.toFixed(2)}</span> },
+    { header: 'Items', renderCell: (o) => <span className="truncate max-w-[200px] inline-block">{o.OrderItems?.map((i:any) => `${i.quantity}x (ID:${i.productId})`).join(', ')}</span> },
     { header: 'Status', renderCell: (o) => (
-        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${o.status === 'pending' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block whitespace-nowrap ${o.status === 'pending' ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400' : 'bg-green-500/20 text-green-600 dark:text-green-400'}`}>
           {o.status}
         </span>
     )},
