@@ -24,10 +24,10 @@ async function seed() {
       grade: 'Hobby-Grade',
       price: 1099.99,
       stock: 5,
-      images: ['https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=1200'],
-      videos: ['https://www.w3schools.com/html/mov_bbb.mp4'],
-      models3d: ['https://modelviewer.dev/shared-assets/models/Astronaut.glb'],
-      is3D: true
+      media: [
+        'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=1200',
+        'https://www.w3schools.com/html/mov_bbb.mp4'
+      ]
     },
     {
       name: 'Hot Wheels 1:64 Ford Mustang',
@@ -36,10 +36,9 @@ async function seed() {
       grade: 'Toy-Grade',
       price: 4.99,
       stock: 120,
-      images: ['https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?auto=format&fit=crop&q=80&w=1200'],
-      videos: [],
-      models3d: [],
-      is3D: false
+      media: [
+        'https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?auto=format&fit=crop&q=80&w=1200'
+      ]
     }
   ]);
 

@@ -51,14 +51,11 @@ router.post(
   '/',
   authenticate,
   authorizeAdmin,
-  upload.fields([{ name: 'images' }, { name: 'videos' }, { name: 'model3d' }]),
+  upload.array('media'),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      
-      const images = files['images'] ? files['images'].map(f => formatFileUrl(req, f.filename)) : [];
-      const videos = files['videos'] ? files['videos'].map(f => formatFileUrl(req, f.filename)) : [];
-      const models = files['model3d'] ? files['model3d'].map(f => formatFileUrl(req, f.filename)) : [];
+      const files = req.files as Express.Multer.File[];
+      const mediaUrls = files ? files.map(f => formatFileUrl(req, f.filename)) : [];
 
       const product = await Product.create({
         name: req.body.name,
@@ -67,10 +64,7 @@ router.post(
         grade: req.body.grade || 'Toy-Grade',
         price: parseFloat(req.body.price),
         stock: parseInt(req.body.stock),
-        images: images,
-        videos: videos,
-        models3d: models,
-        is3D: models.length > 0
+        media: mediaUrls
       });
       res.status(201).json(product);
     } catch (err) {
@@ -84,7 +78,7 @@ router.put(
   '/:id',
   authenticate,
   authorizeAdmin,
-  upload.fields([{ name: 'images' }, { name: 'videos' }, { name: 'model3d' }]),
+  upload.array('media'),
   async (req: Request, res: Response): Promise<void> => {
     try {
       const product = await Product.findByPk(req.params.id);
@@ -93,11 +87,8 @@ router.put(
         return;
       }
 
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      
-      const newImages = files['images'] ? files['images'].map(f => formatFileUrl(req, f.filename)) : [];
-      const newVideos = files['videos'] ? files['videos'].map(f => formatFileUrl(req, f.filename)) : [];
-      const newModels = files['model3d'] ? files['model3d'].map(f => formatFileUrl(req, f.filename)) : [];
+      const files = req.files as Express.Multer.File[];
+      const mediaUrls = files ? files.map(f => formatFileUrl(req, f.filename)) : [];
 
       await product.update({
         name: req.body.name || product.name,
@@ -106,10 +97,7 @@ router.put(
         grade: req.body.grade || product.grade,
         price: req.body.price ? parseFloat(req.body.price) : product.price,
         stock: req.body.stock ? parseInt(req.body.stock) : product.stock,
-        images: newImages.length > 0 ? newImages : product.images,
-        videos: newVideos.length > 0 ? newVideos : product.videos,
-        models3d: newModels.length > 0 ? newModels : product.models3d,
-        is3D: newModels.length > 0 ? true : product.is3D
+        media: mediaUrls.length > 0 ? mediaUrls : product.media
       });
 
       res.json(product);
