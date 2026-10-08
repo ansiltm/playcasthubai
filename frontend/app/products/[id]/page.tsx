@@ -170,7 +170,7 @@ export default function ProductDetails() {
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-text-main mb-4">{product.name}</h1>
             <div className="text-4xl font-black text-primary mb-6">₹{product.price.toFixed(2)}</div>
-            <p className="text-lg text-text-muted leading-relaxed">{product.description}</p>
+            <p className="text-lg text-text-muted leading-relaxed whitespace-pre-wrap">{product.description}</p>
           </div>
 
           <div className="p-6 bg-bubble-input rounded-[var(--radius-bubble)] border border-border-main">

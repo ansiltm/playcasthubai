@@ -22,6 +22,9 @@ export default function AdminPage() {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<number | null>(null);
+  
+  const [isManualOrderModalOpen, setIsManualOrderModalOpen] = useState(false);
+  const [manualOrderData, setManualOrderData] = useState({ productId: '', quantity: '1', price: '' });
 
   // Form State
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -112,6 +115,27 @@ export default function AdminPage() {
     } catch (err: any) {
       if (err.response?.status !== 401 && err.response?.status !== 403) {
         toast.error('Failed to delete product');
+      }
+    }
+  };
+
+  const handleManualOrderSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualOrderData.productId || !manualOrderData.quantity) return;
+    try {
+      await api.post('/orders/manual', {
+        productId: manualOrderData.productId,
+        quantity: parseInt(manualOrderData.quantity),
+        price: manualOrderData.price ? parseFloat(manualOrderData.price) : undefined
+      });
+      toast.success('Manual order created successfully!');
+      setIsManualOrderModalOpen(false);
+      setManualOrderData({ productId: '', quantity: '1', price: '' });
+      fetchOrders();
+      fetchProducts(); // refresh stock
+    } catch (err: any) {
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        toast.error(err.response?.data?.message || 'Failed to create order');
       }
     }
   };
@@ -252,7 +276,15 @@ export default function AdminPage() {
 
       {activeTab === 'orders' && (
         <div className="bubble-card bg-bubble-surface p-6 md:p-8 overflow-hidden flex flex-col">
-          <h2 className="text-2xl font-bold mb-6">Customer Orders</h2>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <h2 className="text-2xl font-bold">Customer Orders</h2>
+            
+            <div className="flex w-full md:w-auto space-x-4">
+              <button onClick={() => setIsManualOrderModalOpen(true)} className="bubble-btn py-2 flex items-center space-x-2 whitespace-nowrap">
+                <Plus size={18} /> <span>Create Order Manually</span>
+              </button>
+            </div>
+          </div>
           
           <DataTable 
             columns={orderColumns} 
@@ -400,6 +432,58 @@ export default function AdminPage() {
                 Yes, Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MANUAL ORDER MODAL */}
+      {isManualOrderModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-bubble-surface rounded-3xl shadow-2xl w-full max-w-lg p-6 md:p-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-black text-text-main">Create Manual Order</h3>
+              <button onClick={() => setIsManualOrderModalOpen(false)} className="p-2 bg-gray-100 text-text-muted rounded-full hover:bg-gray-200 hover:text-text-main transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleManualOrderSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-bold text-text-main mb-2">Select Product</label>
+                <select 
+                  required 
+                  className="bubble-input py-3 px-4 w-full"
+                  value={manualOrderData.productId} 
+                  onChange={e => {
+                    const prod = products.find(p => p.id.toString() === e.target.value);
+                    setManualOrderData({ ...manualOrderData, productId: e.target.value, price: prod ? prod.price.toString() : '' });
+                  }}
+                >
+                  <option value="">-- Choose a Product --</option>
+                  {products.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock} | Price: ₹{p.price})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-text-main mb-2">Quantity</label>
+                  <input required type="number" min="1" className="bubble-input py-3 w-full" value={manualOrderData.quantity} onChange={e => setManualOrderData({...manualOrderData, quantity: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-text-main mb-2">Custom Price (₹)</label>
+                  <input required type="number" step="0.01" className="bubble-input py-3 w-full" value={manualOrderData.price} onChange={e => setManualOrderData({...manualOrderData, price: e.target.value})} placeholder="Auto-filled" />
+                </div>
+              </div>
+              <div className="bg-bubble-input p-4 rounded-xl border border-border-main">
+                <p className="text-sm font-bold text-text-muted flex justify-between">
+                  <span>Total Amount:</span>
+                  <span className="text-lg text-primary">₹{((parseFloat(manualOrderData.price) || 0) * (parseInt(manualOrderData.quantity) || 0)).toFixed(2)}</span>
+                </p>
+              </div>
+              <button type="submit" className="bubble-btn w-full py-4 text-lg shadow-lg">
+                Confirm Order
+              </button>
+            </form>
           </div>
         </div>
       )}
