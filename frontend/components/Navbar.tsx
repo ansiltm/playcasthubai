@@ -71,17 +71,25 @@ export default function Navbar() {
               </button>
             )}
             
-            <button onClick={() => setIsSidebarOpen(true)} className="flex items-center space-x-3 shrink-0 cursor-pointer group hover:opacity-80 transition-opacity">
-              <div className="relative w-12 h-12 overflow-hidden rounded-[var(--radius-pill)] shadow-[var(--shadow-bubble)] border-2 border-white group-hover:scale-105 transition-transform">
-                <Image src="/logo.jpeg" alt="PlaycastHub Logo" fill className="object-cover" />
-              </div>
-              <div className="hidden sm:flex items-center gap-2">
-                <span className="text-xl md:text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-                  PlaycastHub
-                </span>
-                <Menu className="text-text-muted hidden lg:block" size={20} />
-              </div>
-            </button>
+            <div className="flex items-center space-x-3 shrink-0 group">
+              <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                <div className="relative w-12 h-12 overflow-hidden rounded-[var(--radius-pill)] shadow-[var(--shadow-bubble)] border-2 border-white group-hover:scale-105 transition-transform">
+                  <Image src="/logo.jpeg" alt="PlaycastHub Logo" fill className="object-cover" />
+                </div>
+                <div className="hidden sm:flex items-center gap-2">
+                  <span className="text-xl md:text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+                    PlaycastHub
+                  </span>
+                </div>
+              </Link>
+              <button 
+                onClick={() => setIsSidebarOpen(true)}
+                className="hidden sm:flex p-2 text-text-muted hover:text-primary hover:bg-bubble-input rounded-xl transition-colors cursor-pointer"
+                aria-label="Open Sidebar"
+              >
+                <Menu size={24} />
+              </button>
+            </div>
           </div>
 
           {/* Desktop Search */}
