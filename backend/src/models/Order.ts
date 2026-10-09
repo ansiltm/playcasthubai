@@ -9,13 +9,16 @@ interface OrderAttributes {
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
   paymentMethod?: string;
   paymentStatus?: string;
-  latitude?: number | null;
-  longitude?: number | null;
+  shippingAddressLine1?: string | null;
+  shippingAddressLine2?: string | null;
+  shippingCity?: string | null;
+  shippingState?: string | null;
+  shippingPincode?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-type OrderCreationAttributes = Optional<OrderAttributes, 'id' | 'status' | 'orderNumber' | 'paymentMethod' | 'paymentStatus' | 'latitude' | 'longitude'>;
+type OrderCreationAttributes = Optional<OrderAttributes, 'id' | 'status' | 'orderNumber' | 'paymentMethod' | 'paymentStatus' | 'shippingAddressLine1' | 'shippingAddressLine2' | 'shippingCity' | 'shippingState' | 'shippingPincode'>;
 
 class Order extends Model<OrderAttributes, OrderCreationAttributes> implements OrderAttributes {
   public id!: number;
@@ -25,8 +28,11 @@ class Order extends Model<OrderAttributes, OrderCreationAttributes> implements O
   public status!: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
   public paymentMethod!: string;
   public paymentStatus!: string;
-  public latitude!: number | null;
-  public longitude!: number | null;
+  public shippingAddressLine1!: string | null;
+  public shippingAddressLine2!: string | null;
+  public shippingCity!: string | null;
+  public shippingState!: string | null;
+  public shippingPincode!: string | null;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -39,8 +45,11 @@ Order.init(
     status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
     paymentMethod: { type: DataTypes.STRING, allowNull: false, defaultValue: 'COD' },
     paymentStatus: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
-    latitude: { type: DataTypes.FLOAT, allowNull: true },
-    longitude: { type: DataTypes.FLOAT, allowNull: true },
+    shippingAddressLine1: { type: DataTypes.STRING, allowNull: true },
+    shippingAddressLine2: { type: DataTypes.STRING, allowNull: true },
+    shippingCity: { type: DataTypes.STRING, allowNull: true },
+    shippingState: { type: DataTypes.STRING, allowNull: true },
+    shippingPincode: { type: DataTypes.STRING, allowNull: true },
   },
   { 
     sequelize, 

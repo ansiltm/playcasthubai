@@ -7,22 +7,17 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { Trash2, Plus, Minus, ArrowRight, MapPin, CreditCard, Banknote, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
-import dynamic from 'next/dynamic';
-
-const CheckoutMap = dynamic(() => import('../../components/CheckoutMap'), {
-  ssr: false,
-  loading: () => <div className="h-[300px] bg-bubble-bg animate-pulse rounded-2xl flex items-center justify-center text-text-muted">Loading map...</div>
-});
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
   const { user } = useAuthStore();
   
   const [step, setStep] = useState<'cart' | 'shipping' | 'payment' | 'success'>('cart');
-  const [pincode, setPincode] = useState(user?.pincode || '');
-  const [address, setAddress] = useState(user?.address || '');
-  const [coordinates, setCoordinates] = useState<{lat: number, lng: number} | null>(null);
-  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [pincode, setPincode] = useState('');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
   
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'online'>('COD');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -30,29 +25,32 @@ export default function CartPage() {
   useEffect(() => {
     if (user && step === 'shipping') {
       setPincode(user.pincode || '');
-      setAddress(user.address || '');
-      if (user.pincode) fetchLocation(user.pincode);
+      setAddressLine1(user.addressLine1 || '');
+      setAddressLine2(user.addressLine2 || '');
+      setCity(user.city || '');
+      setState(user.state || '');
     }
   }, [user, step]);
 
-  const fetchLocation = async (code: string) => {
-    if (!code) return;
-    setLoadingLocation(true);
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?postalcode=${code}&format=json&countrycodes=in`);
-      const data = await res.json();
-      if (data && data.length > 0) {
-        setCoordinates({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
-        toast.success('Location found!');
-      } else {
-        toast.error('Could not find location for this pincode');
-        setCoordinates(null);
+  const handlePincodeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/[^0-9]/g, '');
+    setPincode(val);
+    
+    if (val.length === 6) {
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${val}`);
+        const data = await res.json();
+        if (data && data[0] && data[0].Status === 'Success') {
+          const postOffice = data[0].PostOffice[0];
+          setCity(postOffice.District);
+          setState(postOffice.State);
+          toast.success('City and State auto-filled!');
+        } else {
+          toast.error('Invalid Pincode');
+        }
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
-      toast.error('Error fetching location');
-    } finally {
-      setLoadingLocation(false);
     }
   };
 
@@ -64,7 +62,6 @@ export default function CartPage() {
     
     setIsProcessing(true);
 
-    // Simulate payment processing delay if online payment
     if (paymentMethod === 'online') {
       toast.loading('Processing payment securely...', { duration: 2000 });
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -75,9 +72,13 @@ export default function CartPage() {
         items,
         paymentMethod,
         paymentStatus: paymentMethod === 'online' ? 'paid' : 'pending',
-        latitude: coordinates?.lat,
-        longitude: coordinates?.lng
+        addressLine1,
+        addressLine2,
+        city,
+        state,
+        pincode
       });
+      
       toast.success('Order placed successfully!');
       clearCart();
       setStep('success');
@@ -120,7 +121,7 @@ export default function CartPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <h1 className="text-4xl font-black text-text-main mb-8">
-        {step === 'cart' ? 'Shopping Cart' : step === 'shipping' ? 'Shipping & Location' : 'Payment Integration'}
+        {step === 'cart' ? 'Shopping Cart' : step === 'shipping' ? 'Shipping Details' : 'Payment'}
       </h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -147,37 +148,46 @@ export default function CartPage() {
 
           {step === 'shipping' && (
             <div className="bubble-card bg-bubble-surface p-8">
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><MapPin className="text-primary"/> Delivery Location</h2>
-              <div className="space-y-4 mb-6">
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><MapPin className="text-primary"/> Delivery Address</h2>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-text-muted mb-2">Delivery Address</label>
-                  <textarea 
-                    value={address} onChange={(e) => setAddress(e.target.value)}
-                    className="bubble-input w-full min-h-[100px]" placeholder="Enter full address..."
+                  <label className="block text-sm font-bold text-text-muted mb-2">Postal Code (Pincode)</label>
+                  <input 
+                    type="text" maxLength={6} value={pincode} onChange={handlePincodeChange}
+                    className="bubble-input w-full" placeholder="e.g. 682001 (Auto-fills City & State)"
                   />
                 </div>
-                <div className="flex gap-4 items-end">
-                  <div className="flex-1">
-                    <label className="block text-sm font-bold text-text-muted mb-2">Postal Code (Pincode)</label>
+                <div>
+                  <label className="block text-sm font-bold text-text-muted mb-2">Address Line 1</label>
+                  <input 
+                    type="text" value={addressLine1} onChange={(e) => setAddressLine1(e.target.value)}
+                    className="bubble-input w-full" placeholder="House/Flat No, Building, Street Area"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-text-muted mb-2">Address Line 2 (Optional)</label>
+                  <input 
+                    type="text" value={addressLine2} onChange={(e) => setAddressLine2(e.target.value)}
+                    className="bubble-input w-full" placeholder="Landmark, Locality"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-text-muted mb-2">City / District</label>
                     <input 
-                      type="text" value={pincode} onChange={(e) => setPincode(e.target.value)}
-                      className="bubble-input w-full" placeholder="e.g. 682001"
+                      type="text" value={city} onChange={(e) => setCity(e.target.value)}
+                      className="bubble-input w-full" placeholder="City"
                     />
                   </div>
-                  <button onClick={() => fetchLocation(pincode)} disabled={loadingLocation || !pincode} className="bubble-btn whitespace-nowrap">
-                    {loadingLocation ? 'Locating...' : 'Verify Location'}
-                  </button>
-                </div>
-              </div>
-              
-              {coordinates && (
-                <div className="mt-6 rounded-2xl overflow-hidden border-2 border-primary/20">
-                  <CheckoutMap lat={coordinates.lat} lng={coordinates.lng} />
-                  <div className="bg-primary/10 p-3 text-sm font-bold text-primary text-center">
-                    Location pinned successfully! Coordinates saved.
+                  <div>
+                    <label className="block text-sm font-bold text-text-muted mb-2">State</label>
+                    <input 
+                      type="text" value={state} onChange={(e) => setState(e.target.value)}
+                      className="bubble-input w-full" placeholder="State"
+                    />
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           )}
 
@@ -252,7 +262,11 @@ export default function CartPage() {
               </button>
             )}
             {step === 'shipping' && (
-              <button onClick={() => setStep('payment')} disabled={!coordinates} className="bubble-btn w-full flex items-center justify-center space-x-2 py-4 disabled:opacity-50 disabled:cursor-not-allowed">
+              <button 
+                onClick={() => setStep('payment')} 
+                disabled={!addressLine1 || !pincode || !city || !state} 
+                className="bubble-btn w-full flex items-center justify-center space-x-2 py-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 <span>Continue to Payment</span> <ArrowRight size={20} />
               </button>
             )}

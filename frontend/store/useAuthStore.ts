@@ -7,7 +7,10 @@ interface User {
   email: string;
   role: 'admin' | 'user';
   pincode?: string;
-  address?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
 }
 
 interface AuthState {

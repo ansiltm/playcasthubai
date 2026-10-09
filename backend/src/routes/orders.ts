@@ -40,7 +40,7 @@ const sendConfirmationEmail = async (userEmail: string, orderNumber: string, amo
 // Create order directly from frontend payload
 router.post('/', authenticate, async (req: any, res: Response) => {
   try {
-    const { items, paymentMethod, paymentStatus, latitude, longitude } = req.body;
+    const { items, paymentMethod, paymentStatus, addressLine1, addressLine2, city, state, pincode } = req.body;
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'Order is empty' });
     }
@@ -59,6 +59,18 @@ router.post('/', authenticate, async (req: any, res: Response) => {
       totalAmount += product.price * item.quantity;
     }
 
+    // Update user default address if provided
+    const user = await User.findByPk(req.user.id);
+    if (user && addressLine1) {
+      await user.update({
+        addressLine1: addressLine1 || user.addressLine1,
+        addressLine2: addressLine2 || user.addressLine2,
+        city: city || user.city,
+        state: state || user.state,
+        pincode: pincode || user.pincode
+      });
+    }
+
     // Create Order
     const order = await Order.create({ 
       userId: req.user.id, 
@@ -66,8 +78,11 @@ router.post('/', authenticate, async (req: any, res: Response) => {
       status: paymentMethod === 'online' ? 'confirmed' : 'pending',
       paymentMethod: paymentMethod || 'COD',
       paymentStatus: paymentStatus || 'pending',
-      latitude: latitude || null,
-      longitude: longitude || null
+      shippingAddressLine1: addressLine1 || null,
+      shippingAddressLine2: addressLine2 || null,
+      shippingCity: city || null,
+      shippingState: state || null,
+      shippingPincode: pincode || null
     });
     
     // Create items and deduct stock

@@ -11,15 +11,13 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [pincode, setPincode] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/auth/register', { name, email, password, phone, address, pincode });
+      await api.post('/auth/register', { name, email, password, phone });
       toast.success('Registration successful! Please login.');
       router.push('/login');
     } catch (err: any) {
@@ -67,28 +65,6 @@ export default function RegisterPage() {
                 placeholder="Phone Number"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-bold text-text-main ml-1 mb-1 block">Pincode</label>
-              <input
-                type="text"
-                required
-                className="bubble-input"
-                placeholder="Pincode"
-                value={pincode}
-                onChange={(e) => setPincode(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-bold text-text-main ml-1 mb-1 block">Full Address</label>
-              <textarea
-                required
-                rows={3}
-                className="bubble-input"
-                placeholder="Full Address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
               />
             </div>
             <div>
