@@ -41,7 +41,7 @@ export default function Home(): React.JSX.Element {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {trendingProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
@@ -49,9 +49,12 @@ export default function Home(): React.JSX.Element {
       </section>
 
       {/* Shop by Category */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <h2 className="text-3xl font-black text-text-main mb-6">Shop by Category</h2>
-        <div className="flex gap-4 overflow-x-auto pb-6 snap-x hide-scrollbar">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex justify-between items-end mb-4">
+          <h2 className="text-3xl font-black text-text-main">Shop by Category</h2>
+          <span className="text-xs text-text-muted font-bold md:hidden animate-pulse">Swipe to explore →</span>
+        </div>
+        <div className="flex gap-3 overflow-x-auto pb-4 snap-x custom-scrollbar">
           {[
             { name: 'Vehicles & RC', query: 'Vehicles & Remote-Controlled (RC)', icon: '🏎️' },
             { name: 'Action Figures', query: 'Action Figures & Pop-Culture Collectibles', icon: '🦸‍♂️' },
@@ -63,10 +66,10 @@ export default function Home(): React.JSX.Element {
             <Link 
               key={i} 
               href={`/products?category=${encodeURIComponent(cat.query)}`}
-              className="bubble-card flex-shrink-0 w-48 p-6 flex flex-col items-center justify-center text-center gap-4 snap-start hover:bg-primary hover:text-white transition-all group"
+              className="bubble-card flex-shrink-0 w-36 p-4 flex flex-col items-center justify-center text-center gap-3 snap-start hover:bg-primary hover:text-white transition-all group"
             >
               <div className="text-4xl group-hover:scale-110 transition-transform">{cat.icon}</div>
-              <h3 className="font-bold">{cat.name}</h3>
+              <h3 className="font-bold text-sm">{cat.name}</h3>
             </Link>
           ))}
         </div>
@@ -75,7 +78,7 @@ export default function Home(): React.JSX.Element {
       {/* Shop by Grade */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <h2 className="text-3xl font-black text-text-main mb-6">Shop by Grade</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { name: 'Toy-Grade', query: 'Toy-Grade', desc: 'Entry-level fun for everyone' },
             { name: 'Semi-Hobby', query: 'Semi-Hobby / Prosumer Grade', desc: 'Step up your game' },
@@ -95,7 +98,7 @@ export default function Home(): React.JSX.Element {
       </section>
 
       {/* Features Banner */}
-      <section className="bg-bubble-surface py-20 border-y border-border-main">
+      <section className="bg-bubble-surface py-12 border-y border-border-main mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
             <div className="flex flex-col items-center">
