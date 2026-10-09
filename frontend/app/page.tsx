@@ -29,6 +29,25 @@ export default function Home(): React.JSX.Element {
 
   return (
     <div className="w-full">
+      {/* Featured Products (Trending Now) - Moved to top & limited to 5 */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pt-12">
+        <div className="flex justify-between items-end mb-8">
+          <div>
+            <h2 className="text-4xl font-black text-text-main mb-2">Trending Now</h2>
+            <p className="text-text-muted">Our most popular models this week.</p>
+          </div>
+          <Link href="/products" className="text-primary font-bold hover:text-primary-dark hover:underline">
+            View All →
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          {products.slice(0, 5).map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      </section>
+
       {/* Shop by Category */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <h2 className="text-3xl font-black text-text-main mb-6">Shop by Category</h2>
@@ -71,25 +90,6 @@ export default function Home(): React.JSX.Element {
               <h3 className="font-black text-xl mb-2">{grade.name}</h3>
               <p className="text-sm text-text-muted">{grade.desc}</p>
             </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Featured Products */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="flex justify-between items-end mb-12">
-          <div>
-            <h2 className="text-4xl font-black text-text-main mb-4">Trending Now</h2>
-            <p className="text-text-muted">Our most popular models this week.</p>
-          </div>
-          <Link href="/products" className="text-primary font-bold hover:text-primary-dark hover:underline">
-            View All →
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
           ))}
         </div>
       </section>

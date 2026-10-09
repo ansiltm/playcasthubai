@@ -25,23 +25,24 @@ export default function ProductCard({ product }: { product: Product }) {
       name: product.name,
       price: product.price,
       quantity: 1,
-      imageUrl: product.media?.[0] || 'https://via.placeholder.com/300'
+      imageUrl: (product.media && product.media.length > 0) ? product.media[0] : '/logo.jpeg'
     });
   };
 
   // Determine if the first media item is a video
-  const firstMedia = product.media?.[0] || 'https://via.placeholder.com/300';
-  const isVideo = firstMedia.match(/\.(mp4|webm|mov|ogg)$/i) !== null;
+  const fallbackImage = '/logo.jpeg';
+  const firstMedia = (product.media && product.media.length > 0) ? product.media[0] : fallbackImage;
+  const isVideo = typeof firstMedia === 'string' && firstMedia.match(/\.(mp4|webm|mov|ogg)$/i) !== null;
 
   return (
     <Link href={`/products/${product.id}`} className="group block">
       <div className="bubble-card overflow-hidden bg-bubble-surface h-full flex flex-col">
         {/* Image/Video Container */}
-        <div className="relative aspect-square overflow-hidden bg-bubble-bg shrink-0">
+        <div className="relative h-48 sm:h-52 overflow-hidden bg-bubble-bg shrink-0 flex items-center justify-center p-4">
           {isVideo ? (
             <video
               src={firstMedia}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 rounded-[var(--radius-bubble)]"
               muted
               loop
               playsInline
@@ -50,7 +51,7 @@ export default function ProductCard({ product }: { product: Product }) {
             <img
               src={firstMedia}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 rounded-[var(--radius-bubble)]"
             />
           )}
           <div className="absolute bottom-4 right-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">

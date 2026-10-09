@@ -14,7 +14,11 @@ function ProductsList() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
+
   useEffect(() => {
+    setCurrentPage(1); // Reset page when filters change
     const fetchProducts = async () => {
       setLoading(true);
       try {
@@ -32,11 +36,7 @@ function ProductsList() {
         setProducts(res.data);
       } catch (err) {
         console.error(err);
-        // Fallback for visual testing if backend isn't ready
-        setProducts([
-          { id: 1, name: 'RC Buggy Pro X1', price: 199.99, category: 'RC', grade: 'Hobby Grade', media: ['https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=800'] },
-          { id: 2, name: 'Diecast Ford Mustang', price: 45.00, category: 'Diecast Models', grade: 'Toy Grade', media: ['https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?auto=format&fit=crop&q=80&w=800'] },
-        ]);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -44,6 +44,14 @@ function ProductsList() {
     
     fetchProducts();
   }, [searchQuery, categoryQuery, gradeQuery]);
+
+  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const currentProducts = products.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -59,11 +67,49 @@ function ProductsList() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
       ) : products.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+            {currentProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center mt-12 space-x-2">
+              <button
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 bubble-card bg-bubble-surface hover:bg-bubble-input disabled:opacity-50 transition-colors font-bold"
+              >
+                Prev
+              </button>
+              
+              <div className="flex space-x-2 overflow-x-auto hide-scrollbar max-w-[200px] sm:max-w-none">
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handlePageChange(i + 1)}
+                    className={`w-10 h-10 rounded-[var(--radius-bubble)] font-bold flex items-center justify-center transition-all ${
+                      currentPage === i + 1 
+                        ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-110' 
+                        : 'bg-bubble-surface hover:bg-bubble-input text-text-main'
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 bubble-card bg-bubble-surface hover:bg-bubble-input disabled:opacity-50 transition-colors font-bold"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="text-center py-20 bg-bubble-surface bubble-card">
           <h2 className="text-2xl font-bold text-text-main mb-2">No products found</h2>
