@@ -52,7 +52,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-12 pt-8 border-t border-border-main text-center text-sm text-text-muted">
-          © {new Date().getFullYear()} PlaycasthubAI. All rights reserved.
+          © {new Date().getFullYear()} PlaycastHub. All rights reserved.
         </div>
       </div>
     </footer>

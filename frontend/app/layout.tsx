@@ -7,7 +7,7 @@ import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from '../components/ThemeProvider';
 
 export const metadata: Metadata = {
-  title: 'PlaycasthubAI',
+  title: 'PlaycastHub',
   description: 'The ultimate store for RC, Diecast, and Hobby items',
   icons: {
     icon: '/logo.jpeg',

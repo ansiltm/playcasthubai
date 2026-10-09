@@ -32,7 +32,7 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 
 app.get('/', (req: Request, res: Response): void => {
-  res.json({ message: 'PlaycasthubAI API is running!' });
+  res.json({ message: 'PlaycastHub API is running!' });
 });
 
 app.listen(PORT, () => {

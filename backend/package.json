@@ -1,7 +1,7 @@
 {
-  "name": "playcasthubai-backend",
+  "name": "playcasthub-backend",
   "version": "1.0.0",
-  "description": "Backend API for PlaycasthubAI Store",
+  "description": "Backend API for PlaycastHub Store",
   "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",
