@@ -38,11 +38,11 @@ export default function ProductCard({ product }: { product: Product }) {
     <Link href={`/products/${product.id}`} className="group block">
       <div className="bubble-card overflow-hidden bg-bubble-surface h-full flex flex-col">
         {/* Image/Video Container */}
-        <div className="relative h-48 sm:h-52 overflow-hidden bg-bubble-bg shrink-0 flex items-center justify-center p-4">
+        <div className="relative aspect-[4/3] sm:aspect-[4/3] w-full overflow-hidden bg-bubble-bg shrink-0">
           {isVideo ? (
             <video
               src={firstMedia}
-              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 rounded-[var(--radius-bubble)]"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               muted
               loop
               playsInline
@@ -51,7 +51,7 @@ export default function ProductCard({ product }: { product: Product }) {
             <img
               src={firstMedia}
               alt={product.name}
-              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 rounded-[var(--radius-bubble)]"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
           )}
           <div className="absolute bottom-4 right-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
