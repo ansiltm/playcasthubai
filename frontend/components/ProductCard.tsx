@@ -9,6 +9,7 @@ interface Product {
   id: number;
   name: string;
   price: number;
+  stock: number;
   category: string;
   grade?: string;
   media?: string[];
@@ -16,9 +17,11 @@ interface Product {
 
 export default function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((state) => state.addItem);
+  const isOutOfStock = product.stock <= 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (isOutOfStock) return;
     addItem({
       id: Date.now(), // Generate unique cart item id
       productId: product.id,
@@ -35,8 +38,8 @@ export default function ProductCard({ product }: { product: Product }) {
   const isVideo = typeof firstMedia === 'string' && firstMedia.match(/\.(mp4|webm|mov|ogg)$/i) !== null;
 
   return (
-    <Link href={`/products/${product.id}`} className="group block">
-      <div className="bubble-card overflow-hidden bg-bubble-surface h-full flex flex-col">
+    <Link href={`/products/${product.id}`} className="group block h-full">
+      <div className={`bubble-card overflow-hidden bg-bubble-surface h-full flex flex-col ${isOutOfStock ? 'opacity-75 grayscale-[0.2]' : ''}`}>
         {/* Image/Video Container */}
         <div className="relative aspect-[4/3] sm:aspect-[4/3] w-full overflow-hidden bg-bubble-bg shrink-0">
           {isVideo ? (
@@ -54,14 +57,25 @@ export default function ProductCard({ product }: { product: Product }) {
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
           )}
-          <div className="absolute bottom-4 right-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-            <button
-              onClick={handleAddToCart}
-              className="bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary-dark hover:scale-110 transition-all"
-            >
-              <ShoppingCart size={20} />
-            </button>
-          </div>
+          
+          {isOutOfStock && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <span className="bg-red-500 text-white font-black px-4 py-2 rounded-full uppercase tracking-wider text-xs shadow-lg transform -rotate-12">
+                Out of Stock
+              </span>
+            </div>
+          )}
+
+          {!isOutOfStock && (
+            <div className="absolute bottom-4 right-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+              <button
+                onClick={handleAddToCart}
+                className="bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary-dark hover:scale-110 transition-all"
+              >
+                <ShoppingCart size={20} />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Content */}
