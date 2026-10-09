@@ -330,6 +330,7 @@ export default function AdminPage() {
   });
 
   const chartData = Array.from(monthlyDataMap.values()).reverse(); // Older first, assuming orders are DESC
+  const pendingOrdersCount = orders.filter((o: any) => o.status === 'pending').length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 relative">
@@ -337,7 +338,14 @@ export default function AdminPage() {
       
       <div className="flex space-x-4 mb-8 overflow-x-auto pb-2">
         <button onClick={() => setActiveTab('products')} className={`bubble-btn whitespace-nowrap ${activeTab === 'products' ? '' : 'bubble-btn-secondary'}`}>Manage Inventory</button>
-        <button onClick={() => setActiveTab('orders')} className={`bubble-btn whitespace-nowrap ${activeTab === 'orders' ? '' : 'bubble-btn-secondary'}`}>Manage Orders</button>
+        <button onClick={() => setActiveTab('orders')} className={`relative bubble-btn whitespace-nowrap ${activeTab === 'orders' ? '' : 'bubble-btn-secondary'}`}>
+          Manage Orders
+          {pendingOrdersCount > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
+              {pendingOrdersCount}
+            </span>
+          )}
+        </button>
         <button onClick={() => setActiveTab('analytics')} className={`bubble-btn whitespace-nowrap ${activeTab === 'analytics' ? '' : 'bubble-btn-secondary'}`}>Analytics Dashboard</button>
       </div>
 
@@ -656,8 +664,17 @@ export default function AdminPage() {
                     <p className="font-bold">{selectedOrder.User?.name || 'Unknown'}</p>
                     <p className="text-sm text-text-muted">{selectedOrder.User?.email}</p>
                     <p className="text-sm text-text-muted mt-2">Phone: {selectedOrder.User?.phone || 'N/A'}</p>
-                    <p className="text-sm text-text-muted">Pincode: {selectedOrder.User?.pincode || 'N/A'}</p>
-                    <p className="text-sm text-text-muted mt-1 whitespace-pre-wrap">{selectedOrder.User?.address}</p>
+                    <div className="text-sm text-text-muted mt-1 whitespace-pre-wrap">
+                      {selectedOrder.shippingAddressLine1 ? (
+                        <>
+                          {selectedOrder.shippingAddressLine1}<br/>
+                          {selectedOrder.shippingAddressLine2 && <>{selectedOrder.shippingAddressLine2}<br/></>}
+                          {selectedOrder.shippingCity}, {selectedOrder.shippingState} - {selectedOrder.shippingPincode}
+                        </>
+                      ) : (
+                        'No shipping address provided.'
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div>

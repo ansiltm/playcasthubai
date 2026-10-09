@@ -71,7 +71,7 @@
   }
 
   .bubble-btn-secondary {
-    @apply inline-flex items-center justify-center px-6 py-3 font-bold text-primary bg-bubble-surface rounded-[var(--radius-pill)] shadow-[var(--shadow-bubble)] transition-all duration-300 hover:shadow-[var(--shadow-bubble-hover)] hover:-translate-y-1 active:translate-y-0 active:shadow-[var(--shadow-bubble-inner)] border-2 border-primary-light;
+    @apply inline-flex items-center justify-center px-6 py-3 font-bold text-text-main bg-bubble-surface rounded-[var(--radius-pill)] shadow-[var(--shadow-bubble)] transition-all duration-300 hover:shadow-[var(--shadow-bubble-hover)] hover:-translate-y-1 hover:text-primary active:translate-y-0 active:shadow-[var(--shadow-bubble-inner)] border-2 border-primary-light;
   }
 
   .bubble-input {

@@ -153,7 +153,7 @@ router.get('/all', authenticate, authorizeAdmin, async (req: any, res: Response)
           model: OrderItem,
           include: [{ model: Product, attributes: ['id', 'name', 'images'] }]
         },
-        { model: User, attributes: ['id', 'name', 'email', 'phone', 'address', 'pincode'] }
+        { model: User, attributes: ['id', 'name', 'email', 'phone', 'addressLine1', 'addressLine2', 'city', 'state', 'pincode'] }
       ],
       order: [['createdAt', 'DESC']]
     });
