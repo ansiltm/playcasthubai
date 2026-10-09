@@ -45,7 +45,7 @@ function ProductsList() {
     fetchProducts();
   }, [searchQuery, categoryQuery, gradeQuery]);
 
-  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(products.length / itemsPerPage));
   const currentProducts = products.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handlePageChange = (page: number) => {
@@ -74,41 +74,39 @@ function ProductsList() {
             ))}
           </div>
 
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center mt-12 space-x-2">
-              <button
-                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bubble-card bg-bubble-surface hover:bg-bubble-input disabled:opacity-50 transition-colors font-bold"
-              >
-                Prev
-              </button>
-              
-              <div className="flex space-x-2 overflow-x-auto hide-scrollbar max-w-[200px] sm:max-w-none">
-                {Array.from({ length: totalPages }).map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handlePageChange(i + 1)}
-                    className={`w-10 h-10 rounded-[var(--radius-bubble)] font-bold flex items-center justify-center transition-all ${
-                      currentPage === i + 1 
-                        ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-110' 
-                        : 'bg-bubble-surface hover:bg-bubble-input text-text-main'
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bubble-card bg-bubble-surface hover:bg-bubble-input disabled:opacity-50 transition-colors font-bold"
-              >
-                Next
-              </button>
+          <div className="flex justify-center items-center mt-12 space-x-2">
+            <button
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bubble-card bg-bubble-surface hover:bg-bubble-input disabled:opacity-50 transition-colors font-bold"
+            >
+              Prev
+            </button>
+            
+            <div className="flex space-x-2 overflow-x-auto hide-scrollbar max-w-[200px] sm:max-w-none">
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => handlePageChange(i + 1)}
+                  className={`w-10 h-10 rounded-[var(--radius-bubble)] font-bold flex items-center justify-center transition-all ${
+                    currentPage === i + 1 
+                      ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-110' 
+                      : 'bg-bubble-surface hover:bg-bubble-input text-text-main'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
             </div>
-          )}
+
+            <button
+              onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bubble-card bg-bubble-surface hover:bg-bubble-input disabled:opacity-50 transition-colors font-bold"
+            >
+              Next
+            </button>
+          </div>
         </>
       ) : (
         <div className="text-center py-20 bg-bubble-surface bubble-card">
