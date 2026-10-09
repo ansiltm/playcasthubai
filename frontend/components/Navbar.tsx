@@ -55,9 +55,10 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-bubble-surface/90 backdrop-blur-md border-b border-blue-50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+    <>
+      <nav className="sticky top-0 z-50 w-full bg-bubble-surface/90 backdrop-blur-md border-b border-blue-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
           {/* Back Button & Logo */}
           <div className="flex items-center space-x-2 md:space-x-4 shrink-0">
             {mounted && pathname !== '/' && (
@@ -207,6 +208,7 @@ export default function Navbar() {
           </div>
         </div>
       )}
+      </nav>
 
       {/* Left Sidebar */}
       {isSidebarOpen && (
@@ -261,6 +263,6 @@ export default function Navbar() {
           </div>
         </div>
       )}
-    </nav>
+    </>
   );
 }
