@@ -7,11 +7,15 @@ interface OrderAttributes {
   userId: number;
   totalAmount: number;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
+  paymentMethod?: string;
+  paymentStatus?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-type OrderCreationAttributes = Optional<OrderAttributes, 'id' | 'status' | 'orderNumber'>;
+type OrderCreationAttributes = Optional<OrderAttributes, 'id' | 'status' | 'orderNumber' | 'paymentMethod' | 'paymentStatus' | 'latitude' | 'longitude'>;
 
 class Order extends Model<OrderAttributes, OrderCreationAttributes> implements OrderAttributes {
   public id!: number;
@@ -19,6 +23,10 @@ class Order extends Model<OrderAttributes, OrderCreationAttributes> implements O
   public userId!: number;
   public totalAmount!: number;
   public status!: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
+  public paymentMethod!: string;
+  public paymentStatus!: string;
+  public latitude!: number | null;
+  public longitude!: number | null;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -29,6 +37,10 @@ Order.init(
     userId: { type: DataTypes.INTEGER, allowNull: false },
     totalAmount: { type: DataTypes.FLOAT, allowNull: false },
     status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
+    paymentMethod: { type: DataTypes.STRING, allowNull: false, defaultValue: 'COD' },
+    paymentStatus: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
+    latitude: { type: DataTypes.FLOAT, allowNull: true },
+    longitude: { type: DataTypes.FLOAT, allowNull: true },
   },
   { 
     sequelize, 

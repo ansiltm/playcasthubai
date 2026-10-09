@@ -2,12 +2,45 @@ import { Router, Response } from 'express';
 import { Order, OrderItem, Product, User } from '../models';
 import { authenticate, authorizeAdmin } from '../middleware/auth';
 
+import nodemailer from 'nodemailer';
+
 const router = Router();
+
+// Helper to send order confirmation email
+const sendConfirmationEmail = async (userEmail: string, orderNumber: string, amount: number) => {
+  try {
+    const testAccount = await nodemailer.createTestAccount();
+    const transporter = nodemailer.createTransport({
+      host: "smtp.ethereal.email",
+      port: 587,
+      secure: false, 
+      auth: {
+        user: testAccount.user,
+        pass: testAccount.pass,
+      },
+    });
+
+    const info = await transporter.sendMail({
+      from: '"PlaycastHub" <orders@playcasthub.com>',
+      to: userEmail,
+      subject: `Order Confirmation - ${orderNumber}`,
+      html: `<h2>Thank you for your order!</h2>
+             <p>Your order <strong>${orderNumber}</strong> has been successfully placed.</p>
+             <p>Total Amount: ₹${amount.toFixed(2)}</p>
+             <p>We will notify you when it ships!</p>`,
+    });
+
+    console.log("Email Message sent: %s", info.messageId);
+    console.log("Email Preview URL: %s", nodemailer.getTestMessageUrl(info));
+  } catch (err) {
+    console.error("Email sending failed:", err);
+  }
+};
 
 // Create order directly from frontend payload
 router.post('/', authenticate, async (req: any, res: Response) => {
   try {
-    const { items } = req.body; // Array of { productId, quantity, price }
+    const { items, paymentMethod, paymentStatus, latitude, longitude } = req.body;
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'Order is empty' });
     }
@@ -27,7 +60,15 @@ router.post('/', authenticate, async (req: any, res: Response) => {
     }
 
     // Create Order
-    const order = await Order.create({ userId: req.user.id, totalAmount, status: 'pending' });
+    const order = await Order.create({ 
+      userId: req.user.id, 
+      totalAmount, 
+      status: paymentMethod === 'online' ? 'confirmed' : 'pending',
+      paymentMethod: paymentMethod || 'COD',
+      paymentStatus: paymentStatus || 'pending',
+      latitude: latitude || null,
+      longitude: longitude || null
+    });
     
     // Create items and deduct stock
     for (const item of items) {
@@ -37,6 +78,9 @@ router.post('/', authenticate, async (req: any, res: Response) => {
         await product.update({ stock: product.stock - item.quantity });
       }
     }
+
+    // Send order confirmation email asynchronously
+    sendConfirmationEmail(req.user.email, order.orderNumber, totalAmount);
     
     res.status(201).json(order);
   } catch (error) {
