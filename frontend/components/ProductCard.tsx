@@ -65,22 +65,22 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Content */}
-        <div className="p-6 flex-1 flex flex-col">
-          <div className="flex justify-between items-start mb-2">
-            <div className="text-xs font-bold text-secondary uppercase tracking-wider">
+        <div className="p-4 flex-1 flex flex-col">
+          <div className="flex justify-between items-start gap-2 mb-3">
+            <div className="text-[9px] sm:text-[10px] font-bold text-secondary uppercase tracking-wider line-clamp-2 flex-1">
               {product.category}
             </div>
             {product.grade && (
-              <div className="text-[10px] font-bold bg-bubble-input text-primary px-2 py-1 rounded-full uppercase tracking-wider">
+              <div className="text-[8px] sm:text-[9px] font-black bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 px-2 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap shrink-0 border border-purple-200 dark:border-purple-800">
                 {product.grade}
               </div>
             )}
           </div>
-          <h3 className="text-lg font-bold text-text-main mb-4 line-clamp-2 flex-1">
+          <h3 className="text-sm sm:text-base font-bold text-text-main mb-3 line-clamp-2 flex-1 leading-snug">
             {product.name}
           </h3>
           <div className="flex items-center justify-between mt-auto">
-            <span className="text-xl font-black text-primary">
+            <span className="text-lg font-black text-primary">
               ₹{product.price.toFixed(2)}
             </span>
           </div>
