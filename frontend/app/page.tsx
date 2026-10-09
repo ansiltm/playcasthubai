@@ -6,30 +6,30 @@ import ProductCard from '../components/ProductCard';
 import api from '../lib/api';
 
 export default function Home(): React.JSX.Element {
-  const [products, setProducts] = useState<any[]>([]);
+  const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
 
   useEffect(() => {
-    // Fetch products from backend (fallback to dummy if backend fails)
-    const fetchProducts = async () => {
+    // Fetch trending products from backend (fallback to dummy if backend fails)
+    const fetchTrendingProducts = async () => {
       try {
-        const res = await api.get('/products');
-        setProducts(res.data);
+        const res = await api.get('/products/trending');
+        setTrendingProducts(res.data);
       } catch (error) {
-        console.error('Failed to fetch products', error);
+        console.error('Failed to fetch trending products', error);
         // Fallback dummy data for visual testing
-        setProducts([
+        setTrendingProducts([
           { id: 1, name: 'RC Buggy Pro X1', price: 199.99, category: 'Vehicles & Remote-Controlled (RC)', media: ['https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=800'] },
           { id: 2, name: 'Diecast Ford Mustang', price: 45.00, category: 'Vehicles & Remote-Controlled (RC)', media: ['https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?auto=format&fit=crop&q=80&w=800'] },
           { id: 3, name: 'Drone Master 5000', price: 299.00, category: 'Vehicles & Remote-Controlled (RC)', media: ['https://images.unsplash.com/photo-1579829366248-204fe8413f31?auto=format&fit=crop&q=80&w=800'] },
         ]);
       }
     };
-    fetchProducts();
+    fetchTrendingProducts();
   }, []);
 
   return (
     <div className="w-full">
-      {/* Featured Products (Trending Now) - Moved to top & limited to 5 */}
+      {/* Featured Products (Trending Now) - Moved to top & limited to 6 */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pt-12">
         <div className="flex justify-between items-end mb-8">
           <div>
@@ -41,8 +41,8 @@ export default function Home(): React.JSX.Element {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          {products.slice(0, 5).map((product) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
+          {trendingProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
