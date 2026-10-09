@@ -122,17 +122,6 @@ export default function Navbar() {
 
           {/* Mobile Menu Button & Cart */}
           <div className="flex items-center space-x-4 md:hidden">
-            
-            {mounted && (
-              <button 
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="p-2 text-text-muted hover:text-primary transition-colors"
-                aria-label="Toggle Theme"
-              >
-                {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
-              </button>
-            )}
-
             <Link href="/cart" className="relative p-2 text-text-muted dark:text-gray-300">
               <ShoppingCart size={24} />
               {items.length > 0 && (
@@ -149,23 +138,35 @@ export default function Navbar() {
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden bg-bubble-surface border-b border-border-main shadow-lg absolute w-full left-0 top-20 flex flex-col p-4 space-y-4">
+        {/* Mobile Search - Always visible under top row */}
+        <div className="md:hidden pb-4">
           <form onSubmit={handleSearch} className="relative w-full">
             <input
               type="text"
-              placeholder="Search..."
-              className="bubble-input w-full pl-10 py-3"
+              placeholder="Search toys, diecasts, RC..."
+              className="bubble-input w-full pl-10 py-2.5 text-sm"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           </form>
-          
-          <div className="flex flex-col space-y-4 pt-2 border-t border-border-main">
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-bubble-surface border-b border-border-main shadow-lg absolute w-full left-0 top-full flex flex-col p-4 space-y-4">
+          <div className="flex flex-col space-y-4">
+            {mounted && (
+              <button 
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="text-left font-bold text-text-muted hover:text-primary flex items-center gap-2 pb-4 border-b border-border-main"
+              >
+                {theme === 'dark' ? <><Sun size={20} /> Switch to Light Mode</> : <><Moon size={20} /> Switch to Dark Mode</>}
+              </button>
+            )}
+
             {user ? (
               <>
                 <div className="font-bold text-text-main">Hi, {user.name}</div>
