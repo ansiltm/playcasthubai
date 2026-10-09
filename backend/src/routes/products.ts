@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { Op } from 'sequelize';
-import Product from '../models/Product';
+import { Op, Sequelize } from 'sequelize';
+import { Product, OrderItem } from '../models';
 import { authenticate, authorizeAdmin, optionalAuthenticate } from '../middleware/auth';
 import { upload } from '../middleware/upload';
 
@@ -10,6 +10,44 @@ const router: Router = Router();
 const formatFileUrl = (req: Request, filename: string) => {
   return `${req.protocol}://${req.get('host')}/uploads/${filename}`;
 };
+
+// GET trending products
+router.get('/trending', optionalAuthenticate, async (req: any, res: Response): Promise<void> => {
+  try {
+    const isAdmin = req.user && req.user.role === 'admin';
+    const attributes = isAdmin ? undefined : { exclude: ['wholesalePrice'] };
+
+    // Get products ordered by the sum of their order item quantities
+    const trendingProducts = await Product.findAll({
+      attributes,
+      include: [{
+        model: OrderItem,
+        attributes: []
+      }],
+      group: ['Product.id'],
+      order: [[Sequelize.fn('SUM', Sequelize.col('OrderItems.quantity')), 'DESC']],
+      limit: 6,
+      subQuery: false
+    });
+
+    // If we don't have enough trending products (e.g. new store with no orders),
+    // fallback to newest products to fill the gap up to 6
+    if (trendingProducts.length < 6) {
+      const existingIds = trendingProducts.map(p => p.id);
+      const extra = await Product.findAll({
+        attributes,
+        where: existingIds.length > 0 ? { id: { [Op.notIn]: existingIds } } : undefined,
+        order: [['createdAt', 'DESC']],
+        limit: 6 - trendingProducts.length
+      });
+      trendingProducts.push(...extra);
+    }
+
+    res.json(trendingProducts);
+  } catch (err) {
+    res.status(500).json({ message: (err as Error).message });
+  }
+});
 
 // GET all products
 router.get('/', optionalAuthenticate, async (req: any, res: Response): Promise<void> => {
