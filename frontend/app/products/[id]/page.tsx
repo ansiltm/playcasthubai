@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useCartStore } from '../../../store/useCartStore';
+import { useFavoritesStore } from '../../../store/useFavoritesStore';
 import { ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../../lib/api';
@@ -15,6 +16,26 @@ export default function ProductDetails() {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const addItem = useCartStore((state) => state.addItem);
+  
+  const { toggleFavorite, isFavorite } = useFavoritesStore();
+
+  const handleShare = async () => {
+    const shareData = {
+      title: product?.name || 'PlaycastHub',
+      text: `Check out ${product?.name} on PlaycastHub!`,
+      url: window.location.href,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success('Link copied to clipboard!');
+      }
+    } catch (err) {
+      console.error('Error sharing:', err);
+    }
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -222,10 +243,16 @@ export default function ProductDetails() {
                 <ShoppingCart size={24} />
                 <span>Add to Cart</span>
               </button>
-              <button className="bubble-btn-secondary p-4 rounded-[var(--radius-pill)]">
-                <Heart size={24} />
+              <button 
+                onClick={() => toggleFavorite(product.id)}
+                className={`bubble-btn-secondary p-4 rounded-[var(--radius-pill)] transition-colors ${isFavorite(product.id) ? 'bg-red-50 border-red-200' : ''}`}
+              >
+                <Heart size={24} className={isFavorite(product.id) ? 'fill-red-500 text-red-500' : ''} />
               </button>
-              <button className="bubble-btn-secondary p-4 rounded-[var(--radius-pill)]">
+              <button 
+                onClick={handleShare}
+                className="bubble-btn-secondary p-4 rounded-[var(--radius-pill)] hover:text-primary"
+              >
                 <Share2 size={24} />
               </button>
             </div>
