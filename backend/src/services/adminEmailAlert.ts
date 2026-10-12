@@ -105,7 +105,35 @@ Please contact the customer to confirm delivery.`;
   console.log(`Total: ₹${params.totalAmount.toFixed(2)} | Address: ${addressText}`);
   console.log(`================================================================\n`);
 
-  // 1. Try SendGrid if API key is configured
+  // 1. Try Gmail / SMTP Nodemailer if configured
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  if (smtpUser && smtpPass) {
+    try {
+      const cleanPass = smtpPass.replace(/\s+/g, '');
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: smtpUser,
+          pass: cleanPass,
+        },
+      });
+
+      const info = await transporter.sendMail({
+        from: `"${process.env.SMTP_FROM_NAME || 'PlaycastHub Store'}" <${fromEmail}>`,
+        to: toEmail,
+        subject,
+        text,
+        html,
+      });
+      console.log(`[Admin Alert] Email successfully dispatched to admin via Gmail SMTP: ${toEmail} (MessageId: ${info.messageId})`);
+      return;
+    } catch (err: any) {
+      console.error('[Admin Alert: Gmail SMTP Error]:', err?.message || err);
+    }
+  }
+
+  // 2. Try SendGrid if API key is configured
   const sendgridApiKey = process.env.SENDGRID_API_KEY;
   if (sendgridApiKey && !sendgridApiKey.includes('your_actual_api_key')) {
     try {
@@ -121,35 +149,6 @@ Please contact the customer to confirm delivery.`;
       return;
     } catch (err: any) {
       console.error('[Admin Alert: SendGrid Error]:', err?.response?.body || err?.message || err);
-    }
-  }
-
-  // 2. Try SMTP / Gmail Nodemailer if configured
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
-  if (smtpUser && smtpPass) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT || '587', 10),
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-      });
-
-      await transporter.sendMail({
-        from: `"${process.env.SMTP_FROM_NAME || 'PlaycastHub'}" <${fromEmail}>`,
-        to: toEmail,
-        subject,
-        text,
-        html,
-      });
-      console.log(`[Admin Alert] Email successfully dispatched to admin via SMTP: ${toEmail}`);
-      return;
-    } catch (err) {
-      console.error('[Admin Alert: SMTP Error]:', err);
     }
   }
 
