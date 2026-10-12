@@ -2,8 +2,14 @@ import axios from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 import toast from 'react-hot-toast';
 
+const getBaseURL = (): string => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!envUrl) return 'http://localhost:5000/api';
+  return envUrl.endsWith('/api') ? envUrl : `${envUrl.replace(/\/+$/, '')}/api`;
+};
+
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: getBaseURL(),
 });
 
 // Request interceptor to add token
