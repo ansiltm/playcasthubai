@@ -49,13 +49,54 @@ router.get('/trending', optionalAuthenticate, async (req: any, res: Response): P
   }
 });
 
-// GET all products
+// Dedicated Search endpoint: GET /api/products/search?q=... or ?search=...
+router.get('/search', optionalAuthenticate, async (req: any, res: Response): Promise<void> => {
+  try {
+    const query = (req.query.q || req.query.search || '') as string;
+    const { category, grade } = req.query;
+    const whereClause: any = {};
+
+    if (query.trim()) {
+      whereClause[Op.or] = [
+        { name: { [Op.like]: `%${query.trim()}%` } },
+        { description: { [Op.like]: `%${query.trim()}%` } },
+        { category: { [Op.like]: `%${query.trim()}%` } },
+      ];
+    }
+    if (category) {
+      whereClause.category = category;
+    }
+    if (grade) {
+      whereClause.grade = grade;
+    }
+
+    const isAdmin = req.user && req.user.role === 'admin';
+    const attributes = isAdmin ? undefined : { exclude: ['wholesalePrice'] };
+
+    const products = await Product.findAll({ 
+      where: whereClause, 
+      attributes,
+      order: [['id', 'ASC']]
+    });
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ message: (err as Error).message });
+  }
+});
+
+// GET all products with filtering & search: GET /api/products?search=...
 router.get('/', optionalAuthenticate, async (req: any, res: Response): Promise<void> => {
   try {
-    const { search, category, grade } = req.query;
+    const search = (req.query.search || req.query.q || '') as string;
+    const { category, grade } = req.query;
     const whereClause: any = {};
-    if (search) {
-      whereClause.name = { [Op.like]: `%${search}%` };
+
+    if (search.trim()) {
+      whereClause[Op.or] = [
+        { name: { [Op.like]: `%${search.trim()}%` } },
+        { description: { [Op.like]: `%${search.trim()}%` } },
+        { category: { [Op.like]: `%${search.trim()}%` } },
+      ];
     }
     if (category) {
       whereClause.category = category;
@@ -68,7 +109,11 @@ router.get('/', optionalAuthenticate, async (req: any, res: Response): Promise<v
     const isAdmin = req.user && req.user.role === 'admin';
     const attributes = isAdmin ? undefined : { exclude: ['wholesalePrice'] };
 
-    const products = await Product.findAll({ where: whereClause, attributes });
+    const products = await Product.findAll({ 
+      where: whereClause, 
+      attributes,
+      order: [['id', 'ASC']]
+    });
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: (err as Error).message });

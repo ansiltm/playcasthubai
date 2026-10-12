@@ -1,7 +1,7 @@
 import sequelize from './config/database';
 import { Product } from './models';
 
-const catalog = [
+export const catalog = [
   {
     name: 'RC JCB Excavator',
     category: 'Vehicles & Remote-Controlled (RC)',
