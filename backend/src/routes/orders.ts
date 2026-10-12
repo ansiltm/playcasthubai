@@ -3,35 +3,50 @@ import { Order, OrderItem, Product, User } from '../models';
 import { authenticate, authorizeAdmin } from '../middleware/auth';
 
 import nodemailer from 'nodemailer';
+import { sendTransactionalEmail } from '../services/emailService';
 
 const router = Router();
 
 // Helper to send order confirmation email
 const sendConfirmationEmail = async (userEmail: string, orderNumber: string, amount: number) => {
   try {
-    const testAccount = await nodemailer.createTestAccount();
-    const transporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false, 
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    });
+    const subject = `Order Confirmation - ${orderNumber} | PlaycastHub`;
+    const html = `<h2>Thank you for your order!</h2>
+           <p>Your order <strong>${orderNumber}</strong> has been successfully placed.</p>
+           <p>Total Amount: ₹${amount.toFixed(2)}</p>
+           <p>We will notify you when it ships!</p>`;
+    const text = `Thank you for your order! Your order ${orderNumber} for ₹${amount.toFixed(2)} has been placed.`;
 
-    const info = await transporter.sendMail({
-      from: '"PlaycastHub" <orders@playcasthub.com>',
-      to: userEmail,
-      subject: `Order Confirmation - ${orderNumber}`,
-      html: `<h2>Thank you for your order!</h2>
-             <p>Your order <strong>${orderNumber}</strong> has been successfully placed.</p>
-             <p>Total Amount: ₹${amount.toFixed(2)}</p>
-             <p>We will notify you when it ships!</p>`,
-    });
+    if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.your_actual_api_key_here') {
+      await sendTransactionalEmail({
+        to: userEmail,
+        subject,
+        html,
+        text,
+      });
+      console.log(`[Order Email] SendGrid email sent to ${userEmail}`);
+    } else {
+      const testAccount = await nodemailer.createTestAccount();
+      const transporter = nodemailer.createTransport({
+        host: "smtp.ethereal.email",
+        port: 587,
+        secure: false, 
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+      });
 
-    console.log("Email Message sent: %s", info.messageId);
-    console.log("Email Preview URL: %s", nodemailer.getTestMessageUrl(info));
+      const info = await transporter.sendMail({
+        from: '"PlaycastHub" <orders@playcasthub.com>',
+        to: userEmail,
+        subject,
+        html,
+      });
+
+      console.log("Email Message sent via Ethereal: %s", info.messageId);
+      console.log("Email Preview URL: %s", nodemailer.getTestMessageUrl(info));
+    }
   } catch (err) {
     console.error("Email sending failed:", err);
   }
