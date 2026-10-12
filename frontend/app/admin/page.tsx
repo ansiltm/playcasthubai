@@ -21,10 +21,9 @@ export default function AdminPage() {
   
   // Filter States
   const [orderStatusFilter, setOrderStatusFilter] = useState('all');
-  const [orderStartDate, setOrderStartDate] = useState('');
-  const [orderEndDate, setOrderEndDate] = useState('');
-  const [analyticsStartDate, setAnalyticsStartDate] = useState('');
-  const [analyticsEndDate, setAnalyticsEndDate] = useState('');
+  const [orderTypeFilter, setOrderTypeFilter] = useState('all');
+  const [orderDateRange, setOrderDateRange] = useState('all');
+  const [analyticsDateRange, setAnalyticsDateRange] = useState('all');
   
 
   // Modal States
@@ -66,11 +65,29 @@ export default function AdminPage() {
     } catch (err) {}
   };
 
+  const sortOrders = (ordersList: any[]) => {
+    return [...ordersList].sort((a: any, b: any) => {
+      const aIsPending = a.status === 'pending';
+      const bIsPending = b.status === 'pending';
+
+      // 1. Pending orders come first
+      if (aIsPending && !bIsPending) return -1;
+      if (!aIsPending && bIsPending) return 1;
+
+      // 2. Both pending: Ascending order of order date (oldest first)
+      if (aIsPending && bIsPending) {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+
+      // 3. For other orders: Ascending order of order date as requested
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+  };
+
   const fetchOrders = async () => {
     try {
       const res = await api.get('/orders/all');
-      const sorted = res.data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setOrders(sorted);
+      setOrders(sortOrders(res.data));
     } catch (err) {}
   };
 
@@ -311,17 +328,134 @@ export default function AdminPage() {
     )}
   ];
 
+  const isCustomOrder = (o: any) => {
+    return Boolean(
+      o.paymentMethod?.toLowerCase().includes('custom') ||
+      o.shippingAddressLine1?.toLowerCase().includes('custom') ||
+      o.orderType === 'custom'
+    );
+  };
+
+  const checkDateInRange = (dateStr: string, range: string) => {
+    if (!range || range === 'all') return true;
+    const d = new Date(dateStr);
+    const now = new Date();
+    
+    if (range === 'today') {
+      return d.toDateString() === now.toDateString();
+    }
+    
+    if (range === 'yesterday') {
+      const yesterday = new Date(now);
+      yesterday.setDate(now.getDate() - 1);
+      return d.toDateString() === yesterday.toDateString();
+    }
+    
+    if (range === 'this_week') {
+      const current = new Date(now);
+      const day = current.getDay();
+      const diff = current.getDate() - day + (day === 0 ? -6 : 1);
+      const startOfWeek = new Date(current.setDate(diff));
+      startOfWeek.setHours(0, 0, 0, 0);
+      return d >= startOfWeek;
+    }
+    
+    if (range === 'last_week') {
+      const current = new Date(now);
+      const day = current.getDay();
+      const diff = current.getDate() - day + (day === 0 ? -6 : 1) - 7;
+      const startOfLastWeek = new Date(current.setDate(diff));
+      startOfLastWeek.setHours(0, 0, 0, 0);
+      
+      const endOfLastWeek = new Date(startOfLastWeek);
+      endOfLastWeek.setDate(endOfLastWeek.getDate() + 6);
+      endOfLastWeek.setHours(23, 59, 59, 999);
+      
+      return d >= startOfLastWeek && d <= endOfLastWeek;
+    }
+    
+    if (range === 'this_month') {
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }
+    
+    return true;
+  };
+
   const orderColumns: Column<any>[] = [
-    { header: 'Order ID', renderCell: (o) => <span className="font-bold whitespace-nowrap">{o.orderNumber || `#${o.id}`}</span> },
-    { header: 'Date', renderCell: (o) => <span className="whitespace-nowrap">{new Date(o.createdAt).toLocaleDateString()}</span> },
-    { header: 'Customer', renderCell: (o) => <span className="whitespace-nowrap">{o.User?.name || 'Unknown'}</span> },
-    { header: 'Total', renderCell: (o) => <span className="font-bold text-primary whitespace-nowrap">₹{o.totalAmount.toFixed(2)}</span> },
-    { header: 'Status', renderCell: (o) => (
+    { 
+      header: 'Order ID', 
+      renderCell: (o) => {
+        const isCustom = isCustomOrder(o);
+        return (
+          <div className="flex flex-col">
+            <span className="font-bold whitespace-nowrap">{o.orderNumber || `#${o.id}`}</span>
+            {isCustom ? (
+              <span className="inline-block mt-1 px-2 py-0.5 bg-purple-500/15 text-purple-700 dark:text-purple-300 rounded-full text-[10px] font-black uppercase tracking-wider w-fit">
+                Custom Order
+              </span>
+            ) : (
+              <span className="inline-block mt-1 px-2 py-0.5 bg-blue-500/15 text-blue-700 dark:text-blue-300 rounded-full text-[10px] font-black uppercase tracking-wider w-fit">
+                Online Store
+              </span>
+            )}
+          </div>
+        );
+      }
+    },
+    { 
+      header: 'Order Date', 
+      renderCell: (o) => (
+        <div className="flex flex-col text-xs">
+          <span className="font-bold text-text-main whitespace-nowrap">{new Date(o.createdAt).toLocaleDateString()}</span>
+          <span className="text-text-muted whitespace-nowrap">{new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+      )
+    },
+    { 
+      header: 'Customer Details', 
+      renderCell: (o) => {
+        const isCustom = isCustomOrder(o);
+        const name = isCustom 
+          ? (o.shippingAddressLine1?.includes('Custom') ? 'Real-time Custom Order' : o.shippingAddressLine1 || o.User?.name || 'Customer')
+          : (o.User?.name || 'Customer');
+        const phone = o.User?.phone && o.User.phone !== '0000000000' ? o.User.phone : null;
+        return (
+          <div className="flex flex-col max-w-[200px]">
+            <span className="font-bold text-sm truncate text-text-main">{name}</span>
+            {phone && <span className="text-xs text-text-muted">{phone}</span>}
+          </div>
+        );
+      }
+    },
+    { 
+      header: 'Items', 
+      renderCell: (o) => {
+        const itemsCount = o.OrderItems?.length || 0;
+        const totalQty = o.OrderItems?.reduce((sum: number, it: any) => sum + (it.quantity || 1), 0) || 0;
+        return (
+          <div className="flex flex-col">
+            <span className="font-bold text-sm whitespace-nowrap">{itemsCount} Products</span>
+            <span className="text-xs text-text-muted whitespace-nowrap">{totalQty} Total Units</span>
+          </div>
+        );
+      }
+    },
+    { 
+      header: 'Total Amount', 
+      renderCell: (o) => (
+        <span className="font-black text-primary whitespace-nowrap text-base">
+          ₹{o.totalAmount?.toFixed(2)}
+        </span>
+      )
+    },
+    { 
+      header: 'Order Status', 
+      renderCell: (o) => (
         <select 
-          className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap outline-none cursor-pointer ${
-            o.status === 'pending' ? 'bg-orange-500/20 text-orange-600' : 
-            o.status === 'cancelled' ? 'bg-red-500/20 text-red-600' :
-            'bg-green-500/20 text-green-600'
+          className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap outline-none cursor-pointer border ${
+            o.status === 'pending' ? 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/30' : 
+            o.status === 'cancelled' ? 'bg-red-500/20 text-red-600 border-red-500/30' :
+            'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30'
           }`}
           value={o.status}
           onChange={(e) => updateOrderStatus(o.id, e.target.value)}
@@ -333,8 +467,11 @@ export default function AdminPage() {
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
         </select>
-    )},
-    { header: 'Actions', renderCell: (o) => (
+      )
+    },
+    { 
+      header: 'Actions', 
+      renderCell: (o) => (
         <div className="flex justify-end space-x-2">
           <button onClick={() => { setSelectedOrder(o); setIsOrderViewModalOpen(true); }} className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors" title="View Details">
             <Package size={16} />
@@ -343,22 +480,23 @@ export default function AdminPage() {
             <Trash2 size={16} />
           </button>
         </div>
-    )}
+      )
+    }
   ];
 
   // Filtering Logic
-  const filteredOrders = orders.filter(o => {
+  const filteredOrders = sortOrders(orders.filter(o => {
     let keep = true;
     if (orderStatusFilter !== 'all' && o.status !== orderStatusFilter) keep = false;
-    if (orderStartDate && new Date(o.createdAt) < new Date(orderStartDate)) keep = false;
-    if (orderEndDate && new Date(o.createdAt) > new Date(orderEndDate + 'T23:59:59')) keep = false;
+    if (orderTypeFilter === 'custom' && !isCustomOrder(o)) keep = false;
+    if (orderTypeFilter === 'online' && isCustomOrder(o)) keep = false;
+    if (!checkDateInRange(o.createdAt, orderDateRange)) keep = false;
     return keep;
-  });
+  }));
 
   const analyticsFilteredOrders = orders.filter(o => {
     let keep = true;
-    if (analyticsStartDate && new Date(o.createdAt) < new Date(analyticsStartDate)) keep = false;
-    if (analyticsEndDate && new Date(o.createdAt) > new Date(analyticsEndDate + 'T23:59:59')) keep = false;
+    if (!checkDateInRange(o.createdAt, analyticsDateRange)) keep = false;
     return keep;
   });
 
@@ -441,12 +579,28 @@ export default function AdminPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h2 className="text-2xl font-bold">Customer Orders</h2>
             
-            <div className="flex flex-col md:flex-row w-full md:w-auto items-start md:items-center gap-4">
-              <div className="flex items-center space-x-2 w-full md:w-auto">
+            <div className="flex flex-wrap w-full md:w-auto items-center gap-3">
+              {/* Type Filter */}
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-bold text-text-muted whitespace-nowrap">Type:</label>
+                <SearchableSelect
+                  options={[
+                    { label: 'All Orders', value: 'all' },
+                    { label: 'Custom Orders', value: 'custom' },
+                    { label: 'Online Orders', value: 'online' },
+                  ]}
+                  value={orderTypeFilter}
+                  onChange={(val) => setOrderTypeFilter(val)}
+                  className="w-36"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <div className="flex items-center space-x-2">
                 <label className="text-sm font-bold text-text-muted whitespace-nowrap">Status:</label>
                 <SearchableSelect
                   options={[
-                    { label: 'All', value: 'all' },
+                    { label: 'All Statuses', value: 'all' },
                     { label: 'Pending', value: 'pending' },
                     { label: 'Confirmed', value: 'confirmed' },
                     { label: 'Shipped', value: 'shipped' },
@@ -455,22 +609,30 @@ export default function AdminPage() {
                   ]}
                   value={orderStatusFilter}
                   onChange={(val) => setOrderStatusFilter(val)}
-                  className="w-full md:w-48"
+                  className="w-36"
                 />
               </div>
               
-              <div className="flex items-center space-x-2 w-full md:w-auto">
-                <label className="text-sm font-bold text-text-muted whitespace-nowrap">From:</label>
-                <input type="date" className="bubble-input py-2 text-sm w-full md:w-auto" value={orderStartDate} onChange={(e) => setOrderStartDate(e.target.value)} />
+              {/* Quick Date Range Filter */}
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-bold text-text-muted whitespace-nowrap">Date:</label>
+                <SearchableSelect
+                  options={[
+                    { label: 'All Time (Show All)', value: 'all' },
+                    { label: 'Today', value: 'today' },
+                    { label: 'Yesterday', value: 'yesterday' },
+                    { label: 'This Week', value: 'this_week' },
+                    { label: 'Last Week', value: 'last_week' },
+                    { label: 'This Month', value: 'this_month' },
+                  ]}
+                  value={orderDateRange}
+                  onChange={(val) => setOrderDateRange(val)}
+                  className="w-44"
+                />
               </div>
 
-              <div className="flex items-center space-x-2 w-full md:w-auto">
-                <label className="text-sm font-bold text-text-muted whitespace-nowrap">To:</label>
-                <input type="date" className="bubble-input py-2 text-sm w-full md:w-auto" value={orderEndDate} onChange={(e) => setOrderEndDate(e.target.value)} />
-              </div>
-
-              <button onClick={() => setIsManualOrderModalOpen(true)} className="bubble-btn py-2 flex items-center justify-center space-x-2 w-full md:w-auto whitespace-nowrap">
-                <Plus size={18} /> <span>Manual Order</span>
+              <button onClick={() => setIsManualOrderModalOpen(true)} className="bubble-btn py-2 flex items-center justify-center space-x-2 whitespace-nowrap">
+                <Plus size={18} /> <span>Create Custom Order</span>
               </button>
             </div>
           </div>
@@ -478,8 +640,8 @@ export default function AdminPage() {
           <DataTable 
             columns={orderColumns} 
             data={filteredOrders} 
-            searchKeys={['id', 'status']} 
-            searchPlaceholder="Search orders by ID or status..."
+            searchKeys={['orderNumber', 'status', 'shippingAddressLine1']} 
+            searchPlaceholder="Search orders by number, status, customer..."
             emptyMessage="No orders found."
             itemsPerPage={10}
           />
@@ -491,21 +653,21 @@ export default function AdminPage() {
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-bubble-surface bubble-card p-4 gap-4">
             <h2 className="text-xl font-bold">Analytics Filter</h2>
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-bold text-text-muted whitespace-nowrap">From:</label>
-                <input type="date" className="bubble-input py-2 text-sm" value={analyticsStartDate} onChange={(e) => setAnalyticsStartDate(e.target.value)} />
-              </div>
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-bold text-text-muted whitespace-nowrap">To:</label>
-                <input type="date" className="bubble-input py-2 text-sm" value={analyticsEndDate} onChange={(e) => setAnalyticsEndDate(e.target.value)} />
-              </div>
-              <button 
-                onClick={() => { setAnalyticsStartDate(''); setAnalyticsEndDate(''); }} 
-                className="bubble-btn-secondary py-2 text-sm whitespace-nowrap"
-              >
-                All Dates
-              </button>
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-bold text-text-muted whitespace-nowrap">Date Range:</label>
+              <SearchableSelect
+                options={[
+                  { label: 'All Time (Show All)', value: 'all' },
+                  { label: 'Today', value: 'today' },
+                  { label: 'Yesterday', value: 'yesterday' },
+                  { label: 'This Week', value: 'this_week' },
+                  { label: 'Last Week', value: 'last_week' },
+                  { label: 'This Month', value: 'this_month' },
+                ]}
+                value={analyticsDateRange}
+                onChange={(val) => setAnalyticsDateRange(val)}
+                className="w-48"
+              />
             </div>
           </div>
 
@@ -715,7 +877,20 @@ export default function AdminPage() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-bubble-surface rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b border-border-main">
-              <h3 className="text-2xl font-black text-text-main">Order Details {selectedOrder.orderNumber ? `(${selectedOrder.orderNumber})` : `(#${selectedOrder.id})`}</h3>
+              <div className="flex items-center space-x-3">
+                <h3 className="text-2xl font-black text-text-main">
+                  Order Details {selectedOrder.orderNumber ? `(${selectedOrder.orderNumber})` : `(#${selectedOrder.id})`}
+                </h3>
+                {isCustomOrder(selectedOrder) ? (
+                  <span className="px-3 py-1 bg-purple-500/15 text-purple-700 dark:text-purple-300 rounded-full text-xs font-black uppercase tracking-wider">
+                    Custom Order
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 bg-blue-500/15 text-blue-700 dark:text-blue-300 rounded-full text-xs font-black uppercase tracking-wider">
+                    Online Store
+                  </span>
+                )}
+              </div>
               <button onClick={() => { setIsOrderViewModalOpen(false); setSelectedOrder(null); }} className="p-2 bg-gray-100 text-text-muted rounded-full hover:bg-gray-200 hover:text-text-main transition-colors">
                 <X size={20} />
               </button>
@@ -723,57 +898,88 @@ export default function AdminPage() {
             <div className="p-6 overflow-y-auto custom-scrollbar flex-grow">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div>
-                  <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-2">Customer Info</h4>
-                  <div className="bg-bubble-input p-4 rounded-[var(--radius-bubble)]">
-                    <p className="font-bold">{selectedOrder.User?.name || 'Unknown'}</p>
-                    <p className="text-sm text-text-muted">{selectedOrder.User?.email}</p>
-                    <p className="text-sm text-text-muted mt-2">Phone: {selectedOrder.User?.phone || 'N/A'}</p>
-                    <div className="text-sm text-text-muted mt-1 whitespace-pre-wrap">
+                  <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-2">Customer & Delivery Info</h4>
+                  <div className="bg-bubble-input p-4 rounded-[var(--radius-bubble)] space-y-1">
+                    <p className="font-bold text-base text-text-main">
+                      {isCustomOrder(selectedOrder) 
+                        ? (selectedOrder.shippingAddressLine1?.includes('Custom') ? 'Direct Custom Customer' : selectedOrder.shippingAddressLine1 || selectedOrder.User?.name || 'Customer')
+                        : (selectedOrder.User?.name || 'Unknown')}
+                    </p>
+                    <p className="text-sm text-text-muted">{selectedOrder.User?.email || 'N/A'}</p>
+                    <p className="text-sm text-text-muted">Contact Phone: <strong className="text-primary">{selectedOrder.User?.phone && selectedOrder.User.phone !== '0000000000' ? selectedOrder.User.phone : 'Direct Counter'}</strong></p>
+                    <div className="text-xs text-text-muted mt-2 pt-2 border-t border-border-main">
+                      <span className="font-bold block text-text-main mb-0.5">Address / Note:</span>
                       {selectedOrder.shippingAddressLine1 ? (
                         <>
-                          {selectedOrder.shippingAddressLine1}<br/>
-                          {selectedOrder.shippingAddressLine2 && <>{selectedOrder.shippingAddressLine2}<br/></>}
-                          {selectedOrder.shippingCity}, {selectedOrder.shippingState} - {selectedOrder.shippingPincode}
+                          {selectedOrder.shippingAddressLine1}
+                          {selectedOrder.shippingAddressLine2 && <>, {selectedOrder.shippingAddressLine2}</>}
+                          {selectedOrder.shippingCity && <>, {selectedOrder.shippingCity}</>}
+                          {selectedOrder.shippingState && <>, {selectedOrder.shippingState}</>}
+                          {selectedOrder.shippingPincode && <> - {selectedOrder.shippingPincode}</>}
                         </>
                       ) : (
-                        'No shipping address provided.'
+                        'Direct / In-store'
                       )}
                     </div>
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-2">Order Summary</h4>
-                  <div className="bg-bubble-input p-4 rounded-[var(--radius-bubble)]">
-                    <p className="text-sm flex justify-between"><span>Date:</span> <span className="font-bold">{new Date(selectedOrder.createdAt).toLocaleDateString()}</span></p>
-                    <p className="text-sm flex justify-between mt-2"><span>Status:</span> <span className="font-bold uppercase">{selectedOrder.status}</span></p>
-                    <p className="text-sm flex justify-between mt-2 text-primary font-black text-lg"><span>Total Amount:</span> <span>₹{selectedOrder.totalAmount?.toFixed(2)}</span></p>
+                  <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-2">Order Information</h4>
+                  <div className="bg-bubble-input p-4 rounded-[var(--radius-bubble)] space-y-2">
+                    <p className="text-sm flex justify-between">
+                      <span className="text-text-muted">Order Date:</span> 
+                      <span className="font-bold">{new Date(selectedOrder.createdAt).toLocaleDateString()} {new Date(selectedOrder.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </p>
+                    <p className="text-sm flex justify-between">
+                      <span className="text-text-muted">Order Type:</span> 
+                      <span className="font-bold">{isCustomOrder(selectedOrder) ? 'Custom Real-time Order' : 'Online Store Order'}</span>
+                    </p>
+                    <p className="text-sm flex justify-between">
+                      <span className="text-text-muted">Payment:</span> 
+                      <span className="font-bold">{selectedOrder.paymentMethod || 'Custom / Cash'} ({selectedOrder.paymentStatus || 'paid'})</span>
+                    </p>
+                    <p className="text-sm flex justify-between">
+                      <span className="text-text-muted">Status:</span> 
+                      <span className="font-bold uppercase text-primary">{selectedOrder.status}</span>
+                    </p>
+                    <div className="border-t border-border-main pt-2 flex justify-between text-primary font-black text-lg">
+                      <span>Total Amount:</span> 
+                      <span>₹{selectedOrder.totalAmount?.toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">Items Ordered</h4>
-              <div className="space-y-4">
-                {selectedOrder.OrderItems?.map((item: any) => (
-                  <div key={item.id} className="flex items-center space-x-4 bg-bubble-input p-4 rounded-[var(--radius-bubble)]">
-                    <div className="w-16 h-16 bg-white rounded-lg overflow-hidden shrink-0">
-                      {item.Product?.images?.[0] ? (
-                        item.Product.images[0].match(/\.(mp4|webm|mov|ogg)$/i) ? 
-                          <video src={item.Product.images[0]} className="w-full h-full object-cover" /> :
-                          <img src={item.Product.images[0]} alt={item.Product.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400"><Package size={24} /></div>
-                      )}
+              <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">
+                Items in this Order ({selectedOrder.OrderItems?.length || 0})
+              </h4>
+              <div className="space-y-3">
+                {selectedOrder.OrderItems?.map((item: any) => {
+                  const mediaUrl = item.Product?.media?.[0] || item.Product?.imageUrl;
+                  const isVideo = mediaUrl && mediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) !== null;
+
+                  return (
+                    <div key={item.id} className="flex items-center space-x-4 bg-bubble-input p-4 rounded-[var(--radius-bubble)]">
+                      <div className="w-16 h-16 bg-white rounded-lg overflow-hidden shrink-0 border border-border-main">
+                        {mediaUrl ? (
+                          isVideo ? 
+                            <video src={mediaUrl} className="w-full h-full object-cover" /> :
+                            <img src={mediaUrl} alt={item.Product?.name || 'Product'} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400"><Package size={24} /></div>
+                        )}
+                      </div>
+                      <div className="flex-grow">
+                        <p className="font-bold text-text-main">{item.Product?.name || `Product ID: ${item.productId}`}</p>
+                        <p className="text-xs text-text-muted mt-0.5">Quantity: <strong className="text-text-main">{item.quantity}</strong></p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-black text-primary text-base">₹{(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="text-xs text-text-muted">₹{item.price.toFixed(2)} each</p>
+                      </div>
                     </div>
-                    <div className="flex-grow">
-                      <p className="font-bold text-text-main">{item.Product?.name || `Product ID: ${item.productId}`}</p>
-                      <p className="text-sm text-text-muted">Quantity: {item.quantity}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-black text-primary">₹{(item.price * item.quantity).toFixed(2)}</p>
-                      <p className="text-xs text-text-muted">₹{item.price.toFixed(2)} each</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
             <div className="p-6 border-t border-border-main flex justify-end">

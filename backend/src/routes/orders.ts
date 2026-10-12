@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import sequelize from '../config/database';
 import { Order, OrderItem, Product, User } from '../models';
 import { authenticate, authorizeAdmin } from '../middleware/auth';
 
@@ -189,11 +190,14 @@ router.get('/all', authenticate, authorizeAdmin, async (req: any, res: Response)
       include: [
         { 
           model: OrderItem,
-          include: [{ model: Product, attributes: ['id', 'name', 'images'] }]
+          include: [{ model: Product, attributes: ['id', 'name', 'media', 'imageUrl', 'price', 'wholesalePrice'] }]
         },
         { model: User, attributes: ['id', 'name', 'email', 'phone', 'addressLine1', 'addressLine2', 'city', 'state', 'pincode'] }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [
+        [sequelize.literal("CASE WHEN Order.status = 'pending' THEN 0 ELSE 1 END"), 'ASC'],
+        ['createdAt', 'ASC']
+      ]
     });
     res.json(orders);
   } catch (error) {
