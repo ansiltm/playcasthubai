@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { Order, OrderItem, Product, User } from '../models';
 import { authenticate, authorizeAdmin } from '../middleware/auth';
 
-import { sendAdminOrderSMS } from '../services/smsService';
+import { sendAdminOrderEmailAlert } from '../services/adminEmailAlert';
 
 const router = Router();
 
@@ -58,25 +58,38 @@ router.post('/', authenticate, async (req: any, res: Response) => {
     });
     
     // Create items and deduct stock
+    const orderedItemsSummary: Array<{ name: string; quantity: number; price: number }> = [];
     for (const item of items) {
       const product = await Product.findByPk(item.productId);
       if (product) {
         await OrderItem.create({ orderId: order.id, productId: item.productId, quantity: item.quantity, price: product.price });
         await product.update({ stock: product.stock - item.quantity });
+        orderedItemsSummary.push({
+          name: product.name,
+          quantity: item.quantity,
+          price: product.price,
+        });
       }
     }
 
-    // Send SMS alert to Admin asynchronously
+    // Send Order Notification Email to Admin ONLY (Asynchronously)
     const customerPhone = phone || user?.phone || 'N/A';
     const customerName = name || user?.name || 'Customer';
-    sendAdminOrderSMS({
+    sendAdminOrderEmailAlert({
       orderNumber: order.orderNumber,
       customerName,
       customerPhone,
+      customerEmail: user?.email,
       totalAmount,
-      city: city || user?.city || undefined,
-      itemsCount: items.length,
-    }).catch(err => console.error('SMS notification error:', err));
+      shippingAddress: {
+        addressLine1,
+        addressLine2,
+        city,
+        state,
+        pincode,
+      },
+      items: orderedItemsSummary,
+    }).catch(err => console.error('Admin order email alert error:', err));
     
     res.status(201).json(order);
   } catch (error) {
