@@ -100,30 +100,74 @@ router.post('/', authenticate, async (req: any, res: Response) => {
 // Create manual order (Admin only)
 router.post('/manual', authenticate, authorizeAdmin, async (req: any, res: Response) => {
   try {
-    const { productId, quantity, price } = req.body;
+    const { productId, quantity, price, items, customerName, customerPhone, customerAddress, status } = req.body;
     
-    if (!productId || !quantity) {
-      return res.status(400).json({ message: 'Missing product or quantity' });
+    // Normalize items list
+    let orderItemsInput: Array<{ productId: number; quantity: number; price?: number }> = [];
+    if (Array.isArray(items) && items.length > 0) {
+      orderItemsInput = items;
+    } else if (productId && quantity) {
+      orderItemsInput = [{ productId: parseInt(productId), quantity: parseInt(quantity), price: price ? parseFloat(price) : undefined }];
+    } else {
+      return res.status(400).json({ message: 'Missing order items' });
     }
 
-    const product = await Product.findByPk(productId);
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+    let calculatedTotal = 0;
+    const validatedItems: Array<{ product: Product; quantity: number; price: number }> = [];
+
+    for (const it of orderItemsInput) {
+      const product = await Product.findByPk(it.productId);
+      if (!product) {
+        return res.status(404).json({ message: `Product ${it.productId} not found` });
+      }
+      if (product.stock < it.quantity) {
+        return res.status(400).json({ message: `Insufficient stock for ${product.name} (Stock: ${product.stock})` });
+      }
+      const actualPrice = it.price !== undefined ? parseFloat(it.price.toString()) : product.price;
+      calculatedTotal += actualPrice * it.quantity;
+      validatedItems.push({ product, quantity: it.quantity, price: actualPrice });
     }
 
-    if (product.stock < quantity) {
-      return res.status(400).json({ message: `Insufficient stock for ${product.name}` });
+    // Create Order
+    const order = await Order.create({
+      userId: req.user.id,
+      totalAmount: calculatedTotal,
+      status: status || 'confirmed',
+      paymentMethod: 'Custom / Cash',
+      paymentStatus: 'paid',
+      shippingAddressLine1: customerAddress || 'Custom Real-time Order',
+    });
+
+    const summaryItems: Array<{ name: string; quantity: number; price: number }> = [];
+
+    // Create OrderItems & deduct stock
+    for (const v of validatedItems) {
+      await OrderItem.create({
+        orderId: order.id,
+        productId: v.product.id,
+        quantity: v.quantity,
+        price: v.price,
+      });
+      await v.product.update({ stock: v.product.stock - v.quantity });
+      summaryItems.push({
+        name: v.product.name,
+        quantity: v.quantity,
+        price: v.price,
+      });
     }
 
-    const actualPrice = price ? parseFloat(price) : product.price;
-    const totalAmount = actualPrice * quantity;
+    // Trigger Admin Email Alert
+    sendAdminOrderEmailAlert({
+      orderNumber: order.orderNumber,
+      customerName: customerName || 'Custom Real-time Order',
+      customerPhone: customerPhone || 'N/A',
+      totalAmount: calculatedTotal,
+      shippingAddress: {
+        addressLine1: customerAddress || 'Direct Custom Order',
+      },
+      items: summaryItems,
+    }).catch(err => console.error('Manual order email error:', err));
 
-    // Create Order (assign to admin's ID since they created it on behalf of someone)
-    const order = await Order.create({ userId: req.user.id, totalAmount, status: 'confirmed' });
-    
-    await OrderItem.create({ orderId: order.id, productId: product.id, quantity: quantity, price: actualPrice });
-    await product.update({ stock: product.stock - quantity });
-    
     res.status(201).json(order);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });

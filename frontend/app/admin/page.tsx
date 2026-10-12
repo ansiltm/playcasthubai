@@ -33,7 +33,9 @@ export default function AdminPage() {
   const [productToDelete, setProductToDelete] = useState<number | null>(null);
   
   const [isManualOrderModalOpen, setIsManualOrderModalOpen] = useState(false);
-  const [manualOrderData, setManualOrderData] = useState({ productId: '', quantity: '1', price: '' });
+  const [manualCustomer, setManualCustomer] = useState({ name: '', phone: '', address: '' });
+  const [manualOrderItems, setManualOrderItems] = useState<Array<{ productId: number; name: string; quantity: number; price: number }>>([]);
+  const [currentItem, setCurrentItem] = useState({ productId: '', quantity: '1', price: '' });
   const [isCustomPrice, setIsCustomPrice] = useState(false);
 
   const [isOrderViewModalOpen, setIsOrderViewModalOpen] = useState(false);
@@ -150,18 +152,80 @@ export default function AdminPage() {
     }
   };
 
+  const handleAddItemToManualOrder = () => {
+    if (!currentItem.productId) {
+      toast.error('Please select a product first');
+      return;
+    }
+    const prod = products.find(p => p.id.toString() === currentItem.productId);
+    if (!prod) return;
+
+    const qty = parseInt(currentItem.quantity) || 1;
+    if (qty <= 0) {
+      toast.error('Quantity must be at least 1');
+      return;
+    }
+    if (qty > prod.stock) {
+      toast.error(`Only ${prod.stock} items available in stock for ${prod.name}`);
+      return;
+    }
+
+    const price = currentItem.price ? parseFloat(currentItem.price) : prod.price;
+
+    const existingIndex = manualOrderItems.findIndex(i => i.productId === prod.id);
+    if (existingIndex >= 0) {
+      const updated = [...manualOrderItems];
+      updated[existingIndex].quantity += qty;
+      updated[existingIndex].price = price;
+      setManualOrderItems(updated);
+    } else {
+      setManualOrderItems([...manualOrderItems, { productId: prod.id, name: prod.name, quantity: qty, price }]);
+    }
+
+    setCurrentItem({ productId: '', quantity: '1', price: '' });
+    setIsCustomPrice(false);
+    toast.success(`Added ${prod.name} to order list`);
+  };
+
+  const handleRemoveManualItem = (index: number) => {
+    setManualOrderItems(manualOrderItems.filter((_, i) => i !== index));
+  };
+
   const handleManualOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manualOrderData.productId || !manualOrderData.quantity) return;
+    let itemsToSubmit = [...manualOrderItems];
+
+    // If no items were added to table yet but product is selected in dropdown, add it
+    if (itemsToSubmit.length === 0 && currentItem.productId) {
+      const prod = products.find(p => p.id.toString() === currentItem.productId);
+      if (prod) {
+        const qty = parseInt(currentItem.quantity) || 1;
+        const price = currentItem.price ? parseFloat(currentItem.price) : prod.price;
+        itemsToSubmit.push({ productId: prod.id, name: prod.name, quantity: qty, price });
+      }
+    }
+
+    if (itemsToSubmit.length === 0) {
+      toast.error('Please add at least one product to the order');
+      return;
+    }
+
     try {
       await api.post('/orders/manual', {
-        productId: manualOrderData.productId,
-        quantity: parseInt(manualOrderData.quantity),
-        price: manualOrderData.price ? parseFloat(manualOrderData.price) : undefined
+        customerName: manualCustomer.name || 'Custom Real-time Order',
+        customerPhone: manualCustomer.phone,
+        customerAddress: manualCustomer.address,
+        items: itemsToSubmit.map(it => ({
+          productId: it.productId,
+          quantity: it.quantity,
+          price: it.price
+        }))
       });
-      toast.success('Manual order created successfully!');
+      toast.success('Custom order created successfully! Email alert sent to Admin.');
       setIsManualOrderModalOpen(false);
-      setManualOrderData({ productId: '', quantity: '1', price: '' });
+      setManualOrderItems([]);
+      setCurrentItem({ productId: '', quantity: '1', price: '' });
+      setManualCustomer({ name: '', phone: '', address: '' });
       setIsCustomPrice(false);
       fetchOrders();
       fetchProducts(); // refresh stock
@@ -740,74 +804,209 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* MANUAL ORDER MODAL */}
+      {/* MANUAL / CUSTOM ORDER MODAL */}
       {isManualOrderModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-bubble-surface rounded-3xl shadow-2xl w-full max-w-lg p-6 md:p-8 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-black text-text-main">Create Manual Order</h3>
-              <button onClick={() => setIsManualOrderModalOpen(false)} className="p-2 bg-gray-100 text-text-muted rounded-full hover:bg-gray-200 hover:text-text-main transition-colors">
+          <div className="bg-bubble-surface rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-border-main">
+              <div>
+                <h3 className="text-2xl font-black text-text-main">Create Custom / Manual Order</h3>
+                <p className="text-xs text-text-muted mt-1">Add one or multiple items to create an instant real-time order with stock deduction.</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setIsManualOrderModalOpen(false);
+                  setManualOrderItems([]);
+                  setCurrentItem({ productId: '', quantity: '1', price: '' });
+                }} 
+                className="p-2 bg-gray-100 text-text-muted rounded-full hover:bg-gray-200 hover:text-text-main transition-colors"
+              >
                 <X size={20} />
               </button>
             </div>
-            <form onSubmit={handleManualOrderSubmit} className="space-y-6">
+
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-grow space-y-6">
+              {/* Customer Information */}
               <div>
-                <label className="block text-sm font-bold text-text-main mb-2">Select Product</label>
-                <SearchableSelect
-                  options={products.map(p => ({
-                    label: `${p.name} (Stock: ${p.stock} | Price: ₹${p.price})`,
-                    value: p.id.toString()
-                  }))}
-                  value={manualOrderData.productId}
-                  onChange={(val) => {
-                    const prod = products.find(p => p.id.toString() === val);
-                    setManualOrderData({ ...manualOrderData, productId: val, price: prod ? prod.price.toString() : '' });
-                  }}
-                  placeholder="-- Choose a Product --"
-                  className="w-full"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-text-main mb-2">Quantity</label>
-                  <input required type="number" min="1" className="bubble-input py-3 w-full" value={manualOrderData.quantity} onChange={e => setManualOrderData({...manualOrderData, quantity: e.target.value})} />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-bold text-text-main">Custom Price?</label>
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        const prod = products.find(p => p.id.toString() === manualOrderData.productId);
-                        if (!isCustomPrice && prod) {
-                          setManualOrderData({...manualOrderData, price: prod.price.toString()});
-                        }
-                        setIsCustomPrice(!isCustomPrice);
-                      }}
-                      className={`w-10 h-6 rounded-full transition-colors relative ${isCustomPrice ? 'bg-primary' : 'bg-gray-300'}`}
-                    >
-                      <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${isCustomPrice ? 'translate-x-5' : 'translate-x-1'}`} />
-                    </button>
+                <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-3">Customer Information (Optional)</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-text-muted mb-1">Customer Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Rahul Sharma" 
+                      className="bubble-input py-2.5 w-full text-sm" 
+                      value={manualCustomer.name} 
+                      onChange={e => setManualCustomer({ ...manualCustomer, name: e.target.value })} 
+                    />
                   </div>
-                  {isCustomPrice ? (
-                    <input required type="number" step="0.01" className="bubble-input py-3 w-full" value={manualOrderData.price} onChange={e => setManualOrderData({...manualOrderData, price: e.target.value})} placeholder="Custom rate (₹)" />
-                  ) : (
-                    <div className="bubble-input py-3 w-full bg-gray-50 text-text-muted cursor-not-allowed">
-                      ₹{manualOrderData.price || '0.00'} (Default)
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-xs font-bold text-text-muted mb-1">Phone Number</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. +91 9876543210" 
+                      className="bubble-input py-2.5 w-full text-sm" 
+                      value={manualCustomer.phone} 
+                      onChange={e => setManualCustomer({ ...manualCustomer, phone: e.target.value })} 
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-text-muted mb-1">Address / Order Note</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Door Delivery / Direct Counter Sale" 
+                      className="bubble-input py-2.5 w-full text-sm" 
+                      value={manualCustomer.address} 
+                      onChange={e => setManualCustomer({ ...manualCustomer, address: e.target.value })} 
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="bg-bubble-input p-4 rounded-xl border border-border-main">
-                <p className="text-sm font-bold text-text-muted flex justify-between">
-                  <span>Total Amount:</span>
-                  <span className="text-lg text-primary">₹{((parseFloat(manualOrderData.price) || 0) * (parseInt(manualOrderData.quantity) || 0)).toFixed(2)}</span>
-                </p>
+
+              {/* Add Product Section */}
+              <div className="bg-bubble-input p-4 rounded-2xl border border-border-main space-y-4">
+                <h4 className="text-sm font-bold text-text-main">Add Products to Order</h4>
+                <div>
+                  <label className="block text-xs font-bold text-text-muted mb-1">Select Product</label>
+                  <SearchableSelect
+                    options={products.map(p => ({
+                      label: `${p.name} (Stock: ${p.stock} | Price: ₹${p.price})`,
+                      value: p.id.toString()
+                    }))}
+                    value={currentItem.productId}
+                    onChange={(val) => {
+                      const prod = products.find(p => p.id.toString() === val);
+                      setCurrentItem({ ...currentItem, productId: val, price: prod ? prod.price.toString() : '' });
+                    }}
+                    placeholder="-- Search & Choose a Product --"
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-text-muted mb-1">Quantity</label>
+                    <input 
+                      type="number" 
+                      min="1" 
+                      className="bubble-input py-2.5 w-full text-sm bg-white dark:bg-zinc-800" 
+                      value={currentItem.quantity} 
+                      onChange={e => setCurrentItem({ ...currentItem, quantity: e.target.value })} 
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-text-muted">Custom Rate?</label>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const prod = products.find(p => p.id.toString() === currentItem.productId);
+                          if (!isCustomPrice && prod) {
+                            setCurrentItem({ ...currentItem, price: prod.price.toString() });
+                          }
+                          setIsCustomPrice(!isCustomPrice);
+                        }}
+                        className={`w-9 h-5 rounded-full transition-colors relative ${isCustomPrice ? 'bg-primary' : 'bg-gray-300'}`}
+                      >
+                        <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-0.5 transition-transform ${isCustomPrice ? 'translate-x-4' : 'translate-x-1'}`} />
+                      </button>
+                    </div>
+                    {isCustomPrice ? (
+                      <input 
+                        type="number" 
+                        step="0.01" 
+                        className="bubble-input py-2.5 w-full text-sm bg-white dark:bg-zinc-800" 
+                        value={currentItem.price} 
+                        onChange={e => setCurrentItem({ ...currentItem, price: e.target.value })} 
+                        placeholder="Custom rate (₹)" 
+                      />
+                    ) : (
+                      <div className="bubble-input py-2.5 w-full text-sm bg-gray-100 dark:bg-zinc-700 text-text-muted cursor-not-allowed">
+                        ₹{currentItem.price || '0.00'} (Standard)
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <button 
+                  type="button" 
+                  onClick={handleAddItemToManualOrder} 
+                  disabled={!currentItem.productId}
+                  className="bubble-btn-secondary w-full py-2.5 text-sm flex items-center justify-center space-x-2 disabled:opacity-50"
+                >
+                  <Plus size={16} />
+                  <span>Add Product to Order List</span>
+                </button>
               </div>
-              <button type="submit" className="bubble-btn w-full py-4 text-lg shadow-lg">
-                Confirm Order
+
+              {/* Order Items Table */}
+              <div>
+                <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-2">
+                  Order Items ({manualOrderItems.length})
+                </h4>
+                {manualOrderItems.length === 0 ? (
+                  <p className="text-xs text-text-muted italic bg-bubble-input p-3 rounded-xl">
+                    No items added to the list yet. (If only ordering 1 product, select it above and click Confirm below).
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {manualOrderItems.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-bubble-input rounded-xl text-sm">
+                        <div className="flex-grow pr-4">
+                          <p className="font-bold text-text-main line-clamp-1">{item.name}</p>
+                          <p className="text-xs text-text-muted">
+                            {item.quantity} x ₹{item.price.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0 flex items-center space-x-3">
+                          <span className="font-black text-primary">₹{(item.price * item.quantity).toFixed(2)}</span>
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveManualItem(idx)}
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Total Calculation */}
+              <div className="bg-bubble-input p-4 rounded-xl border border-border-main flex justify-between items-center">
+                <span className="font-bold text-text-muted">Total Order Value:</span>
+                <span className="text-2xl font-black text-primary">
+                  ₹{(
+                    manualOrderItems.length > 0 
+                      ? manualOrderItems.reduce((acc, it) => acc + (it.price * it.quantity), 0)
+                      : ((parseFloat(currentItem.price) || 0) * (parseInt(currentItem.quantity) || 0))
+                  ).toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-border-main flex items-center justify-end space-x-4">
+              <button 
+                type="button" 
+                onClick={() => {
+                  setIsManualOrderModalOpen(false);
+                  setManualOrderItems([]);
+                  setCurrentItem({ productId: '', quantity: '1', price: '' });
+                }} 
+                className="bubble-btn-secondary py-3 px-6"
+              >
+                Cancel
               </button>
-            </form>
+              <button 
+                type="button" 
+                onClick={handleManualOrderSubmit} 
+                className="bubble-btn py-3 px-8 text-base shadow-lg"
+              >
+                Confirm & Place Order
+              </button>
+            </div>
           </div>
         </div>
       )}
