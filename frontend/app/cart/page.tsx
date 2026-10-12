@@ -353,7 +353,10 @@ export default function CartPage() {
 
             <div className="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 p-3 rounded-xl text-xs mb-6 flex items-center gap-2">
               <PhoneCall size={18} className="shrink-0" />
-              <span>Our support team will call <strong>{phone}</strong> to confirm before shipping.</span>
+              <div>
+                <span>Our support team will contact you at <strong>{phone}</strong> after placing the order.</span>
+                <span className="block text-[11px] font-semibold opacity-90 mt-0.5">സപ്പോർട്ട് ടീം ഓർഡർ പ്ലേസ് ചെയ്തതിന് ശേഷം നിങ്ങളെ കോൺടാക്ട് ചെയ്യും.</span>
+              </div>
             </div>
 
             <div className="flex gap-3">
@@ -405,14 +408,17 @@ export default function CartPage() {
                 <div>
                   <p className="font-bold text-text-main text-sm">Support Team Will Contact You</p>
                   <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                    Our team will contact you shortly on <strong className="text-primary">{phone}</strong> to confirm your order details and delivery schedule.
+                    Our support team will contact you on <strong className="text-primary">{phone}</strong> after placing the order to confirm your delivery details.
+                  </p>
+                  <p className="text-xs text-primary font-semibold mt-1">
+                    സപ്പോർട്ട് ടീം ഓർഡർ പ്ലേസ് ചെയ്തതിന് ശേഷം നിങ്ങളെ കോൺടാക്ട് ചെയ്യും.
                   </p>
                 </div>
               </div>
             </div>
 
             <p className="text-xs text-text-muted mb-6">
-              Please keep your phone available. You can close this window at any time.
+              Please keep your phone available. You can close this popup at your convenience.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
