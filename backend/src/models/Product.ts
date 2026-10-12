@@ -1,52 +1,48 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../config/database';
+import mongoose, { Schema, Document } from 'mongoose';
 
-interface ProductAttributes {
-  id?: number;
+export interface IProduct extends Document {
+  id: string;
   name: string;
   description: string;
   category: string;
   grade: string;
   price: number;
-  wholesalePrice?: number;
+  wholesalePrice: number;
   stock: number;
   imageUrl?: string;
-  media?: string[];
-  createdAt?: Date;
-  updatedAt?: Date;
+  media: string[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-type ProductCreationAttributes = Optional<ProductAttributes, 'id' | 'imageUrl' | 'media' | 'grade' | 'wholesalePrice'>;
-
-class Product extends Model<ProductAttributes, ProductCreationAttributes>
-  implements ProductAttributes {
-  public id!: number;
-  public name!: string;
-  public description!: string;
-  public category!: string;
-  public grade!: string;
-  public price!: number;
-  public wholesalePrice!: number;
-  public stock!: number;
-  public imageUrl!: string;
-  public media!: string[];
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
-}
-
-Product.init(
+const ProductSchema = new Schema<IProduct>(
   {
-    name: { type: DataTypes.STRING, allowNull: false },
-    description: { type: DataTypes.TEXT, allowNull: false },
-    category: { type: DataTypes.STRING, allowNull: false },
-    grade: { type: DataTypes.STRING, allowNull: false, defaultValue: 'Toy-Grade' },
-    price: { type: DataTypes.FLOAT, allowNull: false },
-    wholesalePrice: { type: DataTypes.FLOAT, allowNull: true, defaultValue: 0 },
-    stock: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
-    imageUrl: { type: DataTypes.STRING, allowNull: true },
-    media: { type: DataTypes.JSON, allowNull: true },
+    name: { type: String, required: true, trim: true },
+    description: { type: String, required: true },
+    category: { type: String, required: true, trim: true },
+    grade: { type: String, default: 'Toy-Grade', trim: true },
+    price: { type: Number, required: true, min: 0 },
+    wholesalePrice: { type: Number, default: 0, min: 0 },
+    stock: { type: Number, required: true, default: 0, min: 0 },
+    imageUrl: { type: String, default: '' },
+    media: { type: [String], default: [] },
   },
-  { sequelize, modelName: 'Product' }
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      transform: (_, ret: any) => {
+        ret.id = ret._id.toString();
+        delete ret.__v;
+        return ret;
+      },
+    },
+    toObject: { virtuals: true },
+  }
 );
 
+// Search index for fast text searches
+ProductSchema.index({ name: 'text', description: 'text', category: 'text' });
+
+export const Product = mongoose.model<IProduct>('Product', ProductSchema);
 export default Product;

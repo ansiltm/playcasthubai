@@ -1,54 +1,48 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../config/database';
+import mongoose, { Schema, Document } from 'mongoose';
 
-interface UserAttributes {
-  id?: number;
+export interface IUser extends Document {
+  id: string;
   name: string;
   email: string;
   password?: string;
-  phone: string;
-  addressLine1?: string | null;
-  addressLine2?: string | null;
-  city?: string | null;
-  state?: string | null;
-  pincode?: string | null;
+  phone?: string;
   role: 'admin' | 'user';
-  createdAt?: Date;
-  updatedAt?: Date;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-type UserCreationAttributes = Optional<UserAttributes, 'id' | 'role' | 'phone' | 'addressLine1' | 'addressLine2' | 'city' | 'state' | 'pincode'>;
-
-class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
-  public id!: number;
-  public name!: string;
-  public email!: string;
-  public password!: string;
-  public phone!: string;
-  public addressLine1!: string | null;
-  public addressLine2!: string | null;
-  public city!: string | null;
-  public state!: string | null;
-  public pincode!: string | null;
-  public role!: 'admin' | 'user';
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
-}
-
-User.init(
+const UserSchema = new Schema<IUser>(
   {
-    name: { type: DataTypes.STRING, allowNull: false },
-    email: { type: DataTypes.STRING, allowNull: false, unique: true },
-    password: { type: DataTypes.STRING, allowNull: false },
-    phone: { type: DataTypes.STRING, allowNull: false, defaultValue: '0000000000' },
-    addressLine1: { type: DataTypes.STRING, allowNull: true },
-    addressLine2: { type: DataTypes.STRING, allowNull: true },
-    city: { type: DataTypes.STRING, allowNull: true },
-    state: { type: DataTypes.STRING, allowNull: true },
-    pincode: { type: DataTypes.STRING, allowNull: true },
-    role: { type: DataTypes.STRING, allowNull: false, defaultValue: 'user' },
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    password: { type: String, required: true },
+    phone: { type: String, default: '' },
+    role: { type: String, enum: ['admin', 'user'], default: 'user' },
+    addressLine1: { type: String, default: '' },
+    addressLine2: { type: String, default: '' },
+    city: { type: String, default: '' },
+    state: { type: String, default: '' },
+    pincode: { type: String, default: '' },
   },
-  { sequelize, modelName: 'User' }
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      transform: (_, ret: any) => {
+        ret.id = ret._id.toString();
+        delete ret.__v;
+        delete ret.password;
+        return ret;
+      },
+    },
+    toObject: { virtuals: true },
+  }
 );
 
+export const User = mongoose.model<IUser>('User', UserSchema);
 export default User;

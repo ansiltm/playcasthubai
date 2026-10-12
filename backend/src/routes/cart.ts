@@ -1,14 +1,14 @@
 import { Router, Response } from 'express';
-import { Cart, CartItem, Product } from '../models';
+import { Cart, Product } from '../models';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
 router.get('/', authenticate, async (req: any, res: Response) => {
   try {
-    let cart = await Cart.findOne({ where: { userId: req.user.id }, include: [{ model: CartItem, include: [Product] }] });
+    let cart = await Cart.findOne({ userId: req.user.id }).populate('items.productId');
     if (!cart) {
-      cart = await Cart.create({ userId: req.user.id });
+      cart = await Cart.create({ userId: req.user.id, items: [] });
     }
     res.json(cart);
   } catch (error) {
@@ -19,18 +19,21 @@ router.get('/', authenticate, async (req: any, res: Response) => {
 router.post('/', authenticate, async (req: any, res: Response) => {
   try {
     const { productId, quantity } = req.body;
-    let cart = await Cart.findOne({ where: { userId: req.user.id } });
+    let cart = await Cart.findOne({ userId: req.user.id });
     if (!cart) {
-      cart = await Cart.create({ userId: req.user.id });
+      cart = await Cart.create({ userId: req.user.id, items: [] });
     }
-    let cartItem = await CartItem.findOne({ where: { cartId: cart.id, productId } });
-    if (cartItem) {
-      cartItem.quantity += quantity || 1;
-      await cartItem.save();
+
+    const itemIndex = cart.items.findIndex(it => it.productId.toString() === productId.toString());
+    if (itemIndex > -1) {
+      cart.items[itemIndex].quantity += quantity || 1;
     } else {
-      cartItem = await CartItem.create({ cartId: cart.id, productId, quantity: quantity || 1 });
+      cart.items.push({ productId, quantity: quantity || 1 });
     }
-    res.json(cartItem);
+
+    await cart.save();
+    const populated = await Cart.findById(cart._id).populate('items.productId');
+    res.json(populated);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
@@ -39,16 +42,14 @@ router.post('/', authenticate, async (req: any, res: Response) => {
 router.delete('/:itemId', authenticate, async (req: any, res: Response) => {
   try {
     const { itemId } = req.params;
-    const cart = await Cart.findOne({ where: { userId: req.user.id } });
+    const cart = await Cart.findOne({ userId: req.user.id });
     if (!cart) {
       return res.status(404).json({ message: 'Cart not found' });
     }
-    const result = await CartItem.destroy({ where: { id: itemId, cartId: cart.id } });
-    if (result) {
-      res.json({ message: 'Item removed from cart' });
-    } else {
-      res.status(404).json({ message: 'Item not found' });
-    }
+
+    cart.items = cart.items.filter((it: any) => it._id.toString() !== itemId && it.productId.toString() !== itemId);
+    await cart.save();
+    res.json({ message: 'Item removed from cart' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }

@@ -1,67 +1,85 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../config/database';
+import mongoose, { Schema, Document } from 'mongoose';
 
-interface OrderAttributes {
-  id?: number;
-  orderNumber?: string;
-  userId: number;
+export interface IOrderItem {
+  productId?: mongoose.Types.ObjectId | string;
+  name?: string;
+  price: number;
+  quantity: number;
+  Product?: any;
+}
+
+export interface IOrder extends Document {
+  id: string;
+  orderNumber: string;
+  userId: mongoose.Types.ObjectId | string;
+  orderType: 'online' | 'custom';
   totalAmount: number;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
-  paymentMethod?: string;
-  paymentStatus?: string;
-  shippingAddressLine1?: string | null;
-  shippingAddressLine2?: string | null;
-  shippingCity?: string | null;
-  shippingState?: string | null;
-  shippingPincode?: string | null;
-  createdAt?: Date;
-  updatedAt?: Date;
+  paymentMethod: string;
+  paymentStatus: string;
+  shippingAddressLine1?: string;
+  shippingAddressLine2?: string;
+  shippingCity?: string;
+  shippingState?: string;
+  shippingPincode?: string;
+  OrderItems: IOrderItem[];
+  User?: any;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-type OrderCreationAttributes = Optional<OrderAttributes, 'id' | 'status' | 'orderNumber' | 'paymentMethod' | 'paymentStatus' | 'shippingAddressLine1' | 'shippingAddressLine2' | 'shippingCity' | 'shippingState' | 'shippingPincode'>;
-
-class Order extends Model<OrderAttributes, OrderCreationAttributes> implements OrderAttributes {
-  public id!: number;
-  public orderNumber!: string;
-  public userId!: number;
-  public totalAmount!: number;
-  public status!: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
-  public paymentMethod!: string;
-  public paymentStatus!: string;
-  public shippingAddressLine1!: string | null;
-  public shippingAddressLine2!: string | null;
-  public shippingCity!: string | null;
-  public shippingState!: string | null;
-  public shippingPincode!: string | null;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
-}
-
-Order.init(
+const OrderItemSchema = new Schema<IOrderItem>(
   {
-    orderNumber: { type: DataTypes.STRING, allowNull: true, unique: true },
-    userId: { type: DataTypes.INTEGER, allowNull: false },
-    totalAmount: { type: DataTypes.FLOAT, allowNull: false },
-    status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
-    paymentMethod: { type: DataTypes.STRING, allowNull: false, defaultValue: 'COD' },
-    paymentStatus: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
-    shippingAddressLine1: { type: DataTypes.STRING, allowNull: true },
-    shippingAddressLine2: { type: DataTypes.STRING, allowNull: true },
-    shippingCity: { type: DataTypes.STRING, allowNull: true },
-    shippingState: { type: DataTypes.STRING, allowNull: true },
-    shippingPincode: { type: DataTypes.STRING, allowNull: true },
+    productId: { type: Schema.Types.ObjectId, ref: 'Product' },
+    name: { type: String },
+    price: { type: Number, required: true },
+    quantity: { type: Number, required: true, min: 1 },
+    Product: { type: Schema.Types.Mixed },
   },
-  { 
-    sequelize, 
-    modelName: 'Order',
-    hooks: {
-      beforeCreate: (order) => {
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const randomStr = Math.floor(1000 + Math.random() * 9000).toString();
-        order.orderNumber = `ORD-${dateStr}-${randomStr}`;
-      }
-    }
+  { _id: true }
+);
+
+const OrderSchema = new Schema<IOrder>(
+  {
+    orderNumber: { type: String, unique: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    orderType: { type: String, enum: ['online', 'custom'], default: 'online' },
+    totalAmount: { type: Number, required: true },
+    status: {
+      type: String,
+      enum: ['pending', 'confirmed', 'shipped', 'delivered', 'completed', 'cancelled'],
+      default: 'pending',
+    },
+    paymentMethod: { type: String, default: 'COD' },
+    paymentStatus: { type: String, default: 'pending' },
+    shippingAddressLine1: { type: String, default: '' },
+    shippingAddressLine2: { type: String, default: '' },
+    shippingCity: { type: String, default: '' },
+    shippingState: { type: String, default: '' },
+    shippingPincode: { type: String, default: '' },
+    OrderItems: { type: [OrderItemSchema], default: [] },
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      transform: (_, ret: any) => {
+        ret.id = ret._id.toString();
+        delete ret.__v;
+        return ret;
+      },
+    },
+    toObject: { virtuals: true },
   }
 );
 
+OrderSchema.pre('save', function () {
+  if (!this.orderNumber) {
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const randomStr = Math.floor(1000 + Math.random() * 9000).toString();
+    this.orderNumber = `ORD-${dateStr}-${randomStr}`;
+  }
+});
+
+export const Order = mongoose.model<IOrder>('Order', OrderSchema);
 export default Order;

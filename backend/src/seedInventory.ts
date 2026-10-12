@@ -1,4 +1,4 @@
-import sequelize from './config/database';
+import { connectDatabase } from './config/database';
 import { Product } from './models';
 
 export const catalog = [
@@ -331,13 +331,14 @@ export const catalog = [
 
 async function seedInventory() {
   try {
-    await sequelize.authenticate();
-    console.log('Database connected.');
+    await connectDatabase();
+    console.log('MongoDB connected.');
 
     for (const item of catalog) {
-      const existing = await Product.findOne({ where: { name: item.name } });
+      const existing = await Product.findOne({ name: item.name });
       if (existing) {
-        await existing.update(item);
+        Object.assign(existing, item);
+        await existing.save();
         console.log(`Updated: ${item.name} [${item.grade}]`);
       } else {
         await Product.create(item);
@@ -345,8 +346,8 @@ async function seedInventory() {
       }
     }
 
-    const totalCount = await Product.count();
-    console.log(`\nInventory seeding complete! Total products in DB: ${totalCount}`);
+    const totalCount = await Product.countDocuments();
+    console.log(`\nInventory seeding complete! Total products in MongoDB: ${totalCount}`);
     process.exit(0);
   } catch (error) {
     console.error('Seeding error:', error);
@@ -354,4 +355,6 @@ async function seedInventory() {
   }
 }
 
-seedInventory();
+if (require.main === module) {
+  seedInventory();
+}

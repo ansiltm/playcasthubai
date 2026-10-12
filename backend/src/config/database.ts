@@ -1,18 +1,18 @@
-import { Sequelize } from 'sequelize';
+import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const sequelize = new Sequelize(
-  process.env.MYSQL_DATABASE as string,
-  process.env.MYSQL_USER as string,
-  process.env.MYSQL_PASSWORD as string,
-  {
-    host: process.env.MYSQL_HOST,
-    dialect: 'mysql',
-    port: parseInt(process.env.MYSQL_PORT || '3306', 10),
-    logging: false,
-  }
-);
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://playcasthub_db_user:SqgVpn33vcYqSfW7@cluster0.xjssamj.mongodb.net/playcasthub?retryWrites=true&w=majority';
 
-export default sequelize;
+export const connectDatabase = async (): Promise<void> => {
+  try {
+    await mongoose.connect(MONGODB_URI);
+    console.log('MongoDB Atlas connected successfully.');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    process.exit(1);
+  }
+};
+
+export default mongoose;

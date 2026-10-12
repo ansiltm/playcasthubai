@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { Op, Sequelize } from 'sequelize';
-import { Product, OrderItem } from '../models';
+import { Product } from '../models';
 import { authenticate, authorizeAdmin, optionalAuthenticate } from '../middleware/auth';
 import { upload } from '../middleware/upload';
 
@@ -15,34 +14,11 @@ const formatFileUrl = (req: Request, filename: string) => {
 router.get('/trending', optionalAuthenticate, async (req: any, res: Response): Promise<void> => {
   try {
     const isAdmin = req.user && req.user.role === 'admin';
-    const attributes = isAdmin ? undefined : { exclude: ['wholesalePrice'] };
-
-    // Get products ordered by the sum of their order item quantities
-    const trendingProducts = await Product.findAll({
-      attributes,
-      include: [{
-        model: OrderItem,
-        attributes: []
-      }],
-      group: ['Product.id'],
-      order: [[Sequelize.fn('SUM', Sequelize.col('OrderItems.quantity')), 'DESC']],
-      limit: 6,
-      subQuery: false
-    });
-
-    // If we don't have enough trending products (e.g. new store with no orders),
-    // fallback to newest products to fill the gap up to 6
-    if (trendingProducts.length < 6) {
-      const existingIds = trendingProducts.map(p => p.id);
-      const extra = await Product.findAll({
-        attributes,
-        where: existingIds.length > 0 ? { id: { [Op.notIn]: existingIds } } : undefined,
-        order: [['createdAt', 'DESC']],
-        limit: 6 - trendingProducts.length
-      });
-      trendingProducts.push(...extra);
+    let query = Product.find().sort({ createdAt: -1 }).limit(6);
+    if (!isAdmin) {
+      query = query.select('-wholesalePrice');
     }
-
+    const trendingProducts = await query.exec();
     res.json(trendingProducts);
   } catch (err) {
     res.status(500).json({ message: (err as Error).message });
@@ -54,30 +30,30 @@ router.get('/search', optionalAuthenticate, async (req: any, res: Response): Pro
   try {
     const query = (req.query.q || req.query.search || '') as string;
     const { category, grade } = req.query;
-    const whereClause: any = {};
+    const filter: any = {};
 
-    if (query.trim()) {
-      whereClause[Op.or] = [
-        { name: { [Op.like]: `%${query.trim()}%` } },
-        { description: { [Op.like]: `%${query.trim()}%` } },
-        { category: { [Op.like]: `%${query.trim()}%` } },
+    if (query && query.trim()) {
+      const searchRegex = new RegExp(query.trim(), 'i');
+      filter.$or = [
+        { name: searchRegex },
+        { description: searchRegex },
+        { category: searchRegex },
       ];
     }
     if (category) {
-      whereClause.category = category;
+      filter.category = category;
     }
     if (grade) {
-      whereClause.grade = grade;
+      filter.grade = grade;
     }
 
     const isAdmin = req.user && req.user.role === 'admin';
-    const attributes = isAdmin ? undefined : { exclude: ['wholesalePrice'] };
+    let mongoQuery = Product.find(filter).sort({ createdAt: -1 });
+    if (!isAdmin) {
+      mongoQuery = mongoQuery.select('-wholesalePrice');
+    }
 
-    const products = await Product.findAll({ 
-      where: whereClause, 
-      attributes,
-      order: [['id', 'ASC']]
-    });
+    const products = await mongoQuery.exec();
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: (err as Error).message });
@@ -89,31 +65,30 @@ router.get('/', optionalAuthenticate, async (req: any, res: Response): Promise<v
   try {
     const search = (req.query.search || req.query.q || '') as string;
     const { category, grade } = req.query;
-    const whereClause: any = {};
+    const filter: any = {};
 
-    if (search.trim()) {
-      whereClause[Op.or] = [
-        { name: { [Op.like]: `%${search.trim()}%` } },
-        { description: { [Op.like]: `%${search.trim()}%` } },
-        { category: { [Op.like]: `%${search.trim()}%` } },
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      filter.$or = [
+        { name: searchRegex },
+        { description: searchRegex },
+        { category: searchRegex },
       ];
     }
     if (category) {
-      whereClause.category = category;
+      filter.category = category;
     }
     if (grade) {
-      whereClause.grade = grade;
+      filter.grade = grade;
     }
-    
-    // Determine attributes to fetch based on role
-    const isAdmin = req.user && req.user.role === 'admin';
-    const attributes = isAdmin ? undefined : { exclude: ['wholesalePrice'] };
 
-    const products = await Product.findAll({ 
-      where: whereClause, 
-      attributes,
-      order: [['id', 'ASC']]
-    });
+    const isAdmin = req.user && req.user.role === 'admin';
+    let mongoQuery = Product.find(filter).sort({ createdAt: -1 });
+    if (!isAdmin) {
+      mongoQuery = mongoQuery.select('-wholesalePrice');
+    }
+
+    const products = await mongoQuery.exec();
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: (err as Error).message });
@@ -124,9 +99,12 @@ router.get('/', optionalAuthenticate, async (req: any, res: Response): Promise<v
 router.get('/:id', optionalAuthenticate, async (req: any, res: Response): Promise<void> => {
   try {
     const isAdmin = req.user && req.user.role === 'admin';
-    const attributes = isAdmin ? undefined : { exclude: ['wholesalePrice'] };
+    let query = Product.findById(req.params.id);
+    if (!isAdmin) {
+      query = query.select('-wholesalePrice');
+    }
 
-    const product = await Product.findByPk(req.params.id, { attributes });
+    const product = await query.exec();
     if (!product) {
       res.status(404).json({ message: 'Product not found' });
       return;
@@ -156,7 +134,8 @@ router.post(
         price: parseFloat(req.body.price),
         wholesalePrice: req.body.wholesalePrice ? parseFloat(req.body.wholesalePrice) : 0,
         stock: parseInt(req.body.stock),
-        media: mediaUrls
+        media: mediaUrls,
+        imageUrl: mediaUrls[0] || '',
       });
       res.status(201).json(product);
     } catch (err) {
@@ -173,7 +152,7 @@ router.put(
   upload.array('media') as any,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const product = await Product.findByPk(req.params.id);
+      const product = await Product.findById(req.params.id);
       if (!product) {
         res.status(404).json({ message: 'Product not found' });
         return;
@@ -185,7 +164,6 @@ router.put(
       let finalMedia = product.media;
 
       if (req.body.existingMedia !== undefined) {
-        // If frontend sends existingMedia (even if empty array), we honor it.
         let existingMedia: string[] = [];
         if (Array.isArray(req.body.existingMedia)) {
           existingMedia = req.body.existingMedia;
@@ -194,21 +172,20 @@ router.put(
         }
         finalMedia = [...existingMedia, ...newMediaUrls];
       } else if (newMediaUrls.length > 0) {
-        // Fallback for old requests
         finalMedia = newMediaUrls;
       }
 
-      await product.update({
-        name: req.body.name || product.name,
-        description: req.body.description || product.description,
-        category: req.body.category || product.category,
-        grade: req.body.grade || product.grade,
-        price: req.body.price ? parseFloat(req.body.price) : product.price,
-        wholesalePrice: req.body.wholesalePrice ? parseFloat(req.body.wholesalePrice) : product.wholesalePrice,
-        stock: req.body.stock ? parseInt(req.body.stock) : product.stock,
-        media: finalMedia
-      });
+      product.name = req.body.name || product.name;
+      product.description = req.body.description || product.description;
+      product.category = req.body.category || product.category;
+      product.grade = req.body.grade || product.grade;
+      if (req.body.price !== undefined) product.price = parseFloat(req.body.price);
+      if (req.body.wholesalePrice !== undefined) product.wholesalePrice = parseFloat(req.body.wholesalePrice);
+      if (req.body.stock !== undefined) product.stock = parseInt(req.body.stock);
+      product.media = finalMedia;
+      if (finalMedia.length > 0) product.imageUrl = finalMedia[0];
 
+      await product.save();
       res.json(product);
     } catch (err) {
       res.status(400).json({ message: (err as Error).message });
@@ -219,12 +196,11 @@ router.put(
 // DELETE product (Admin)
 router.delete('/:id', authenticate, authorizeAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    const product = await Product.findByPk(req.params.id);
+    const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) {
       res.status(404).json({ message: 'Product not found' });
       return;
     }
-    await product.destroy();
     res.json({ message: 'Product deleted' });
   } catch (err) {
     res.status(500).json({ message: (err as Error).message });

@@ -13,13 +13,31 @@ router.post('/register', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'All fields (name, email, password, phone) are required' });
     }
 
-    const existingUser = await User.findOne({ where: { email } });
+    const normalizedEmail = email.toLowerCase().trim();
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already in use' });
     }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashedPassword, phone, role: role || 'user' });
-    res.status(201).json({ message: 'User created successfully', user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role } });
+    const user = await User.create({
+      name,
+      email: normalizedEmail,
+      password: hashedPassword,
+      phone,
+      role: role || 'user',
+    });
+
+    res.status(201).json({
+      message: 'User created successfully',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
@@ -28,16 +46,42 @@ router.post('/register', async (req: Request, res: Response) => {
 router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user || !user.password) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
-    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role, addressLine1: user.addressLine1, addressLine2: user.addressLine2, city: user.city, state: user.state, pincode: user.pincode } });
+
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET || 'secret',
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        addressLine1: user.addressLine1,
+        addressLine2: user.addressLine2,
+        city: user.city,
+        state: user.state,
+        pincode: user.pincode,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
