@@ -51,7 +51,7 @@ const sendTransactionalEmail = async ({
     console.error('[SendGrid] Failed to send email:', {
       message: error.message,
       code: error.code,
-      response: error.response && error.response.body ? error.response.body : error.response,
+      response: error.response && error.response.body ? JSON.stringify(error.response.body, null, 2) : error.response,
     });
     throw error;
   }
