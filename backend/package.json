@@ -2,6 +2,7 @@
   "name": "playcasthub-backend",
   "version": "1.0.0",
   "description": "Backend API for PlaycastHub Store",
+  "license": "MIT",
   "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",

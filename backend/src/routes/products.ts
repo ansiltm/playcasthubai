@@ -142,7 +142,7 @@ router.post(
   '/',
   authenticate,
   authorizeAdmin,
-  upload.array('media'),
+  upload.array('media') as any,
   async (req: Request, res: Response): Promise<void> => {
     try {
       const files = req.files as Express.Multer.File[];
@@ -170,7 +170,7 @@ router.put(
   '/:id',
   authenticate,
   authorizeAdmin,
-  upload.array('media'),
+  upload.array('media') as any,
   async (req: Request, res: Response): Promise<void> => {
     try {
       const product = await Product.findByPk(req.params.id);
