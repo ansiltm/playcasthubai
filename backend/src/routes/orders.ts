@@ -2,60 +2,14 @@ import { Router, Response } from 'express';
 import { Order, OrderItem, Product, User } from '../models';
 import { authenticate, authorizeAdmin } from '../middleware/auth';
 
-import nodemailer from 'nodemailer';
-import { sendTransactionalEmail } from '../services/emailService';
+import { sendAdminOrderSMS } from '../services/smsService';
 
 const router = Router();
-
-// Helper to send order confirmation email
-const sendConfirmationEmail = async (userEmail: string, orderNumber: string, amount: number) => {
-  try {
-    const subject = `Order Confirmation - ${orderNumber} | PlaycastHub`;
-    const html = `<h2>Thank you for your order!</h2>
-           <p>Your order <strong>${orderNumber}</strong> has been successfully placed.</p>
-           <p>Total Amount: ₹${amount.toFixed(2)}</p>
-           <p>We will notify you when it ships!</p>`;
-    const text = `Thank you for your order! Your order ${orderNumber} for ₹${amount.toFixed(2)} has been placed.`;
-
-    if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.your_actual_api_key_here') {
-      await sendTransactionalEmail({
-        to: userEmail,
-        subject,
-        html,
-        text,
-      });
-      console.log(`[Order Email] SendGrid email sent to ${userEmail}`);
-    } else {
-      const testAccount = await nodemailer.createTestAccount();
-      const transporter = nodemailer.createTransport({
-        host: "smtp.ethereal.email",
-        port: 587,
-        secure: false, 
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass,
-        },
-      });
-
-      const info = await transporter.sendMail({
-        from: '"PlaycastHub" <orders@playcasthub.com>',
-        to: userEmail,
-        subject,
-        html,
-      });
-
-      console.log("Email Message sent via Ethereal: %s", info.messageId);
-      console.log("Email Preview URL: %s", nodemailer.getTestMessageUrl(info));
-    }
-  } catch (err) {
-    console.error("Email sending failed:", err);
-  }
-};
 
 // Create order directly from frontend payload
 router.post('/', authenticate, async (req: any, res: Response) => {
   try {
-    const { items, paymentMethod, paymentStatus, addressLine1, addressLine2, city, state, pincode } = req.body;
+    const { items, addressLine1, addressLine2, city, state, pincode, phone, name } = req.body;
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'Order is empty' });
     }
@@ -74,25 +28,28 @@ router.post('/', authenticate, async (req: any, res: Response) => {
       totalAmount += product.price * item.quantity;
     }
 
-    // Update user default address if provided
+    // Update user default address and phone if provided
     const user = await User.findByPk(req.user.id);
-    if (user && addressLine1) {
-      await user.update({
-        addressLine1: addressLine1 || user.addressLine1,
-        addressLine2: addressLine2 || user.addressLine2,
-        city: city || user.city,
-        state: state || user.state,
-        pincode: pincode || user.pincode
-      });
+    if (user) {
+      const updateData: any = {};
+      if (addressLine1) updateData.addressLine1 = addressLine1;
+      if (addressLine2) updateData.addressLine2 = addressLine2;
+      if (city) updateData.city = city;
+      if (state) updateData.state = state;
+      if (pincode) updateData.pincode = pincode;
+      if (phone) updateData.phone = phone;
+      if (Object.keys(updateData).length > 0) {
+        await user.update(updateData);
+      }
     }
 
-    // Create Order
+    // Create Order (COD / Confirmation by call)
     const order = await Order.create({ 
       userId: req.user.id, 
       totalAmount, 
-      status: paymentMethod === 'online' ? 'confirmed' : 'pending',
-      paymentMethod: paymentMethod || 'COD',
-      paymentStatus: paymentStatus || 'pending',
+      status: 'pending',
+      paymentMethod: 'COD',
+      paymentStatus: 'pending',
       shippingAddressLine1: addressLine1 || null,
       shippingAddressLine2: addressLine2 || null,
       shippingCity: city || null,
@@ -109,8 +66,17 @@ router.post('/', authenticate, async (req: any, res: Response) => {
       }
     }
 
-    // Send order confirmation email asynchronously
-    sendConfirmationEmail(req.user.email, order.orderNumber, totalAmount);
+    // Send SMS alert to Admin asynchronously
+    const customerPhone = phone || user?.phone || 'N/A';
+    const customerName = name || user?.name || 'Customer';
+    sendAdminOrderSMS({
+      orderNumber: order.orderNumber,
+      customerName,
+      customerPhone,
+      totalAmount,
+      city: city || user?.city || undefined,
+      itemsCount: items.length,
+    }).catch(err => console.error('SMS notification error:', err));
     
     res.status(201).json(order);
   } catch (error) {

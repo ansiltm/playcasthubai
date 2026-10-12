@@ -2,35 +2,43 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { Trash2, Plus, Minus, ArrowRight, MapPin, CreditCard, Banknote, CheckCircle } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowRight, MapPin, CheckCircle, PhoneCall, X, ShoppingBag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
 
 export default function CartPage() {
+  const router = useRouter();
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
   const { user } = useAuthStore();
   
-  const [step, setStep] = useState<'cart' | 'shipping' | 'payment' | 'success'>('cart');
+  const [step, setStep] = useState<'cart' | 'shipping'>('cart');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [pincode, setPincode] = useState('');
   const [addressLine1, setAddressLine1] = useState('');
   const [addressLine2, setAddressLine2] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   
-  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'online'>('COD');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [confirmedOrderNumber, setConfirmedOrderNumber] = useState('');
 
   useEffect(() => {
-    if (user && step === 'shipping') {
+    if (user) {
+      setFullName(user.name || '');
+      setPhone(user.phone && user.phone !== '0000000000' ? user.phone : '');
       setPincode(user.pincode || '');
       setAddressLine1(user.addressLine1 || '');
       setAddressLine2(user.addressLine2 || '');
       setCity(user.city || '');
       setState(user.state || '');
     }
-  }, [user, step]);
+  }, [user]);
 
   const handlePincodeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/[^0-9]/g, '');
@@ -54,24 +62,31 @@ export default function CartPage() {
     }
   };
 
-  const handleCheckoutSubmit = async () => {
+  const handleOpenConfirm = () => {
     if (!user) {
-      toast.error('Please login to checkout');
+      toast.error('Please login to place an order');
+      router.push('/login');
       return;
     }
-    
+    if (!phone.trim()) {
+      toast.error('Please provide a valid contact phone number');
+      return;
+    }
+    if (!addressLine1.trim() || !pincode.trim() || !city.trim() || !state.trim()) {
+      toast.error('Please fill in your delivery address');
+      return;
+    }
+    setShowConfirmModal(true);
+  };
+
+  const handleFinalOrderSubmit = async () => {
     setIsProcessing(true);
 
-    if (paymentMethod === 'online') {
-      toast.loading('Processing payment securely...', { duration: 2000 });
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-
     try {
-      await api.post('/orders', { 
+      const res = await api.post('/orders', { 
         items,
-        paymentMethod,
-        paymentStatus: paymentMethod === 'online' ? 'paid' : 'pending',
+        name: fullName,
+        phone,
         addressLine1,
         addressLine2,
         city,
@@ -79,49 +94,47 @@ export default function CartPage() {
         pincode
       });
       
-      toast.success('Order placed successfully!');
+      const orderNumber = res.data?.orderNumber || `ORD-${Date.now().toString().slice(-6)}`;
+      setConfirmedOrderNumber(orderNumber);
       clearCart();
-      setStep('success');
+      setShowConfirmModal(false);
+      setShowSuccessModal(true);
+      toast.success('Order confirmed!');
     } catch (err: any) {
       if (err.response?.status !== 401 && err.response?.status !== 403) {
-        toast.error(err.response?.data?.message || 'Checkout failed');
+        toast.error(err.response?.data?.message || 'Failed to place order. Please try again.');
       }
     } finally {
       setIsProcessing(false);
     }
   };
 
-  if (step === 'success') {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center">
-        <CheckCircle className="w-24 h-24 text-green-500 mb-6" />
-        <h1 className="text-4xl font-black text-text-main mb-4">Order Confirmed!</h1>
-        <p className="text-xl text-text-muted mb-8 max-w-lg">
-          Thank you for your purchase. We have sent an order confirmation and receipt to your registered email address.
-        </p>
-        <Link href="/products" className="bubble-btn">
-          Continue Shopping
-        </Link>
-      </div>
-    );
-  }
+  const handleCloseSuccess = () => {
+    setShowSuccessModal(false);
+    router.push('/products');
+  };
 
-  if (items.length === 0) {
+  if (items.length === 0 && !showSuccessModal) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center">
+        <div className="w-24 h-24 bg-bubble-bg rounded-full flex items-center justify-center mb-6">
+          <ShoppingBag className="w-12 h-12 text-primary" />
+        </div>
         <h1 className="text-4xl font-black text-text-main mb-4">Your Cart is Empty</h1>
-        <p className="text-text-muted mb-8 max-w-md">Looks like you haven't added anything to your cart yet. Discover our amazing collection of RC cars and toys.</p>
-        <Link href="/" className="bubble-btn">
+        <p className="text-text-muted mb-8 max-w-md">Discover our amazing collection of RC cars, toys, and hobby collectibles.</p>
+        <Link href="/products" className="bubble-btn">
           Start Shopping
         </Link>
       </div>
     );
   }
 
+  const isFormValid = Boolean(fullName && phone && addressLine1 && pincode && city && state);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <h1 className="text-4xl font-black text-text-main mb-8">
-        {step === 'cart' ? 'Shopping Cart' : step === 'shipping' ? 'Shipping Details' : 'Payment'}
+        {step === 'cart' ? 'Shopping Cart' : 'Delivery Details'}
       </h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -136,100 +149,119 @@ export default function CartPage() {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center bg-bubble-bg rounded-full border border-gray-200">
-                    <button onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))} className="p-3 text-text-muted hover:text-primary transition-colors"><Minus size={16} /></button>
+                    <button onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))} className="p-3 text-text-muted hover:text-primary transition-colors" aria-label="Decrease quantity"><Minus size={16} /></button>
                     <span className="font-bold w-8 text-center">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.productId, item.quantity + 1)} className="p-3 text-text-muted hover:text-primary transition-colors"><Plus size={16} /></button>
+                    <button onClick={() => updateQuantity(item.productId, item.quantity + 1)} className="p-3 text-text-muted hover:text-primary transition-colors" aria-label="Increase quantity"><Plus size={16} /></button>
                   </div>
-                  <button onClick={() => removeItem(item.productId)} className="p-3 text-red-500 bg-red-50 rounded-full hover:bg-red-100 transition-colors"><Trash2 size={20} /></button>
+                  <button onClick={() => removeItem(item.productId)} className="p-3 text-red-500 bg-red-50 rounded-full hover:bg-red-100 transition-colors" aria-label="Remove item"><Trash2 size={20} /></button>
                 </div>
               </div>
             ))
           )}
 
           {step === 'shipping' && (
-            <div className="bubble-card bg-bubble-surface p-8">
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><MapPin className="text-primary"/> Delivery Address</h2>
-              <div className="space-y-4">
+            <div className="bubble-card bg-bubble-surface p-8 space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                  <MapPin className="text-primary"/> Customer & Delivery Info
+                </h2>
+                <p className="text-sm text-text-muted">
+                  Our customer support team will call this phone number to verify and confirm your order before dispatch.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-text-muted mb-2">Postal Code (Pincode)</label>
+                  <label className="block text-sm font-bold text-text-muted mb-2">Full Name *</label>
                   <input 
-                    type="text" maxLength={6} value={pincode} onChange={handlePincodeChange}
-                    className="bubble-input w-full" placeholder="e.g. 682001 (Auto-fills City & State)"
+                    type="text" 
+                    value={fullName} 
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="bubble-input w-full" 
+                    placeholder="Your Full Name"
+                    required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-text-muted mb-2">Address Line 1</label>
+                  <label className="block text-sm font-bold text-text-muted mb-2">Phone Number for Order Call *</label>
                   <input 
-                    type="text" value={addressLine1} onChange={(e) => setAddressLine1(e.target.value)}
-                    className="bubble-input w-full" placeholder="House/Flat No, Building, Street Area"
+                    type="tel" 
+                    value={phone} 
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="bubble-input w-full" 
+                    placeholder="e.g. 9876543210"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-2 border-t border-border-main">
+                <div>
+                  <label className="block text-sm font-bold text-text-muted mb-2">Postal Code (Pincode) *</label>
+                  <input 
+                    type="text" 
+                    maxLength={6} 
+                    value={pincode} 
+                    onChange={handlePincodeChange}
+                    className="bubble-input w-full" 
+                    placeholder="e.g. 682001 (Auto-fills City & State)"
+                    required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-text-muted mb-2">Address Line 2 (Optional)</label>
+                  <label className="block text-sm font-bold text-text-muted mb-2">Address Line 1 (House/Building/Street) *</label>
                   <input 
-                    type="text" value={addressLine2} onChange={(e) => setAddressLine2(e.target.value)}
-                    className="bubble-input w-full" placeholder="Landmark, Locality"
+                    type="text" 
+                    value={addressLine1} 
+                    onChange={(e) => setAddressLine1(e.target.value)}
+                    className="bubble-input w-full" 
+                    placeholder="House/Flat No, Building Name, Street"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-text-muted mb-2">Address Line 2 (Landmark/Area - Optional)</label>
+                  <input 
+                    type="text" 
+                    value={addressLine2} 
+                    onChange={(e) => setAddressLine2(e.target.value)}
+                    className="bubble-input w-full" 
+                    placeholder="Nearby Landmark, Locality"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-text-muted mb-2">City / District</label>
+                    <label className="block text-sm font-bold text-text-muted mb-2">City / District *</label>
                     <input 
-                      type="text" value={city} onChange={(e) => setCity(e.target.value)}
-                      className="bubble-input w-full" placeholder="City"
+                      type="text" 
+                      value={city} 
+                      onChange={(e) => setCity(e.target.value)}
+                      className="bubble-input w-full" 
+                      placeholder="City / District"
+                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-text-muted mb-2">State</label>
+                    <label className="block text-sm font-bold text-text-muted mb-2">State *</label>
                     <input 
-                      type="text" value={state} onChange={(e) => setState(e.target.value)}
-                      className="bubble-input w-full" placeholder="State"
+                      type="text" 
+                      value={state} 
+                      onChange={(e) => setState(e.target.value)}
+                      className="bubble-input w-full" 
+                      placeholder="State"
+                      required
                     />
                   </div>
                 </div>
               </div>
-            </div>
-          )}
 
-          {step === 'payment' && (
-            <div className="bubble-card bg-bubble-surface p-8 space-y-6">
-              <h2 className="text-2xl font-bold mb-6">Select Payment Method</h2>
-              
-              <label className={`block p-4 rounded-2xl border-2 cursor-pointer transition-all ${paymentMethod === 'online' ? 'border-primary bg-primary/5' : 'border-border-main hover:border-primary/50'}`}>
-                <div className="flex items-center gap-4">
-                  <input type="radio" name="payment" checked={paymentMethod === 'online'} onChange={() => setPaymentMethod('online')} className="w-5 h-5 text-primary" />
-                  <CreditCard className={paymentMethod === 'online' ? 'text-primary' : 'text-text-muted'} size={32} />
-                  <div>
-                    <div className="font-bold text-lg">Pay Online (Card / UPI)</div>
-                    <div className="text-sm text-text-muted">Instant, secure & fully functional test payment.</div>
-                  </div>
+              <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-start gap-3">
+                <PhoneCall className="text-primary w-6 h-6 shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <span className="font-bold text-text-main block">Verification via Phone Call:</span>
+                  <span className="text-text-muted">No advance payment needed. When you click place order, our executive will contact you to verify details before shipping.</span>
                 </div>
-                {paymentMethod === 'online' && (
-                  <div className="mt-4 pt-4 border-t border-border-main">
-                    <div className="bg-gray-100 p-4 rounded-xl text-center text-sm font-bold text-gray-500 mb-3">
-                      Mock Payment Gateway (Test Mode)
-                    </div>
-                    <div className="space-y-3">
-                      <input type="text" placeholder="Card Number (Test: 4242 4242 4242)" className="bubble-input w-full" defaultValue="4242 4242 4242 4242" />
-                      <div className="flex gap-3">
-                        <input type="text" placeholder="MM/YY" className="bubble-input w-1/2" defaultValue="12/28" />
-                        <input type="text" placeholder="CVC" className="bubble-input w-1/2" defaultValue="123" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </label>
-
-              <label className={`block p-4 rounded-2xl border-2 cursor-pointer transition-all ${paymentMethod === 'COD' ? 'border-primary bg-primary/5' : 'border-border-main hover:border-primary/50'}`}>
-                <div className="flex items-center gap-4">
-                  <input type="radio" name="payment" checked={paymentMethod === 'COD'} onChange={() => setPaymentMethod('COD')} className="w-5 h-5 text-primary" />
-                  <Banknote className={paymentMethod === 'COD' ? 'text-primary' : 'text-text-muted'} size={32} />
-                  <div>
-                    <div className="font-bold text-lg">Cash on Delivery</div>
-                    <div className="text-sm text-text-muted">Pay when your order arrives.</div>
-                  </div>
-                </div>
-              </label>
+              </div>
             </div>
           )}
         </div>
@@ -258,32 +290,142 @@ export default function CartPage() {
             
             {step === 'cart' && (
               <button onClick={() => setStep('shipping')} className="bubble-btn w-full flex items-center justify-center space-x-2 py-4">
-                <span>Proceed to Shipping</span> <ArrowRight size={20} />
+                <span>Proceed to Delivery</span> <ArrowRight size={20} />
               </button>
             )}
+            
             {step === 'shipping' && (
               <button 
-                onClick={() => setStep('payment')} 
-                disabled={!addressLine1 || !pincode || !city || !state} 
+                onClick={handleOpenConfirm} 
+                disabled={!isFormValid} 
                 className="bubble-btn w-full flex items-center justify-center space-x-2 py-4 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span>Continue to Payment</span> <ArrowRight size={20} />
-              </button>
-            )}
-            {step === 'payment' && (
-              <button onClick={handleCheckoutSubmit} disabled={isProcessing} className="bubble-btn w-full flex items-center justify-center space-x-2 py-4">
-                <span>{isProcessing ? 'Processing...' : `Pay ₹${(getTotal() * 1.1).toFixed(2)}`}</span>
+                <span>Confirm & Place Order</span> <ArrowRight size={20} />
               </button>
             )}
 
             {step !== 'cart' && (
-              <button onClick={() => setStep(step === 'payment' ? 'shipping' : 'cart')} className="w-full mt-4 text-center font-bold text-text-muted hover:text-primary transition-colors">
-                Back
+              <button onClick={() => setStep('cart')} className="w-full mt-4 text-center font-bold text-text-muted hover:text-primary transition-colors">
+                Back to Cart
               </button>
             )}
           </div>
         </div>
       </div>
+
+      {/* CONFIRM ORDER POPUP MODAL */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-bubble-surface rounded-3xl shadow-2xl w-full max-w-lg p-6 sm:p-8 relative border border-border-main">
+            <button 
+              onClick={() => setShowConfirmModal(false)} 
+              className="absolute top-5 right-5 p-2 bg-bubble-input text-text-muted hover:text-text-main rounded-full transition-colors"
+              aria-label="Close modal"
+            >
+              <X size={20} />
+            </button>
+
+            <h3 className="text-2xl font-black text-text-main mb-2">Confirm Your Order</h3>
+            <p className="text-sm text-text-muted mb-6">
+              Please review your delivery and contact details before placing the order.
+            </p>
+
+            <div className="space-y-4 bg-bubble-input p-4 rounded-2xl mb-6 text-sm">
+              <div className="flex justify-between">
+                <span className="text-text-muted">Recipient Name:</span>
+                <span className="font-bold text-text-main">{fullName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-text-muted">Contact Phone:</span>
+                <span className="font-bold text-primary">{phone}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-text-muted">Delivery Address:</span>
+                <span className="font-bold text-text-main text-right max-w-[60%]">
+                  {addressLine1}, {addressLine2 ? `${addressLine2}, ` : ''}{city}, {state} - {pincode}
+                </span>
+              </div>
+              <div className="flex justify-between border-t border-border-main pt-3 text-base">
+                <span className="font-bold text-text-main">Total Payable:</span>
+                <span className="font-black text-primary">₹{(getTotal() * 1.1).toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 p-3 rounded-xl text-xs mb-6 flex items-center gap-2">
+              <PhoneCall size={18} className="shrink-0" />
+              <span>Our support team will call <strong>{phone}</strong> to confirm before shipping.</span>
+            </div>
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 bubble-btn-secondary py-3 text-sm"
+                disabled={isProcessing}
+              >
+                Edit Details
+              </button>
+              <button 
+                onClick={handleFinalOrderSubmit}
+                className="flex-1 bubble-btn py-3 text-sm justify-center"
+                disabled={isProcessing}
+              >
+                {isProcessing ? 'Placing Order...' : 'Confirm Order'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUCCESS POPUP MODAL (User can close at their convenience) */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-bubble-surface rounded-3xl shadow-2xl w-full max-w-md p-8 text-center relative border border-border-main">
+            <button 
+              onClick={handleCloseSuccess} 
+              className="absolute top-5 right-5 p-2 bg-bubble-input text-text-muted hover:text-text-main rounded-full transition-colors"
+              aria-label="Close modal"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle size={44} />
+            </div>
+
+            <h3 className="text-3xl font-black text-text-main mb-2">Order Confirmed!</h3>
+            {confirmedOrderNumber && (
+              <span className="inline-block bg-primary/10 text-primary text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider mb-4">
+                #{confirmedOrderNumber}
+              </span>
+            )}
+
+            <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 mb-6 text-left space-y-3">
+              <div className="flex items-start gap-3">
+                <PhoneCall className="text-primary w-6 h-6 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-text-main text-sm">Support Team Will Contact You</p>
+                  <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                    Our team will contact you shortly on <strong className="text-primary">{phone}</strong> to confirm your order details and delivery schedule.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-text-muted mb-6">
+              Please keep your phone available. You can close this window at any time.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button 
+                onClick={handleCloseSuccess}
+                className="bubble-btn w-full py-3.5 justify-center"
+              >
+                Close & Continue Shopping
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
