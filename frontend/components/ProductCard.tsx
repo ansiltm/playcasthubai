@@ -32,10 +32,16 @@ export default function ProductCard({ product }: { product: Product }) {
     });
   };
 
-  // Determine if the first media item is a video
+  const isVideoUrl = (url?: string) => {
+    if (!url || typeof url !== 'string') return false;
+    return Boolean(url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i)) || url.includes('/video/upload/');
+  };
+
+  // Determine media to show: prioritize video if available so video autoplays on list
   const fallbackImage = '/logo.jpeg';
-  const firstMedia = (product.media && product.media.length > 0) ? product.media[0] : fallbackImage;
-  const isVideo = typeof firstMedia === 'string' && firstMedia.match(/\.(mp4|webm|mov|ogg)$/i) !== null;
+  const videoMedia = product.media?.find((m: string) => isVideoUrl(m));
+  const activeMedia = videoMedia || ((product.media && product.media.length > 0) ? product.media[0] : fallbackImage);
+  const isVideo = isVideoUrl(activeMedia);
 
   return (
     <Link href={`/products/${product.id}`} className="group block h-full">
@@ -44,15 +50,17 @@ export default function ProductCard({ product }: { product: Product }) {
         <div className="relative aspect-[4/3] sm:aspect-[4/3] w-full overflow-hidden bg-bubble-bg shrink-0">
           {isVideo ? (
             <video
-              src={firstMedia}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              src={activeMedia}
+              autoPlay
               muted
               loop
               playsInline
+              preload="auto"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
             />
           ) : (
             <img
-              src={firstMedia}
+              src={activeMedia}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
@@ -63,6 +71,16 @@ export default function ProductCard({ product }: { product: Product }) {
             <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
               <span className="text-[9px] font-black bg-purple-900/80 backdrop-blur-md text-purple-200 px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm border border-purple-400/30">
                 {product.grade.replace(' / Display-Grade', '').replace(' / Prosumer Grade', '')}
+              </span>
+            </div>
+          )}
+
+          {/* Live Video Badge */}
+          {isVideo && (
+            <div className="absolute top-2.5 right-2.5 z-10 pointer-events-none">
+              <span className="flex items-center gap-1.5 text-[9px] font-black bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm border border-white/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                Video
               </span>
             </div>
           )}

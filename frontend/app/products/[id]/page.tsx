@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useCartStore } from '../../../store/useCartStore';
 import { useFavoritesStore } from '../../../store/useFavoritesStore';
-import { ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../../lib/api';
 
@@ -15,6 +15,8 @@ export default function ProductDetails() {
   const [loading, setLoading] = useState(true);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [isMuted, setIsMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const addItem = useCartStore((state) => state.addItem);
   
   const { toggleFavorite, isFavorite } = useFavoritesStore();
@@ -42,6 +44,15 @@ export default function ProductDetails() {
       try {
         const res = await api.get(`/products/${id}`);
         setProduct(res.data);
+        // If product has a video in media, start by displaying the video first
+        if (res.data?.media && Array.isArray(res.data.media)) {
+          const videoIndex = res.data.media.findIndex(
+            (url: string) => typeof url === 'string' && (Boolean(url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i)) || url.includes('/video/upload/'))
+          );
+          if (videoIndex !== -1) {
+            setCurrentIndex(videoIndex);
+          }
+        }
       } catch (err) {
         console.error('Failed to fetch product details', err);
         setProduct(null);
@@ -109,10 +120,34 @@ export default function ProductDetails() {
     }
   };
 
+  const isVideoMedia = (url?: string) => {
+    if (!url || typeof url !== 'string') return false;
+    return Boolean(url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i)) || url.includes('/video/upload/');
+  };
+
   const currentMediaUrl = product.media?.[currentIndex];
-  const isVideo = currentMediaUrl
-    ? Boolean(currentMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i)) || currentMediaUrl.includes('/video/upload/')
-    : false;
+  const isVideo = isVideoMedia(currentMediaUrl);
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(videoRef.current.muted);
+    }
+  };
+
+  useEffect(() => {
+    if (videoRef.current && isVideo) {
+      videoRef.current.muted = isMuted;
+      videoRef.current.play().catch(() => {
+        if (videoRef.current) {
+          videoRef.current.muted = true;
+          setIsMuted(true);
+          videoRef.current.play().catch(() => {});
+        }
+      });
+    }
+  }, [currentIndex, isVideo, isMuted]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -129,13 +164,40 @@ export default function ProductDetails() {
             {product.media && product.media.length > 0 ? (
               <>
                 {isVideo ? (
-                  <video 
-                    key={currentMediaUrl}
-                    src={currentMediaUrl} 
-                    controls 
-                    autoPlay 
-                    className="w-full h-full object-contain rounded-[var(--radius-bubble-sm)] animate-in fade-in duration-300"
-                  />
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    <video 
+                      ref={videoRef}
+                      key={currentMediaUrl}
+                      src={currentMediaUrl} 
+                      controls 
+                      autoPlay 
+                      muted={isMuted}
+                      loop
+                      playsInline
+                      preload="auto"
+                      onCanPlay={(e) => {
+                        e.currentTarget.muted = isMuted;
+                        e.currentTarget.play().catch(() => {
+                          if (e.currentTarget) {
+                            e.currentTarget.muted = true;
+                            setIsMuted(true);
+                            e.currentTarget.play().catch(() => {});
+                          }
+                        });
+                      }}
+                      className="w-full h-full object-contain rounded-[var(--radius-bubble-sm)] animate-in fade-in duration-300"
+                    />
+                    {/* Quick Floating Audio Mute / Unmute Button */}
+                    <button 
+                      type="button"
+                      onClick={toggleMute}
+                      className="absolute top-4 right-4 z-20 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-lg border border-white/20 transition-all hover:scale-105"
+                      aria-label={isMuted ? 'Unmute video audio' : 'Mute video audio'}
+                    >
+                      {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} className="text-secondary" />}
+                      <span>{isMuted ? 'Unmute' : 'Mute'}</span>
+                    </button>
+                  </div>
                 ) : (
                   <img 
                     key={currentMediaUrl}
@@ -181,17 +243,22 @@ export default function ProductDetails() {
           {product.media && product.media.length > 1 && (
             <div className="flex gap-2 overflow-x-auto pb-2 px-1">
               {product.media.map((url: string, idx: number) => {
-                const isThumbVideo = Boolean(url.match(/\.(mp4|webm|mov|ogg)$/i)) || url.includes('/video/upload/');
+                const isThumbVideo = isVideoMedia(url);
                 return (
                   <button 
                     key={idx} 
                     onClick={() => setCurrentIndex(idx)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border-4 transition-all ${idx === currentIndex ? 'border-primary opacity-100' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                    className={`relative flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border-4 transition-all ${idx === currentIndex ? 'border-primary opacity-100 scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
                   >
                     {isThumbVideo ? (
-                      <video src={url} className="w-full h-full object-cover" />
+                      <>
+                        <video src={url} muted autoPlay loop playsInline preload="auto" className="w-full h-full object-cover pointer-events-none" />
+                        <span className="absolute bottom-1 right-1 px-1 py-0.5 rounded text-[8px] font-black bg-black/80 text-white flex items-center gap-0.5">
+                          ▶ Vid
+                        </span>
+                      </>
                     ) : (
-                      <img src={url} className="w-full h-full object-cover" />
+                      <img src={url} alt={`media-${idx}`} className="w-full h-full object-cover" />
                     )}
                   </button>
                 );
