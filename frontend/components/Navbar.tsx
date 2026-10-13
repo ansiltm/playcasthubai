@@ -14,27 +14,10 @@ export default function Navbar() {
   const { items } = useCartStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-
-  const categories = [
-    { name: 'Vehicles & RC', query: 'Vehicles & Remote-Controlled (RC)', icon: '🏎️' },
-    { name: 'Action Figures', query: 'Action Figures & Pop-Culture Collectibles', icon: '🦸‍♂️' },
-    { name: 'Model Kits', query: 'Scale Model Kits & Hobby Crafts', icon: '🛠️' },
-    { name: 'STEM & Tech', query: 'Educational, STEM & STEAM Toys', icon: '🔬' },
-    { name: 'Smart Toys', query: 'Electronic, Smart & Animatronic Toys', icon: '🤖' },
-    { name: 'Outdoor Play', query: 'Outdoor, Sports & Active Play', icon: '⛺' }
-  ];
-
-  const grades = [
-    { name: 'Toy-Grade', query: 'Toy-Grade' },
-    { name: 'Semi-Hobby', query: 'Semi-Hobby / Prosumer Grade' },
-    { name: 'Hobby-Grade', query: 'Hobby-Grade' },
-    { name: 'Collector', query: 'Collector-Grade / Display-Grade' }
-  ];
 
   useEffect(() => {
     setMounted(true);
@@ -82,13 +65,6 @@ export default function Navbar() {
                   </span>
                 </div>
               </Link>
-              <button 
-                onClick={() => setIsSidebarOpen(true)}
-                className="hidden sm:flex p-2 text-text-muted hover:text-primary hover:bg-bubble-input rounded-xl transition-colors cursor-pointer"
-                aria-label="Open Sidebar"
-              >
-                <Menu size={24} />
-              </button>
             </div>
           </div>
 
@@ -217,60 +193,6 @@ export default function Navbar() {
         </div>
       )}
       </nav>
-
-      {/* Left Sidebar */}
-      {isSidebarOpen && (
-        <div className="fixed inset-0 z-[100] flex">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={() => setIsSidebarOpen(false)} />
-          
-          {/* Sidebar Panel */}
-          <div className="relative w-80 max-w-[80vw] bg-bubble-surface h-full flex flex-col shadow-2xl overflow-y-auto transform transition-transform duration-300">
-            <div className="p-6 border-b border-border-main flex justify-between items-center sticky top-0 bg-bubble-surface/90 backdrop-blur-md z-10">
-              <Link href="/" onClick={() => setIsSidebarOpen(false)} className="flex items-center space-x-3 group">
-                <div className="relative w-10 h-10 overflow-hidden rounded-[var(--radius-pill)] border-2 border-white group-hover:scale-110 transition-transform">
-                  <Image src="/logo.jpeg" alt="PlaycastHub" fill className="object-cover" />
-                </div>
-                <span className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-                  Menu
-                </span>
-              </Link>
-              <button onClick={() => setIsSidebarOpen(false)} className="p-2 text-text-muted hover:text-red-500 bg-bubble-input rounded-full transition-colors">
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="p-6 flex-1 space-y-8 pb-20">
-              <Link href="/" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 font-bold text-lg text-text-main hover:text-primary transition-colors bubble-card p-4">
-                🏠 Home
-              </Link>
-              
-              <div>
-                <h3 className="text-sm font-black text-text-muted uppercase tracking-wider mb-4 px-2">Categories</h3>
-                <div className="flex flex-col space-y-2">
-                  {categories.map((c, i) => (
-                    <Link key={i} href={`/products?category=${encodeURIComponent(c.query)}`} onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 text-text-main hover:text-primary hover:bg-bubble-input p-3 rounded-xl transition-all font-medium">
-                      <span className="text-xl">{c.icon}</span> {c.name}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-black text-text-muted uppercase tracking-wider mb-4 px-2">Grades</h3>
-                <div className="flex flex-col space-y-2">
-                  {grades.map((g, i) => (
-                    <Link key={i} href={`/products?grade=${encodeURIComponent(g.query)}`} onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 text-text-main hover:text-primary hover:bg-bubble-input p-3 rounded-xl transition-all font-medium">
-                      <span className="w-2 h-2 rounded-full bg-primary inline-block shrink-0 shadow-[var(--shadow-bubble)]" /> 
-                      {g.name}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
