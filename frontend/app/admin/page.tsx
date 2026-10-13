@@ -5,7 +5,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import api from '../../lib/api';
 import toast from 'react-hot-toast';
-import { Trash2, Edit, CheckCircle, Plus, Search, X, AlertTriangle, TrendingUp, DollarSign, Package } from 'lucide-react';
+import { Trash2, Edit, CheckCircle, Plus, Search, X, AlertTriangle, TrendingUp, DollarSign, Package, Printer } from 'lucide-react';
 import DataTable, { Column } from '../../components/DataTable';
 import SearchableSelect from '../../components/SearchableSelect';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -946,6 +946,19 @@ export default function AdminPage() {
                       <span>Total Amount:</span> 
                       <span>₹{selectedOrder.totalAmount?.toFixed(2)}</span>
                     </div>
+                    {(() => {
+                      const totalWholesale = selectedOrder.OrderItems?.reduce((acc: number, it: any) => {
+                        const ws = it.Product?.wholesalePrice || 0;
+                        return ws > 0 ? acc + (ws * it.quantity) : acc;
+                      }, 0);
+                      const totalProfit = totalWholesale > 0 ? (selectedOrder.totalAmount - totalWholesale) : 0;
+                      return totalProfit > 0 ? (
+                        <div className="flex justify-between text-emerald-600 font-bold text-sm pt-1">
+                          <span>Total Est. Profit:</span>
+                          <span>+₹{totalProfit.toFixed(2)}</span>
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               </div>
@@ -957,6 +970,8 @@ export default function AdminPage() {
                 {selectedOrder.OrderItems?.map((item: any) => {
                   const mediaUrl = item.Product?.media?.[0] || item.Product?.imageUrl;
                   const isVideo = mediaUrl && mediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) !== null;
+                  const wholesale = item.Product?.wholesalePrice || 0;
+                  const itemProfit = wholesale > 0 ? (item.price - wholesale) * item.quantity : 0;
 
                   return (
                     <div key={item.id} className="flex items-center space-x-4 bg-bubble-input p-4 rounded-[var(--radius-bubble)]">
@@ -970,19 +985,31 @@ export default function AdminPage() {
                         )}
                       </div>
                       <div className="flex-grow">
-                        <p className="font-bold text-text-main">{item.Product?.name || `Product ID: ${item.productId}`}</p>
+                        <p className="font-bold text-text-main">{item.Product?.name || item.name || `Product ID: ${item.productId}`}</p>
                         <p className="text-xs text-text-muted mt-0.5">Quantity: <strong className="text-text-main">{item.quantity}</strong></p>
                       </div>
                       <div className="text-right">
                         <p className="font-black text-primary text-base">₹{(item.price * item.quantity).toFixed(2)}</p>
                         <p className="text-xs text-text-muted">₹{item.price.toFixed(2)} each</p>
+                        {itemProfit > 0 && (
+                          <p className="text-[11px] font-bold text-emerald-600 mt-0.5">
+                            Profit: +₹{itemProfit.toFixed(2)}
+                          </p>
+                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
             </div>
-            <div className="p-6 border-t border-border-main flex justify-end">
+            <div className="p-6 border-t border-border-main flex justify-between items-center">
+              <button 
+                onClick={() => window.print()} 
+                className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold px-5 py-2.5 rounded-xl transition"
+              >
+                <Printer size={16} />
+                <span>Print Invoice</span>
+              </button>
               <button onClick={() => { setIsOrderViewModalOpen(false); setSelectedOrder(null); }} className="bubble-btn py-2 px-8">Close</button>
             </div>
           </div>

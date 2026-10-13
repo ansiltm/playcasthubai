@@ -51,34 +51,36 @@ async function seed() {
       { name: 'Diecast Collection Mini Off-Road Vehicles (Suzuki Jimny 1:64)', quantity: 5, price: 120.00 },
       { name: 'Thar Roxx Diecast', quantity: 2, price: 499.00 },
       { name: 'Interactive Steering Wheel Toy (Sound & Light)', quantity: 1, price: 1199.00 },
+      { name: 'M416 Toy Blaster', quantity: 3, price: 850.00 },
+      { name: 'Pioneer 4WD Rock Climber', quantity: 1, price: 1399.00 },
     ];
+
+    const orderItems: any[] = [];
+    let totalAmount = 0;
+
+    for (const it of customItemsData) {
+      const prod = productMap.get(it.name) || (await Product.findOne({ name: it.name }));
+      if (prod) {
+        totalAmount += it.price * it.quantity;
+        orderItems.push({
+          productId: prod._id,
+          name: prod.name,
+          price: it.price,
+          quantity: it.quantity,
+          Product: {
+            id: prod.id,
+            name: prod.name,
+            media: prod.media,
+            imageUrl: prod.imageUrl || prod.media?.[0],
+            price: prod.price,
+            wholesalePrice: prod.wholesalePrice,
+          },
+        });
+      }
+    }
 
     let existingOrder = await Order.findOne({ orderNumber: 'ORD-20261012-1744' });
     if (!existingOrder) {
-      const orderItems: any[] = [];
-      let totalAmount = 0;
-
-      for (const it of customItemsData) {
-        const prod = productMap.get(it.name) || (await Product.findOne({ name: it.name }));
-        if (prod) {
-          totalAmount += it.price * it.quantity;
-          orderItems.push({
-            productId: prod._id,
-            name: prod.name,
-            price: it.price,
-            quantity: it.quantity,
-            Product: {
-              id: prod.id,
-              name: prod.name,
-              media: prod.media,
-              imageUrl: prod.imageUrl || prod.media?.[0],
-              price: prod.price,
-              wholesalePrice: prod.wholesalePrice,
-            },
-          });
-        }
-      }
-
       await Order.create({
         orderNumber: 'ORD-20261012-1744',
         userId: admin._id,
@@ -94,6 +96,11 @@ async function seed() {
         OrderItems: orderItems,
       });
       console.log('Custom Order #ORD-20261012-1744 created in MongoDB.');
+    } else {
+      existingOrder.OrderItems = orderItems;
+      existingOrder.totalAmount = totalAmount;
+      await existingOrder.save();
+      console.log('Custom Order #ORD-20261012-1744 updated with 9 items in MongoDB.');
     }
 
     console.log('All seeding successfully completed in MongoDB Atlas!');
