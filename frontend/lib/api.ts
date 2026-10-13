@@ -4,9 +4,15 @@ import toast from 'react-hot-toast';
 
 const getBaseURL = (): string => {
   const envUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!envUrl) return 'http://localhost:5000/api';
-  return envUrl.endsWith('/api') ? envUrl : `${envUrl.replace(/\/+$/, '')}/api`;
+  if (envUrl) {
+    return envUrl.endsWith('/api') ? envUrl : `${envUrl.replace(/\/+$/, '')}/api`;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://playcasthubai.onrender.com/api';
+  }
+  return 'http://localhost:5000/api';
 };
+
 
 const api = axios.create({
   baseURL: getBaseURL(),
