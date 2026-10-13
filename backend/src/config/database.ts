@@ -5,14 +5,27 @@ dotenv.config();
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://playcasthub_db_user:SqgVpn33vcYqSfW7@cluster0.xjssamj.mongodb.net/playcasthub?retryWrites=true&w=majority';
 
+let cachedPromise: Promise<typeof mongoose> | null = null;
+
 export const connectDatabase = async (): Promise<void> => {
-  try {
-    await mongoose.connect(MONGODB_URI);
-    console.log('MongoDB Atlas connected successfully.');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    process.exit(1);
+  if (mongoose.connection.readyState === 1) {
+    return;
   }
+
+  if (!cachedPromise) {
+    cachedPromise = mongoose.connect(MONGODB_URI).then((m) => {
+      console.log('MongoDB Atlas connected successfully.');
+      return m;
+    }).catch((err) => {
+      cachedPromise = null;
+      console.error('MongoDB connection error:', err);
+      throw err;
+    });
+  }
+
+  await cachedPromise;
 };
 
 export default mongoose;
+
+
