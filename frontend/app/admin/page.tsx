@@ -23,7 +23,6 @@ export default function AdminPage() {
   const [orderStatusFilter, setOrderStatusFilter] = useState('all');
   const [orderTypeFilter, setOrderTypeFilter] = useState('all');
   const [orderDateRange, setOrderDateRange] = useState('all');
-  const [analyticsDateRange, setAnalyticsDateRange] = useState('all');
   
 
   // Modal States
@@ -673,19 +672,13 @@ export default function AdminPage() {
     return keep;
   }));
 
-  const analyticsFilteredOrders = orders.filter(o => {
-    let keep = true;
-    if (!checkDateInRange(o.createdAt, analyticsDateRange)) keep = false;
-    return keep;
-  });
-
-  // Analytics Calculation
+  // Analytics Calculation (All Time - Complete store records)
   let totalRevenue = 0;
   let totalProfit = 0;
   let totalItemsSold = 0;
   const monthlyDataMap = new Map();
 
-  analyticsFilteredOrders.forEach(o => {
+  orders.forEach(o => {
     if (o.status === 'cancelled') return;
     
     totalRevenue += o.totalAmount;
@@ -829,26 +822,6 @@ export default function AdminPage() {
 
       {activeTab === 'analytics' && (
         <div className="space-y-6">
-          
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-bubble-surface bubble-card p-4 gap-4">
-            <h2 className="text-xl font-bold">Analytics Filter</h2>
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-bold text-text-muted whitespace-nowrap">Date Range:</label>
-              <SearchableSelect
-                options={[
-                  { label: 'All Time (Show All)', value: 'all' },
-                  { label: 'Today', value: 'today' },
-                  { label: 'Yesterday', value: 'yesterday' },
-                  { label: 'This Week', value: 'this_week' },
-                  { label: 'Last Week', value: 'last_week' },
-                  { label: 'This Month', value: 'this_month' },
-                ]}
-                value={analyticsDateRange}
-                onChange={(val) => setAnalyticsDateRange(val)}
-                className="w-48"
-              />
-            </div>
-          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bubble-card bg-bubble-surface p-6 flex flex-col items-center text-center">
