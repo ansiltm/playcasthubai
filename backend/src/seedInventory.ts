@@ -19,8 +19,8 @@ export const catalog = [
     name: 'Pioneer 4WD Rock Climber',
     category: 'Vehicles & Remote-Controlled (RC)',
     grade: 'Toy-Grade',
-    wholesalePrice: 650.00,
-    price: 999.00,
+    wholesalePrice: 1100.00,
+    price: 1399.00,
     stock: 30,
     media: [
       'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=1200',
@@ -326,6 +326,84 @@ export const catalog = [
       'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&q=80&w=1200'
     ],
     description: 'Interactive sensory driving simulation toy featuring turning steering wheel, realistic ignition switch, working left & right turn signals, horn, and emergency siren sounds with lights.'
+  },
+  {
+    name: 'Mercedes G-Wagon 1:28 Scale Model Car',
+    category: 'Scale Model Kits & Hobby Crafts',
+    grade: 'Collector-Grade / Display-Grade',
+    wholesalePrice: 850.00,
+    price: 1299.00,
+    stock: 25,
+    media: [
+      'https://images.unsplash.com/photo-1520050206274-a1ae44613e6d?auto=format&fit=crop&q=80&w=1200',
+      'https://images.unsplash.com/photo-1541348263662-e0c8de4259ba?auto=format&fit=crop&q=80&w=1200'
+    ],
+    description: 'Precision 1:28 scale die-cast replica of the Mercedes G-Wagon featuring openable doors and hood, detailed interior cabin, pullback action, and realistic engine sound and light effects.'
+  },
+  {
+    name: 'Dual Truck Drift Challenge RC Car',
+    category: 'Vehicles & Remote-Controlled (RC)',
+    grade: 'Toy-Grade',
+    wholesalePrice: 550.00,
+    price: 899.00,
+    stock: 25,
+    media: [
+      'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&q=80&w=1200',
+      'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&q=80&w=1200'
+    ],
+    description: 'Dual-purpose high-speed RC drift truck designed for extreme maneuvers, rapid cornering, and smooth indoor/outdoor drift performance.'
+  },
+  {
+    name: 'THST Cars Container Truck Luxury Gift Box Set',
+    category: 'Pretend Play & Playsets',
+    grade: 'Toy-Grade',
+    wholesalePrice: 400.00,
+    price: 650.00,
+    stock: 30,
+    media: [
+      'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&q=80&w=1200',
+      'https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?auto=format&fit=crop&q=80&w=1200'
+    ],
+    description: 'Deluxe container carrier truck playset with transparent side bays carrying mini alloy die-cast vehicles, built-in carry handle, and fold-out ramp.'
+  },
+  {
+    name: 'Detsky 911 PRGT 1:64 Diecast Sports Car',
+    category: 'Scale Model Kits & Hobby Crafts',
+    grade: 'Collector-Grade / Display-Grade',
+    wholesalePrice: 90.00,
+    price: 149.00,
+    stock: 50,
+    media: [
+      'https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?auto=format&fit=crop&q=80&w=1200',
+      'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&q=80&w=1200'
+    ],
+    description: 'Fine detail 1:64 scale diecast sports car with sleek aerodynamics, smooth-rolling wheels, detailed livery, and premium finish.'
+  },
+  {
+    name: 'Kids Toy Camera (Small Type)',
+    category: 'Electronic, Smart & Animatronic Toys',
+    grade: 'Toy-Grade',
+    wholesalePrice: 300.00,
+    price: 499.00,
+    stock: 35,
+    media: [
+      'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=1200',
+      'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?auto=format&fit=crop&q=80&w=1200'
+    ],
+    description: 'Compact digital toy camera designed for toddlers and kids with silicone protective case, fun photo frames, easy grip, and built-in mini games.'
+  },
+  {
+    name: 'Kids Instant Print Camera',
+    category: 'Electronic, Smart & Animatronic Toys',
+    grade: 'Toy-Grade',
+    wholesalePrice: 750.00,
+    price: 1199.00,
+    stock: 20,
+    media: [
+      'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&q=80&w=1200',
+      'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=1200'
+    ],
+    description: 'Kids instant print thermal camera allowing young creators to snap black-and-white printouts in seconds with HD digital recording and creative filters.'
   }
 ];
 
