@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useCartStore } from '../../../store/useCartStore';
 import { useFavoritesStore } from '../../../store/useFavoritesStore';
-import { ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
+import { ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight, Volume2, VolumeX, RotateCcw, Video, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../../lib/api';
 
@@ -313,6 +313,68 @@ export default function ProductDetails() {
               >
                 <Share2 size={24} />
               </button>
+            </div>
+
+            <p className="text-xs text-center text-text-muted font-bold mt-4 flex items-center justify-center gap-1.5">
+              <RotateCcw size={14} className="text-emerald-500" />
+              <span>7-Day Return Policy Enabled • Live Unboxing Video Mandatory</span>
+            </p>
+          </div>
+
+          {/* Return & Replacement Policy Section */}
+          <div className="bg-bubble-surface rounded-[var(--radius-bubble)] p-6 border-2 border-primary/20 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-border-main">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <RotateCcw size={20} />
+                </div>
+                <div>
+                  <h3 className="font-black text-lg text-text-main flex items-center gap-2 flex-wrap">
+                    Return & Replacement Policy
+                    <span className="text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                      Active for All Products
+                    </span>
+                  </h3>
+                  <p className="text-xs text-text-muted font-medium">Eligible for return, replacement, or refund in case of transit damage or defects</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Mandatory Unboxing Video Callout */}
+            <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl p-4 space-y-2.5">
+              <div className="flex items-center space-x-2 text-amber-700 dark:text-amber-400 font-black text-sm">
+                <Video size={18} className="shrink-0 text-amber-600 animate-pulse" />
+                <span>Mandatory Live Unboxing Video Required</span>
+              </div>
+              <p className="text-xs text-text-muted leading-relaxed">
+                To process any replacement, return, or refund claim for defective, damaged, or missing items, customers <strong className="text-text-main">must record a clear, continuous unboxing video</strong> while opening the courier package.
+              </p>
+              <div className="bg-bubble-surface/80 rounded-xl p-3 space-y-2 text-xs text-text-muted">
+                <div className="flex items-start space-x-2">
+                  <span className="text-amber-500 font-bold">•</span>
+                  <span><strong>Live Recording Only:</strong> The unboxing video must be captured live in a single, continuous take from the moment you cut open the courier flyer/box.</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-amber-500 font-bold">•</span>
+                  <span><strong>No Edits or Cuts:</strong> Videos with cuts, pauses, trimming, or edits are <strong className="text-red-500 font-black">strictly NOT accepted</strong>.</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-amber-500 font-bold">•</span>
+                  <span><strong>Clear Shipping Label:</strong> The video must clearly display the courier shipping label with tracking details intact before unboxing.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Policy highlights */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-xs text-text-muted">
+              <div className="flex items-start space-x-2">
+                <ShieldCheck size={16} className="text-primary shrink-0 mt-0.5" />
+                <span><strong>7-Day Claim Window:</strong> Report return or replacement requests within 7 days of delivery.</span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <CheckCircle2 size={16} className="text-emerald-500 shrink-0 mt-0.5" />
+                <span><strong>Original Packaging:</strong> Keep original retail box, manuals, and accessories in original condition.</span>
+              </div>
             </div>
           </div>
         </div>
