@@ -53,11 +53,38 @@ function ProductsList() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const getDisplayTitle = () => {
+    if (searchQuery) return `Search Results for "${searchQuery}"`;
+    if (categoryQuery) {
+      const catMap: Record<string, string> = {
+        'Vehicles & Remote-Controlled (RC)': 'Vehicles & RC',
+        'Action Figures & Pop-Culture Collectibles': 'Action Figures',
+        'Scale Model Kits & Hobby Crafts': 'Scale Model Kits',
+        'Educational, STEM & STEAM Toys': 'STEM & Educational',
+        'Electronic, Smart & Animatronic Toys': 'Smart Toys',
+        'Outdoor, Sports & Active Play': 'Outdoor Play',
+        'Pretend Play & Playsets': 'Pretend Play',
+        'Building Sets & Construction Toys': 'Building Sets',
+      };
+      return catMap[categoryQuery] || categoryQuery;
+    }
+    if (gradeQuery) {
+      const gradeMap: Record<string, string> = {
+        'Semi-Hobby / Prosumer Grade': 'Semi-Hobby Grade',
+        'Collector-Grade / Display-Grade': 'Collector-Grade',
+        'Institutional / Commercial Grade': 'Commercial Grade',
+        'Artisan / Designer Grade': 'Artisan Grade',
+      };
+      return gradeMap[gradeQuery] || gradeQuery;
+    }
+    return 'All Products';
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-black text-text-main mb-2">
-          {searchQuery ? `Search Results for "${searchQuery}"` : categoryQuery ? categoryQuery : gradeQuery ? gradeQuery : 'All Products'}
+          {getDisplayTitle()}
         </h1>
         <p className="text-text-muted">Showing {products.length} products</p>
       </div>

@@ -25,18 +25,22 @@ import { useTheme } from 'next-themes';
 
 const CATEGORIES = [
   { name: 'All Products', href: '/products' },
-  { name: 'RC Models & Vehicles', href: '/products?category=RC Models & Vehicles' },
-  { name: 'Diecast & Scale Models', href: '/products?category=Diecast & Scale Models' },
-  { name: 'Electronic, Smart & Battery-Operated', href: '/products?category=Electronic, Smart & Battery-Operated' },
-  { name: 'Action Figures, Blasters & Outdoor', href: '/products?category=Action Figures, Blasters & Outdoor' },
-  { name: 'Interactive & Learning Toys', href: '/products?category=Interactive & Learning Toys' },
-  { name: 'Novelty & Specialty Items', href: '/products?category=Novelty & Specialty Items' },
+  { name: 'Vehicles & RC', href: `/products?category=${encodeURIComponent('Vehicles & Remote-Controlled (RC)')}` },
+  { name: 'Action Figures', href: `/products?category=${encodeURIComponent('Action Figures & Pop-Culture Collectibles')}` },
+  { name: 'Scale Model Kits', href: `/products?category=${encodeURIComponent('Scale Model Kits & Hobby Crafts')}` },
+  { name: 'STEM & Educational', href: `/products?category=${encodeURIComponent('Educational, STEM & STEAM Toys')}` },
+  { name: 'Smart Toys', href: `/products?category=${encodeURIComponent('Electronic, Smart & Animatronic Toys')}` },
+  { name: 'Outdoor Play', href: `/products?category=${encodeURIComponent('Outdoor, Sports & Active Play')}` },
 ];
 
 const GRADES = [
   { name: 'All Grades', desc: 'Browse full collection', href: '/products' },
-  { name: 'Hobby-Grade', desc: 'High-performance & enthusiast models', href: '/products?grade=Hobby-Grade' },
-  { name: 'Toy-Grade', desc: 'Fun & accessible toys for all ages', href: '/products?grade=Toy-Grade' },
+  { name: 'Toy-Grade', desc: 'Fun & accessible toys for all ages', href: `/products?grade=${encodeURIComponent('Toy-Grade')}` },
+  { name: 'Semi-Hobby Grade', desc: 'Step up with prosumer performance', href: `/products?grade=${encodeURIComponent('Semi-Hobby / Prosumer Grade')}` },
+  { name: 'Hobby-Grade', desc: 'High-performance enthusiast & repairable models', href: `/products?grade=${encodeURIComponent('Hobby-Grade')}` },
+  { name: 'Collector-Grade', desc: 'Extreme scale display fidelity & detailed diecasts', href: `/products?grade=${encodeURIComponent('Collector-Grade / Display-Grade')}` },
+  { name: 'Commercial Grade', desc: 'Heavy-duty & commercial models', href: `/products?grade=${encodeURIComponent('Institutional / Commercial Grade')}` },
+  { name: 'Artisan Grade', desc: 'Boutique & limited edition crafts', href: `/products?grade=${encodeURIComponent('Artisan / Designer Grade')}` },
 ];
 
 export default function Navbar() {
@@ -369,7 +373,7 @@ export default function Navbar() {
                 >
                   <div className="flex items-center gap-2.5">
                     <Award size={18} className="text-secondary" />
-                    <span>Hobby & Toy Grade</span>
+                    <span>Grades</span>
                   </div>
                   <ChevronDown 
                     size={18} 

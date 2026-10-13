@@ -39,6 +39,72 @@ router.get('/trending', optionalAuthenticate, async (req: any, res: Response): P
   }
 });
 
+// Resolvers for category and grade with support for display names, aliases, and slugs
+const resolveCategoryFilter = (cat: any) => {
+  if (!cat || typeof cat !== 'string') return null;
+  const trimmed = cat.trim();
+  const aliasMap: Record<string, string> = {
+    'vehicles & rc': 'Vehicles & Remote-Controlled (RC)',
+    'rc models & vehicles': 'Vehicles & Remote-Controlled (RC)',
+    'vehicles-and-rc': 'Vehicles & Remote-Controlled (RC)',
+    'vehicles & remote-controlled (rc)': 'Vehicles & Remote-Controlled (RC)',
+    'action figures': 'Action Figures & Pop-Culture Collectibles',
+    'action-figures': 'Action Figures & Pop-Culture Collectibles',
+    'action figures & pop-culture collectibles': 'Action Figures & Pop-Culture Collectibles',
+    'scale model kits': 'Scale Model Kits & Hobby Crafts',
+    'scale-model-kits': 'Scale Model Kits & Hobby Crafts',
+    'scale model kits & hobby crafts': 'Scale Model Kits & Hobby Crafts',
+    'stem & educational': 'Educational, STEM & STEAM Toys',
+    'stem & tech': 'Educational, STEM & STEAM Toys',
+    'stem-and-educational': 'Educational, STEM & STEAM Toys',
+    'educational, stem & steam toys': 'Educational, STEM & STEAM Toys',
+    'smart toys': 'Electronic, Smart & Animatronic Toys',
+    'smart-toys': 'Electronic, Smart & Animatronic Toys',
+    'electronic, smart & animatronic toys': 'Electronic, Smart & Animatronic Toys',
+    'outdoor play': 'Outdoor, Sports & Active Play',
+    'outdoor-play': 'Outdoor, Sports & Active Play',
+    'outdoor, sports & active play': 'Outdoor, Sports & Active Play',
+    'pretend play': 'Pretend Play & Playsets',
+    'pretend play & playsets': 'Pretend Play & Playsets',
+    'building sets': 'Building Sets & Construction Toys',
+    'building sets & construction toys': 'Building Sets & Construction Toys',
+    'games & puzzles': 'Games & Puzzles',
+    'plush toys': 'Plush, Soft & Fabric Toys',
+    'plush, soft & fabric toys': 'Plush, Soft & Fabric Toys',
+  };
+  const resolved = aliasMap[trimmed.toLowerCase()] || trimmed;
+  const escaped = resolved.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return { $regex: new RegExp(`^${escaped}$`, 'i') };
+};
+
+const resolveGradeFilter = (grd: any) => {
+  if (!grd || typeof grd !== 'string') return null;
+  const trimmed = grd.trim();
+  const aliasMap: Record<string, string> = {
+    'toy-grade': 'Toy-Grade',
+    'toy grade': 'Toy-Grade',
+    'semi-hobby': 'Semi-Hobby / Prosumer Grade',
+    'semi hobby': 'Semi-Hobby / Prosumer Grade',
+    'semi-hobby grade': 'Semi-Hobby / Prosumer Grade',
+    'semi-hobby / prosumer grade': 'Semi-Hobby / Prosumer Grade',
+    'hobby-grade': 'Hobby-Grade',
+    'hobby grade': 'Hobby-Grade',
+    'collector': 'Collector-Grade / Display-Grade',
+    'collector-grade': 'Collector-Grade / Display-Grade',
+    'collector grade': 'Collector-Grade / Display-Grade',
+    'collector-grade / display-grade': 'Collector-Grade / Display-Grade',
+    'commercial grade': 'Institutional / Commercial Grade',
+    'commercial-grade': 'Institutional / Commercial Grade',
+    'institutional / commercial grade': 'Institutional / Commercial Grade',
+    'artisan grade': 'Artisan / Designer Grade',
+    'artisan-grade': 'Artisan / Designer Grade',
+    'artisan / designer grade': 'Artisan / Designer Grade',
+  };
+  const resolved = aliasMap[trimmed.toLowerCase()] || trimmed;
+  const escaped = resolved.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return { $regex: new RegExp(`^${escaped}$`, 'i') };
+};
+
 // Dedicated Search endpoint: GET /api/products/search?q=... or ?search=...
 router.get('/search', optionalAuthenticate, async (req: any, res: Response): Promise<void> => {
   try {
@@ -55,10 +121,12 @@ router.get('/search', optionalAuthenticate, async (req: any, res: Response): Pro
       ];
     }
     if (category) {
-      filter.category = category;
+      const catFilter = resolveCategoryFilter(category);
+      if (catFilter) filter.category = catFilter;
     }
     if (grade) {
-      filter.grade = grade;
+      const gradeFilter = resolveGradeFilter(grade);
+      if (gradeFilter) filter.grade = gradeFilter;
     }
 
     const isAdmin = req.user && req.user.role === 'admin';
@@ -90,10 +158,12 @@ router.get('/', optionalAuthenticate, async (req: any, res: Response): Promise<v
       ];
     }
     if (category) {
-      filter.category = category;
+      const catFilter = resolveCategoryFilter(category);
+      if (catFilter) filter.category = catFilter;
     }
     if (grade) {
-      filter.grade = grade;
+      const gradeFilter = resolveGradeFilter(grade);
+      if (gradeFilter) filter.grade = gradeFilter;
     }
 
     const isAdmin = req.user && req.user.role === 'admin';
