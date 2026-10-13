@@ -63,15 +63,37 @@ export default function ProductDetails() {
     if (id) fetchProduct();
   }, [id]);
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center font-bold">Loading product...</div>;
-  }
+  const isVideoMedia = (url?: string) => {
+    if (!url || typeof url !== 'string') return false;
+    return Boolean(url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i)) || url.includes('/video/upload/');
+  };
 
-  if (!product) {
-    return <div className="min-h-screen flex items-center justify-center font-bold text-red-500">Product not found.</div>;
-  }
+  const currentMediaUrl = product?.media?.[currentIndex];
+  const isVideo = isVideoMedia(currentMediaUrl);
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(videoRef.current.muted);
+    }
+  };
+
+  useEffect(() => {
+    if (videoRef.current && isVideo) {
+      videoRef.current.muted = isMuted;
+      videoRef.current.play().catch(() => {
+        if (videoRef.current) {
+          videoRef.current.muted = true;
+          setIsMuted(true);
+          videoRef.current.play().catch(() => {});
+        }
+      });
+    }
+  }, [currentIndex, isVideo, isMuted]);
 
   const handleAddToCart = () => {
+    if (!product) return;
     addItem({
       id: Date.now(),
       productId: product.id,
@@ -84,13 +106,13 @@ export default function ProductDetails() {
   };
 
   const nextMedia = () => {
-    if (product.media && product.media.length > 0) {
+    if (product?.media && product.media.length > 0) {
       setCurrentIndex((prev) => (prev + 1) % product.media.length);
     }
   };
 
   const prevMedia = () => {
-    if (product.media && product.media.length > 0) {
+    if (product?.media && product.media.length > 0) {
       setCurrentIndex((prev) => (prev - 1 + product.media.length) % product.media.length);
     }
   };
@@ -120,34 +142,13 @@ export default function ProductDetails() {
     }
   };
 
-  const isVideoMedia = (url?: string) => {
-    if (!url || typeof url !== 'string') return false;
-    return Boolean(url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i)) || url.includes('/video/upload/');
-  };
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center font-bold">Loading product...</div>;
+  }
 
-  const currentMediaUrl = product.media?.[currentIndex];
-  const isVideo = isVideoMedia(currentMediaUrl);
-
-  const toggleMute = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (videoRef.current) {
-      videoRef.current.muted = !videoRef.current.muted;
-      setIsMuted(videoRef.current.muted);
-    }
-  };
-
-  useEffect(() => {
-    if (videoRef.current && isVideo) {
-      videoRef.current.muted = isMuted;
-      videoRef.current.play().catch(() => {
-        if (videoRef.current) {
-          videoRef.current.muted = true;
-          setIsMuted(true);
-          videoRef.current.play().catch(() => {});
-        }
-      });
-    }
-  }, [currentIndex, isVideo, isMuted]);
+  if (!product) {
+    return <div className="min-h-screen flex items-center justify-center font-bold text-red-500">Product not found.</div>;
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
