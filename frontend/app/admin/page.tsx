@@ -5,7 +5,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import api from '../../lib/api';
 import toast from 'react-hot-toast';
-import { Trash2, Edit, CheckCircle, Plus, Search, X, AlertTriangle, TrendingUp, DollarSign, Package, Printer, ChevronDown, StickyNote, MessageSquare, Check } from 'lucide-react';
+import { Trash2, Edit, CheckCircle, Plus, Search, X, AlertTriangle, TrendingUp, DollarSign, Package, Printer, ChevronDown, StickyNote, MessageSquare, Check, Loader2, UploadCloud, FileVideo, Image as ImageIcon } from 'lucide-react';
 import DataTable, { Column } from '../../components/DataTable';
 import SearchableSelect from '../../components/SearchableSelect';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -55,6 +55,32 @@ export default function AdminPage() {
   });
   const [mediaFiles, setMediaFiles] = useState<FileList | null>(null);
   const [existingMedia, setExistingMedia] = useState<string[]>([]);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [newMediaPreviews, setNewMediaPreviews] = useState<Array<{ url: string; isVideo: boolean; name: string; size: string }>>([]);
+
+  // Generate previews for newly selected media files
+  useEffect(() => {
+    if (!mediaFiles || mediaFiles.length === 0) {
+      setNewMediaPreviews([]);
+      return;
+    }
+    const previews = Array.from(mediaFiles).map(file => {
+      const isVideo = file.type.startsWith('video/') || Boolean(file.name.match(/\.(mp4|webm|mov|ogg)$/i));
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+      return {
+        url: URL.createObjectURL(file),
+        isVideo,
+        name: file.name,
+        size: `${sizeMb} MB`,
+      };
+    });
+    setNewMediaPreviews(previews);
+
+    return () => {
+      previews.forEach(p => URL.revokeObjectURL(p.url));
+    };
+  }, [mediaFiles]);
 
   useEffect(() => {
     setMounted(true);
@@ -109,6 +135,11 @@ export default function AdminPage() {
 
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isUploadingMedia) return;
+
+    setIsUploadingMedia(true);
+    setUploadProgress(0);
+
     const data = new FormData();
     data.append('name', formData.name);
     data.append('price', formData.price);
@@ -125,15 +156,21 @@ export default function AdminPage() {
     if (mediaFiles) Array.from(mediaFiles).forEach(f => data.append('media', f));
 
     try {
+      const config = {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent: any) => {
+          if (progressEvent.total) {
+            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percent);
+          }
+        }
+      };
+
       if (editingId) {
-        await api.put(`/products/${editingId}`, data, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        await api.put(`/products/${editingId}`, data, config);
         toast.success('Product updated successfully!');
       } else {
-        await api.post('/products', data, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        await api.post('/products', data, config);
         toast.success('New product added successfully!');
       }
       closeProductModal();
@@ -142,6 +179,9 @@ export default function AdminPage() {
       if (err.response?.status !== 401 && err.response?.status !== 403) {
         toast.error(err.response?.data?.message || 'Error saving product');
       }
+    } finally {
+      setIsUploadingMedia(false);
+      setUploadProgress(0);
     }
   };
 
@@ -263,6 +303,7 @@ export default function AdminPage() {
     setEditingId(null);
     setFormData({ name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '' });
     setMediaFiles(null);
+    setNewMediaPreviews([]);
     setExistingMedia([]);
     setIsProductModalOpen(true);
   };
@@ -274,13 +315,20 @@ export default function AdminPage() {
       grade: p.grade, description: p.description, stock: p.stock.toString()
     });
     setMediaFiles(null);
+    setNewMediaPreviews([]);
     setExistingMedia(p.media || []);
     setIsProductModalOpen(true);
   };
 
   const closeProductModal = () => {
+    if (isUploadingMedia) {
+      toast.error('File upload is in progress. Please wait.');
+      return;
+    }
     setIsProductModalOpen(false);
     setEditingId(null);
+    setMediaFiles(null);
+    setNewMediaPreviews([]);
   };
 
   const updateOrderStatus = async (id: number, status: string) => {
@@ -860,7 +908,12 @@ export default function AdminPage() {
           <div className="bg-bubble-surface rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto bubble-card animate-in fade-in zoom-in-95 duration-200">
             <div className="sticky top-0 bg-bubble-surface/90 backdrop-blur-md p-6 border-b border-border-main flex justify-between items-center z-10">
               <h2 className="text-2xl font-black text-text-main">{editingId ? 'Edit Product' : 'Add New Product'}</h2>
-              <button onClick={closeProductModal} className="p-2 bg-gray-100 text-text-muted rounded-full hover:bg-gray-200 hover:text-text-main transition-colors">
+              <button 
+                onClick={closeProductModal} 
+                disabled={isUploadingMedia}
+                className="p-2 bg-gray-100 text-text-muted rounded-full hover:bg-gray-200 hover:text-text-main transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Close"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -968,13 +1021,127 @@ export default function AdminPage() {
 
                 <div className="w-full">
                   <label className="block text-xs font-bold text-text-muted mb-2">Add New Files (Optional)</label>
-                  <input type="file" multiple accept="image/*,video/*" onChange={e => setMediaFiles(e.target.files)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200" />
+                  <input 
+                    type="file" 
+                    multiple 
+                    accept="image/*,video/*" 
+                    disabled={isUploadingMedia}
+                    onChange={e => setMediaFiles(e.target.files)} 
+                    className="w-full text-sm file:mr-4 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" 
+                  />
+                  <p className="text-[11px] text-text-muted mt-1.5">
+                    Supports high-resolution images (.jpg, .png, .webp) and product demonstration videos (.mp4, .webm, .mov).
+                  </p>
                 </div>
+
+                {/* NEWLY SELECTED PREVIEWS QUEUED FOR UPLOAD */}
+                {newMediaPreviews.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border-main animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-black text-text-main">
+                        Files Queued for Upload ({newMediaPreviews.length})
+                      </label>
+                      {!isUploadingMedia && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMediaFiles(null);
+                            setNewMediaPreviews([]);
+                          }}
+                          className="text-[11px] text-red-500 hover:underline font-bold"
+                        >
+                          Clear Selection
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {newMediaPreviews.map((item, idx) => (
+                        <div key={idx} className="relative rounded-xl overflow-hidden border border-border-main bg-bubble-surface p-2 flex flex-col gap-1.5 shadow-sm">
+                          <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-black/5">
+                            {item.isVideo ? (
+                              <video src={item.url} className="w-full h-full object-cover" muted />
+                            ) : (
+                              <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
+                            )}
+                            <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-black/75 text-white flex items-center gap-1">
+                              {item.isVideo ? <FileVideo size={10} /> : <ImageIcon size={10} />}
+                              {item.isVideo ? 'Video' : 'Image'}
+                            </span>
+                          </div>
+                          <div className="text-[11px] font-semibold text-text-main truncate" title={item.name}>
+                            {item.name}
+                          </div>
+                          <div className="text-[10px] text-text-muted">{item.size}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* UPLOAD PROGRESS & LOADER BANNER */}
+                {isUploadingMedia && (
+                  <div className="mt-4 p-5 rounded-2xl bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/30 shadow-sm animate-in fade-in zoom-in-95 duration-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
+                          <UploadCloud size={22} className="animate-bounce" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-text-main flex items-center gap-2">
+                            <span>
+                              {mediaFiles && mediaFiles.length > 0 
+                                ? uploadProgress < 100 
+                                  ? `Uploading ${mediaFiles.length} file(s) to server...` 
+                                  : 'Uploading to Cloudinary media storage...'
+                                : 'Saving product details...'}
+                            </span>
+                            <Loader2 size={14} className="animate-spin text-primary" />
+                          </h4>
+                          <p className="text-xs text-text-muted mt-0.5">
+                            {uploadProgress < 100 
+                              ? `${uploadProgress}% uploaded. Please keep this modal open.`
+                              : 'Encoding videos/images and saving product in database...'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-lg font-black text-primary">{uploadProgress}%</span>
+                      </div>
+                    </div>
+
+                    {/* Animated Progress Bar */}
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 h-2.5 rounded-full overflow-hidden shadow-inner">
+                      <div 
+                        className="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-300 relative"
+                        style={{ width: `${Math.max(5, uploadProgress)}%` }}
+                      >
+                        <div className="absolute inset-0 bg-white/25 animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex space-x-4 pt-4">
-                <button type="submit" className="bubble-btn flex-1 py-4 text-lg shadow-lg">
-                  {editingId ? 'Save Changes' : 'Create Product'}
+                <button 
+                  type="submit" 
+                  disabled={isUploadingMedia}
+                  className="bubble-btn flex-1 py-4 text-lg shadow-lg flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                >
+                  {isUploadingMedia ? (
+                    <>
+                      <Loader2 className="animate-spin" size={24} />
+                      <span>
+                        {mediaFiles && mediaFiles.length > 0
+                          ? uploadProgress < 100
+                            ? `Uploading Media (${uploadProgress}%)...`
+                            : 'Uploading to Cloudinary... Please wait'
+                          : 'Saving Product...'}
+                      </span>
+                    </>
+                  ) : (
+                    editingId ? 'Save Changes' : 'Create Product'
+                  )}
                 </button>
               </div>
             </form>
