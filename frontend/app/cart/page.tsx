@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { Trash2, Plus, Minus, ArrowRight, MapPin, CheckCircle, PhoneCall, X, ShoppingBag } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowRight, MapPin, CheckCircle, PhoneCall, X, ShoppingBag, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
 
@@ -355,7 +355,6 @@ export default function CartPage() {
               <PhoneCall size={18} className="shrink-0" />
               <div>
                 <span>Our support team will contact you at <strong>{phone}</strong> after placing the order.</span>
-                <span className="block text-[11px] font-semibold opacity-90 mt-0.5">സപ്പോർട്ട് ടീം ഓർഡർ പ്ലേസ് ചെയ്തതിന് ശേഷം നിങ്ങളെ കോൺടാക്ട് ചെയ്യും.</span>
               </div>
             </div>
 
@@ -410,9 +409,6 @@ export default function CartPage() {
                   <p className="text-xs text-text-muted mt-1 leading-relaxed">
                     Our support team will contact you on <strong className="text-primary">{phone}</strong> after placing the order to confirm your delivery details.
                   </p>
-                  <p className="text-xs text-primary font-semibold mt-1">
-                    സപ്പോർട്ട് ടീം ഓർഡർ പ്ലേസ് ചെയ്തതിന് ശേഷം നിങ്ങളെ കോൺടാക്ട് ചെയ്യും.
-                  </p>
                 </div>
               </div>
             </div>
@@ -422,11 +418,19 @@ export default function CartPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
+              <Link 
+                href="/orders" 
+                onClick={handleCloseSuccess}
+                className="bubble-btn w-full py-3.5 justify-center flex items-center gap-2"
+              >
+                <Package size={18} />
+                <span>Track Order in History</span>
+              </Link>
               <button 
                 onClick={handleCloseSuccess}
-                className="bubble-btn w-full py-3.5 justify-center"
+                className="bubble-btn-secondary w-full py-3.5 justify-center"
               >
-                Close & Continue Shopping
+                Continue Shopping
               </button>
             </div>
           </div>

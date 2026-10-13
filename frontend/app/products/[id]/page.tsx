@@ -43,20 +43,8 @@ export default function ProductDetails() {
         const res = await api.get(`/products/${id}`);
         setProduct(res.data);
       } catch (err) {
-        console.error(err);
-        // Fallback for visual testing
-        setProduct({
-          id: Number(id),
-          name: 'RC Buggy Pro X1 Extreme Edition',
-          price: 199.99,
-          category: 'Vehicles & Remote-Controlled (RC)',
-          description: 'Experience the ultimate off-road adventure with the RC Buggy Pro X1. Features 4WD, independent suspension, and a top speed of 50mph.',
-          stock: 15,
-          media: [
-            'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=1200',
-            'https://www.w3schools.com/html/mov_bbb.mp4'
-          ]
-        });
+        console.error('Failed to fetch product details', err);
+        setProduct(null);
       } finally {
         setLoading(false);
       }
@@ -122,7 +110,9 @@ export default function ProductDetails() {
   };
 
   const currentMediaUrl = product.media?.[currentIndex];
-  const isVideo = currentMediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) !== null;
+  const isVideo = currentMediaUrl
+    ? Boolean(currentMediaUrl.match(/\.(mp4|webm|mov|ogg)$/i)) || currentMediaUrl.includes('/video/upload/')
+    : false;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -191,7 +181,7 @@ export default function ProductDetails() {
           {product.media && product.media.length > 1 && (
             <div className="flex gap-2 overflow-x-auto pb-2 px-1">
               {product.media.map((url: string, idx: number) => {
-                const isThumbVideo = url.match(/\.(mp4|webm|mov|ogg)$/i) !== null;
+                const isThumbVideo = Boolean(url.match(/\.(mp4|webm|mov|ogg)$/i)) || url.includes('/video/upload/');
                 return (
                   <button 
                     key={idx} 

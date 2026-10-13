@@ -1,27 +1,40 @@
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+import cloudinary from '../config/cloudinary';
 
-// Ensure uploads directory exists
-const uploadDir = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Store incoming files in memory for fast direct streaming to Cloudinary
+const storage = multer.memoryStorage();
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-// Unlimited file size logic
 export const upload = multer({
-  storage: storage,
+  storage,
   limits: {
-    fileSize: Infinity // No limit
-  }
+    fileSize: 50 * 1024 * 1024, // 50MB max file size
+  },
 });
+
+/**
+ * Uploads a file buffer from Multer directly to Cloudinary CDN
+ */
+export const uploadToCloudinary = (
+  file: Express.Multer.File,
+  folder: string = 'playcasthub_products'
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const isVideo = file.mimetype ? file.mimetype.startsWith('video') : false;
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: isVideo ? 'video' : 'auto',
+      },
+      (error, result) => {
+        if (error) {
+          return reject(error);
+        }
+        if (!result?.secure_url) {
+          return reject(new Error('Cloudinary upload returned no secure URL'));
+        }
+        resolve(result.secure_url);
+      }
+    );
+    uploadStream.end(file.buffer);
+  });
+};

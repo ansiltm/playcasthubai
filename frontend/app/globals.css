@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    color-scheme: light;
     --bg-page: #f2fbff;
     --bg-surface: #ffffff;
     --bg-input: #ffffff;
@@ -17,6 +18,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     --bg-page: #020617;
     --bg-surface: #0f172a;
     --bg-input: #1e293b;

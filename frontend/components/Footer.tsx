@@ -4,7 +4,7 @@ export default function Footer() {
   return (
     <footer className="bg-bubble-surface border-t border-border-main mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <div className="relative w-12 h-12 overflow-hidden rounded-[var(--radius-pill)] shadow-sm">
@@ -39,16 +39,6 @@ export default function Footer() {
               <li><a href="/products?grade=Institutional+%2F+Commercial+Grade" className="hover:text-primary">Commercial Grade</a></li>
               <li><a href="/products?grade=Artisan+%2F+Designer+Grade" className="hover:text-primary">Artisan Grade</a></li>
             </ul>
-          </div>
-          <div>
-            <h3 className="font-bold text-text-main mb-4">Newsletter</h3>
-            <p className="text-sm text-text-muted mb-4">Subscribe to get special offers, free giveaways, and once-in-a-lifetime deals.</p>
-            <div className="flex">
-              <input type="email" placeholder="Enter your email" className="bubble-input rounded-r-none border-r-0 focus:ring-0" />
-              <button className="bg-primary text-white px-4 rounded-r-[var(--radius-pill)] font-bold hover:bg-primary-dark transition-colors">
-                Subscribe
-              </button>
-            </div>
           </div>
         </div>
         <div className="mt-12 pt-8 border-t border-border-main text-center text-sm text-text-muted">

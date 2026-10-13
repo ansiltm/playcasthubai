@@ -17,6 +17,7 @@ export interface IOrder extends Document {
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
   paymentMethod: string;
   paymentStatus: string;
+  notes?: string;
   shippingAddressLine1?: string;
   shippingAddressLine2?: string;
   shippingCity?: string;
@@ -52,6 +53,7 @@ const OrderSchema = new Schema<IOrder>(
     },
     paymentMethod: { type: String, default: 'COD' },
     paymentStatus: { type: String, default: 'pending' },
+    notes: { type: String, default: '' },
     shippingAddressLine1: { type: String, default: '' },
     shippingAddressLine2: { type: String, default: '' },
     shippingCity: { type: String, default: '' },

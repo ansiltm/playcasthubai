@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { Product } from '../models';
 import { authenticate, authorizeAdmin, optionalAuthenticate } from '../middleware/auth';
-import { upload } from '../middleware/upload';
+import { upload, uploadToCloudinary } from '../middleware/upload';
 
 const router: Router = Router();
 
@@ -10,11 +10,25 @@ const formatFileUrl = (req: Request, filename: string) => {
   return `${req.protocol}://${req.get('host')}/uploads/${filename}`;
 };
 
-// GET trending products
+// GET trending products - supports dynamic ordering: ?order=asc|desc&sort=createdAt|price|name&limit=6
 router.get('/trending', optionalAuthenticate, async (req: any, res: Response): Promise<void> => {
   try {
     const isAdmin = req.user && req.user.role === 'admin';
-    let query = Product.find().sort({ createdAt: -1 }).limit(6);
+    const orderParam = req.query.order ? req.query.order.toString().toLowerCase() : 'asc';
+    const sortDirection: 1 | -1 = orderParam === 'desc' ? -1 : 1;
+    const sortBy = (req.query.sort || req.query.sortBy || 'createdAt') as string;
+    const limit = parseInt(req.query.limit as string) || 6;
+
+    let sortObj: any = {};
+    if (sortBy === 'price') {
+      sortObj = { price: sortDirection };
+    } else if (sortBy === 'name') {
+      sortObj = { name: sortDirection };
+    } else {
+      sortObj = { createdAt: sortDirection, _id: sortDirection };
+    }
+
+    let query = Product.find().sort(sortObj).limit(limit);
     if (!isAdmin) {
       query = query.select('-wholesalePrice');
     }
@@ -83,7 +97,19 @@ router.get('/', optionalAuthenticate, async (req: any, res: Response): Promise<v
     }
 
     const isAdmin = req.user && req.user.role === 'admin';
-    let mongoQuery = Product.find(filter).sort({ createdAt: -1 });
+    const orderParam = req.query.order ? req.query.order.toString().toLowerCase() : 'asc';
+    const sortDirection: 1 | -1 = orderParam === 'desc' ? -1 : 1;
+    const sortBy = (req.query.sort || req.query.sortBy || 'createdAt') as string;
+    let sortObj: any = {};
+    if (sortBy === 'price') {
+      sortObj = { price: sortDirection };
+    } else if (sortBy === 'name') {
+      sortObj = { name: sortDirection };
+    } else {
+      sortObj = { createdAt: sortDirection, _id: sortDirection };
+    }
+
+    let mongoQuery = Product.find(filter).sort(sortObj);
     if (!isAdmin) {
       mongoQuery = mongoQuery.select('-wholesalePrice');
     }
@@ -124,7 +150,22 @@ router.post(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const files = req.files as Express.Multer.File[];
-      const mediaUrls = files ? files.map(f => formatFileUrl(req, f.filename)) : [];
+      let mediaUrls: string[] = [];
+      if (files && files.length > 0) {
+        mediaUrls = await Promise.all(files.map(f => uploadToCloudinary(f)));
+      }
+
+      let existingMedia: string[] = [];
+      if (req.body.existingMedia) {
+        if (Array.isArray(req.body.existingMedia)) {
+          existingMedia = req.body.existingMedia;
+        } else if (typeof req.body.existingMedia === 'string' && req.body.existingMedia.trim() !== '') {
+          existingMedia = [req.body.existingMedia];
+        }
+      }
+
+      const allMedia = [...existingMedia, ...mediaUrls];
+      const primaryImage = req.body.imageUrl || allMedia[0] || '';
 
       const product = await Product.create({
         name: req.body.name,
@@ -134,8 +175,8 @@ router.post(
         price: parseFloat(req.body.price),
         wholesalePrice: req.body.wholesalePrice ? parseFloat(req.body.wholesalePrice) : 0,
         stock: parseInt(req.body.stock),
-        media: mediaUrls,
-        imageUrl: mediaUrls[0] || '',
+        media: allMedia,
+        imageUrl: primaryImage,
       });
       res.status(201).json(product);
     } catch (err) {
@@ -159,11 +200,14 @@ router.put(
       }
 
       const files = req.files as Express.Multer.File[];
-      const newMediaUrls = files ? files.map(f => formatFileUrl(req, f.filename)) : [];
+      let newMediaUrls: string[] = [];
+      if (files && files.length > 0) {
+        newMediaUrls = await Promise.all(files.map(f => uploadToCloudinary(f)));
+      }
 
-      let finalMedia = product.media;
+      let finalMedia = product.media || [];
 
-      if (req.body.existingMedia !== undefined) {
+      if (req.body.mediaUpdated === 'true' || req.body.existingMedia !== undefined) {
         let existingMedia: string[] = [];
         if (Array.isArray(req.body.existingMedia)) {
           existingMedia = req.body.existingMedia;
@@ -172,7 +216,7 @@ router.put(
         }
         finalMedia = [...existingMedia, ...newMediaUrls];
       } else if (newMediaUrls.length > 0) {
-        finalMedia = newMediaUrls;
+        finalMedia = [...finalMedia, ...newMediaUrls];
       }
 
       product.name = req.body.name || product.name;
@@ -183,7 +227,11 @@ router.put(
       if (req.body.wholesalePrice !== undefined) product.wholesalePrice = parseFloat(req.body.wholesalePrice);
       if (req.body.stock !== undefined) product.stock = parseInt(req.body.stock);
       product.media = finalMedia;
-      if (finalMedia.length > 0) product.imageUrl = finalMedia[0];
+      if (finalMedia.length > 0) {
+        product.imageUrl = finalMedia[0];
+      } else if (req.body.imageUrl) {
+        product.imageUrl = req.body.imageUrl;
+      }
 
       await product.save();
       res.json(product);

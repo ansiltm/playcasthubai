@@ -58,6 +58,15 @@ export default function ProductCard({ product }: { product: Product }) {
             />
           )}
           
+          {/* Grade Badge overlay on image */}
+          {product.grade && (
+            <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
+              <span className="text-[9px] font-black bg-purple-900/80 backdrop-blur-md text-purple-200 px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm border border-purple-400/30">
+                {product.grade.replace(' / Display-Grade', '').replace(' / Prosumer Grade', '')}
+              </span>
+            </div>
+          )}
+
           {isOutOfStock && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
               <span className="bg-red-500 text-white font-black px-4 py-2 rounded-full uppercase tracking-wider text-xs shadow-lg transform -rotate-12">
@@ -79,16 +88,10 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         {/* Content */}
-        <div className="p-4 flex-1 flex flex-col">
-          <div className="flex justify-between items-start gap-2 mb-3">
-            <div className="text-[9px] sm:text-[10px] font-bold text-secondary uppercase tracking-wider line-clamp-2 flex-1">
-              {product.category}
-            </div>
-            {product.grade && (
-              <div className="text-[8px] sm:text-[9px] font-black bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 px-2 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap shrink-0 border border-purple-200 dark:border-purple-800">
-                {product.grade}
-              </div>
-            )}
+        <div className="p-3.5 sm:p-4 flex-1 flex flex-col">
+          {/* Full-width Category */}
+          <div className="text-[10px] sm:text-[11px] font-bold text-secondary dark:text-cyan-400 uppercase tracking-wider line-clamp-1 mb-1.5" title={product.category}>
+            {product.category}
           </div>
           <h3 className="text-sm sm:text-base font-bold text-text-main mb-3 line-clamp-2 flex-1 leading-snug">
             {product.name}

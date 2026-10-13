@@ -253,6 +253,64 @@ router.put('/:id/status', authenticate, authorizeAdmin, async (req: any, res: Re
   }
 });
 
+// Update order payment status (Admin)
+router.put('/:id/payment-status', authenticate, authorizeAdmin, async (req: any, res: Response) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const { paymentStatus } = req.body;
+    if (paymentStatus) {
+      order.paymentStatus = paymentStatus;
+    }
+    await order.save();
+
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
+
+// Update order notes (Admin)
+router.put('/:id/notes', authenticate, authorizeAdmin, async (req: any, res: Response) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const { notes } = req.body;
+    order.notes = notes ?? '';
+    await order.save();
+
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
+
+// General update order (Admin)
+router.put('/:id', authenticate, authorizeAdmin, async (req: any, res: Response) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const { status, paymentStatus, notes } = req.body;
+    if (status !== undefined) order.status = status;
+    if (paymentStatus !== undefined) order.paymentStatus = paymentStatus;
+    if (notes !== undefined) order.notes = notes;
+    await order.save();
+
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
+
 // Delete order (Admin)
 router.delete('/:id', authenticate, authorizeAdmin, async (req: any, res: Response) => {
   try {

@@ -9,19 +9,14 @@ export default function Home(): React.JSX.Element {
   const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
 
   useEffect(() => {
-    // Fetch trending products from backend (fallback to dummy if backend fails)
+    // Fetch trending products from backend
     const fetchTrendingProducts = async () => {
       try {
-        const res = await api.get('/products/trending');
+        const res = await api.get('/products/trending?order=asc&limit=6');
         setTrendingProducts(res.data);
       } catch (error) {
         console.error('Failed to fetch trending products', error);
-        // Fallback dummy data for visual testing
-        setTrendingProducts([
-          { id: 1, name: 'RC Buggy Pro X1', price: 199.99, category: 'Vehicles & Remote-Controlled (RC)', media: ['https://images.unsplash.com/photo-1594787318286-3d835c1d207f?auto=format&fit=crop&q=80&w=800'] },
-          { id: 2, name: 'Diecast Ford Mustang', price: 45.00, category: 'Vehicles & Remote-Controlled (RC)', media: ['https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?auto=format&fit=crop&q=80&w=800'] },
-          { id: 3, name: 'Drone Master 5000', price: 299.00, category: 'Vehicles & Remote-Controlled (RC)', media: ['https://images.unsplash.com/photo-1579829366248-204fe8413f31?auto=format&fit=crop&q=80&w=800'] },
-        ]);
+        setTrendingProducts([]);
       }
     };
     fetchTrendingProducts();

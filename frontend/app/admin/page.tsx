@@ -5,7 +5,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import api from '../../lib/api';
 import toast from 'react-hot-toast';
-import { Trash2, Edit, CheckCircle, Plus, Search, X, AlertTriangle, TrendingUp, DollarSign, Package, Printer } from 'lucide-react';
+import { Trash2, Edit, CheckCircle, Plus, Search, X, AlertTriangle, TrendingUp, DollarSign, Package, Printer, ChevronDown, StickyNote, MessageSquare, Check } from 'lucide-react';
 import DataTable, { Column } from '../../components/DataTable';
 import SearchableSelect from '../../components/SearchableSelect';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -41,6 +41,12 @@ export default function AdminPage() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isOrderDeleteModalOpen, setIsOrderDeleteModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<number | null>(null);
+
+  // Order Note Modal States
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [selectedOrderForNote, setSelectedOrderForNote] = useState<any>(null);
+  const [noteText, setNoteText] = useState('');
+  const [isSavingNote, setIsSavingNote] = useState(false);
 
   // Form State
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -289,6 +295,64 @@ export default function AdminPage() {
     }
   };
 
+  const getOrderStatusBadgeClass = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40 hover:bg-amber-500/25';
+      case 'confirmed':
+        return 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/40 hover:bg-blue-500/25';
+      case 'shipped':
+        return 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/40 hover:bg-purple-500/25';
+      case 'delivered':
+        return 'bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/40 hover:bg-teal-500/25';
+      case 'completed':
+        return 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/25';
+      case 'cancelled':
+        return 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40 hover:bg-rose-500/25';
+      default:
+        return 'bg-gray-500/15 text-gray-700 dark:text-gray-300 border-gray-500/40 hover:bg-gray-500/25';
+    }
+  };
+
+  const updatePaymentStatus = async (id: number | string, paymentStatus: string) => {
+    try {
+      await api.put(`/orders/${id}/payment-status`, { paymentStatus });
+      toast.success(`Payment marked as ${paymentStatus === 'paid' ? 'PAID' : 'NOT PAID'}!`);
+      fetchOrders();
+    } catch (err: any) {
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        toast.error('Failed to update payment status');
+      }
+    }
+  };
+
+  const handleSaveNote = async () => {
+    if (!selectedOrderForNote) return;
+    try {
+      setIsSavingNote(true);
+      await api.put(`/orders/${selectedOrderForNote.id}/notes`, { notes: noteText });
+      toast.success('Order note saved successfully!');
+      setIsNoteModalOpen(false);
+      fetchOrders();
+      if (selectedOrder && selectedOrder.id === selectedOrderForNote.id) {
+        setSelectedOrder({ ...selectedOrder, notes: noteText });
+      }
+    } catch (err: any) {
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        toast.error('Failed to save order note');
+      }
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
+
+  const getPaymentBadgeClass = (paymentStatus: string) => {
+    const isPaid = (paymentStatus || '').toLowerCase() === 'paid';
+    return isPaid
+      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/25'
+      : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/40 hover:bg-rose-500/25';
+  };
+
   const productColumns: Column<any>[] = [
     { 
       header: 'Product Name', 
@@ -451,22 +515,89 @@ export default function AdminPage() {
     { 
       header: 'Order Status', 
       renderCell: (o) => (
-        <select 
-          className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap outline-none cursor-pointer border ${
-            o.status === 'pending' ? 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/30' : 
-            o.status === 'cancelled' ? 'bg-red-500/20 text-red-600 border-red-500/30' :
-            'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30'
-          }`}
-          value={o.status}
-          onChange={(e) => updateOrderStatus(o.id, e.target.value)}
-        >
-          <option value="pending">Pending</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="shipped">Shipped</option>
-          <option value="delivered">Delivered</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+        <div className="relative inline-flex items-center">
+          <select 
+            className={`appearance-none pl-3.5 pr-8 py-1.5 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap outline-none cursor-pointer border transition-colors shadow-sm ${getOrderStatusBadgeClass(o.status)}`}
+            value={o.status}
+            onChange={(e) => updateOrderStatus(o.id, e.target.value)}
+          >
+            <option value="pending" className="bg-[#0f172a] text-amber-400 font-bold py-2" style={{ backgroundColor: '#0f172a', color: '#fbbf24' }}>
+              Pending
+            </option>
+            <option value="confirmed" className="bg-[#0f172a] text-blue-400 font-bold py-2" style={{ backgroundColor: '#0f172a', color: '#60a5fa' }}>
+              Confirmed
+            </option>
+            <option value="shipped" className="bg-[#0f172a] text-purple-400 font-bold py-2" style={{ backgroundColor: '#0f172a', color: '#c084fc' }}>
+              Shipped
+            </option>
+            <option value="delivered" className="bg-[#0f172a] text-teal-400 font-bold py-2" style={{ backgroundColor: '#0f172a', color: '#2dd4bf' }}>
+              Delivered
+            </option>
+            <option value="completed" className="bg-[#0f172a] text-emerald-400 font-bold py-2" style={{ backgroundColor: '#0f172a', color: '#4ade80' }}>
+              Completed
+            </option>
+            <option value="cancelled" className="bg-[#0f172a] text-rose-400 font-bold py-2" style={{ backgroundColor: '#0f172a', color: '#fb7185' }}>
+              Cancelled
+            </option>
+          </select>
+          <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-80" />
+        </div>
+      )
+    },
+    { 
+      header: 'Payment', 
+      renderCell: (o) => {
+        const isPaid = (o.paymentStatus || 'pending').toLowerCase() === 'paid';
+        return (
+          <div className="relative inline-flex items-center">
+            <select 
+              className={`appearance-none pl-3.5 pr-7 py-1.5 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap outline-none cursor-pointer border transition-colors shadow-sm ${getPaymentBadgeClass(o.paymentStatus)}`}
+              value={isPaid ? 'paid' : 'pending'}
+              onChange={(e) => updatePaymentStatus(o.id, e.target.value)}
+            >
+              <option value="paid" className="bg-[#0f172a] text-emerald-400 font-bold py-2" style={{ backgroundColor: '#0f172a', color: '#4ade80' }}>
+                Paid
+              </option>
+              <option value="pending" className="bg-[#0f172a] text-rose-400 font-bold py-2" style={{ backgroundColor: '#0f172a', color: '#fb7185' }}>
+                Not Paid
+              </option>
+            </select>
+            <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-80" />
+          </div>
+        );
+      }
+    },
+    { 
+      header: 'Notes', 
+      renderCell: (o) => (
+        <div className="flex items-center">
+          {o.notes ? (
+            <button
+              onClick={() => {
+                setSelectedOrderForNote(o);
+                setNoteText(o.notes || '');
+                setIsNoteModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-bubble-input hover:bg-bubble-input/80 border border-border-main text-xs text-text-main max-w-[170px] truncate text-left transition-colors group"
+              title={o.notes}
+            >
+              <StickyNote size={14} className="text-primary shrink-0 group-hover:scale-110 transition-transform" />
+              <span className="truncate font-medium">{o.notes}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setSelectedOrderForNote(o);
+                setNoteText('');
+                setIsNoteModalOpen(true);
+              }}
+              className="text-xs text-text-muted hover:text-primary flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-dashed border-border-main hover:border-primary/50 transition-colors"
+            >
+              <Plus size={13} />
+              <span>Add Note</span>
+            </button>
+          )}
+        </div>
       )
     },
     { 
@@ -813,7 +944,7 @@ export default function AdminPage() {
                     <label className="block text-xs font-bold text-text-muted mb-2">Currently Uploaded Media</label>
                     <div className="flex flex-wrap gap-3">
                       {existingMedia.map((url, idx) => {
-                        const isVideo = url.match(/\.(mp4|webm|mov|ogg)$/i) !== null;
+                        const isVideo = Boolean(url.match(/\.(mp4|webm|mov|ogg)$/i)) || url.includes('/video/upload/');
                         return (
                           <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border-main group">
                             {isVideo ? (
@@ -936,12 +1067,31 @@ export default function AdminPage() {
                     </p>
                     <p className="text-sm flex justify-between">
                       <span className="text-text-muted">Payment:</span> 
-                      <span className="font-bold">{selectedOrder.paymentMethod || 'Custom / Cash'} ({selectedOrder.paymentStatus || 'paid'})</span>
+                      <span className="font-bold uppercase text-emerald-600">{selectedOrder.paymentStatus || 'pending'} ({selectedOrder.paymentMethod || 'COD / Cash'})</span>
                     </p>
                     <p className="text-sm flex justify-between">
                       <span className="text-text-muted">Status:</span> 
                       <span className="font-bold uppercase text-primary">{selectedOrder.status}</span>
                     </p>
+                    <div className="pt-2 border-t border-border-main">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs font-bold text-text-muted uppercase tracking-wider">Internal Notes:</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedOrderForNote(selectedOrder);
+                            setNoteText(selectedOrder.notes || '');
+                            setIsNoteModalOpen(true);
+                          }}
+                          className="text-xs text-primary font-bold hover:underline"
+                        >
+                          {selectedOrder.notes ? 'Edit Note' : '+ Add Note'}
+                        </button>
+                      </div>
+                      <p className="text-xs text-text-main italic bg-bubble-surface/60 p-2.5 rounded-xl border border-border-main">
+                        {selectedOrder.notes || 'No notes added to this order yet.'}
+                      </p>
+                    </div>
                     <div className="border-t border-border-main pt-2 flex justify-between text-primary font-black text-lg">
                       <span>Total Amount:</span> 
                       <span>₹{selectedOrder.totalAmount?.toFixed(2)}</span>
@@ -967,14 +1117,14 @@ export default function AdminPage() {
                 Items in this Order ({selectedOrder.OrderItems?.length || 0})
               </h4>
               <div className="space-y-3">
-                {selectedOrder.OrderItems?.map((item: any) => {
+                {selectedOrder.OrderItems?.map((item: any, idx: number) => {
                   const mediaUrl = item.Product?.media?.[0] || item.Product?.imageUrl;
                   const isVideo = mediaUrl && mediaUrl.match(/\.(mp4|webm|mov|ogg)$/i) !== null;
                   const wholesale = item.Product?.wholesalePrice || 0;
                   const itemProfit = wholesale > 0 ? (item.price - wholesale) * item.quantity : 0;
 
                   return (
-                    <div key={item.id} className="flex items-center space-x-4 bg-bubble-input p-4 rounded-[var(--radius-bubble)]">
+                    <div key={item._id || item.id || `order-item-${idx}`} className="flex items-center space-x-4 bg-bubble-input p-4 rounded-[var(--radius-bubble)]">
                       <div className="w-16 h-16 bg-white rounded-lg overflow-hidden shrink-0 border border-border-main">
                         {mediaUrl ? (
                           isVideo ? 
@@ -1011,6 +1161,61 @@ export default function AdminPage() {
                 <span>Print Invoice</span>
               </button>
               <button onClick={() => { setIsOrderViewModalOpen(false); setSelectedOrder(null); }} className="bubble-btn py-2 px-8">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ORDER NOTE MODAL */}
+      {isNoteModalOpen && selectedOrderForNote && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-bubble-surface rounded-3xl shadow-2xl max-w-md w-full p-6 border border-border-main">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-border-main">
+              <div className="flex items-center gap-2">
+                <StickyNote size={20} className="text-primary" />
+                <h3 className="text-lg font-black text-text-main">
+                  Order Note {selectedOrderForNote.orderNumber ? `(#${selectedOrderForNote.orderNumber})` : `(#${selectedOrderForNote.id})`}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setIsNoteModalOpen(false)}
+                className="p-1.5 bg-bubble-input text-text-muted hover:text-text-main rounded-full transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-text-muted uppercase tracking-wider block mb-1.5">
+                  Internal Note / Delivery Instructions
+                </label>
+                <textarea
+                  className="bubble-input w-full p-3.5 text-sm min-h-[120px] resize-y rounded-2xl"
+                  placeholder="e.g., Paid via GPay, deliver after 6 PM, verified phone number..."
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex gap-3 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsNoteModalOpen(false)}
+                  className="bubble-btn-secondary px-4 py-2 text-xs font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveNote}
+                  disabled={isSavingNote}
+                  className="bubble-btn px-6 py-2 text-xs font-bold"
+                >
+                  {isSavingNote ? 'Saving...' : 'Save Note'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
