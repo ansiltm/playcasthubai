@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IUser extends Document {
   id: string;
+  tokenVersion: number;
   name: string;
   email: string;
   password?: string;
@@ -18,6 +19,7 @@ export interface IUser extends Document {
 
 const UserSchema = new Schema<IUser>(
   {
+    tokenVersion: { type: Number, default: 0 },
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true },
@@ -37,6 +39,7 @@ const UserSchema = new Schema<IUser>(
         ret.id = ret._id.toString();
         delete ret.__v;
         delete ret.password;
+        delete ret.tokenVersion;
         return ret;
       },
     },

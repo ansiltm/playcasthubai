@@ -1,24 +1,5 @@
-import mongoose from '../config/database';
-import User from './User';
-import Product from './Product';
-import Order from './Order';
-import Cart from './Cart';
-import Otp from './Otp';
-
-export {
-  mongoose,
-  User,
-  Product,
-  Order,
-  Cart,
-  Otp,
-};
-
-export default {
-  mongoose,
-  User,
-  Product,
-  Order,
-  Cart,
-  Otp,
-};
+export { default as mongoose } from '../config/database';
+export { default as User } from './User';
+export { default as Product } from './Product';
+export { default as Order } from './Order';
+export { default as Otp } from './Otp';

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import api from '../../lib/api';
@@ -13,6 +13,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 export default function AdminPage() {
   const { user, isAdmin, token } = useAuthStore();
   const router = useRouter();
+  const manualKey = useRef<string | null>(null);
+  const manualSignature = useRef('');
+  const manualSubmitting = useRef(false);
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'analytics'>('products');
   const [mounted, setMounted] = useState(false);
   
@@ -28,18 +31,18 @@ export default function AdminPage() {
   // Modal States
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<number | null>(null);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
   
   const [isManualOrderModalOpen, setIsManualOrderModalOpen] = useState(false);
   const [manualCustomer, setManualCustomer] = useState({ name: '', phone: '', address: '' });
-  const [manualOrderItems, setManualOrderItems] = useState<Array<{ productId: number; name: string; quantity: number; price: number }>>([]);
+  const [manualOrderItems, setManualOrderItems] = useState<Array<{ productId: string; name: string; quantity: number; price: number }>>([]);
   const [currentItem, setCurrentItem] = useState({ productId: '', quantity: '1', price: '' });
   const [isCustomPrice, setIsCustomPrice] = useState(false);
 
   const [isOrderViewModalOpen, setIsOrderViewModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isOrderDeleteModalOpen, setIsOrderDeleteModalOpen] = useState(false);
-  const [orderToDelete, setOrderToDelete] = useState<number | null>(null);
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
 
   // Order Note Modal States
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
@@ -48,9 +51,9 @@ export default function AdminPage() {
   const [isSavingNote, setIsSavingNote] = useState(false);
 
   // Form State
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: ''
+    name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '', ageLabel: 'Not specified', safetyNotes: ''
   });
   const [mediaFiles, setMediaFiles] = useState<FileList | null>(null);
   const [existingMedia, setExistingMedia] = useState<string[]>([]);
@@ -127,7 +130,7 @@ export default function AdminPage() {
   if (!isAdmin()) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <h1 className="text-2xl text-red-500 font-bold">Access Denied. Super Admins Only.</h1>
+        <h1 className="text-2xl text-red-500 font-bold">Access Denied. Store Admins Only.</h1>
       </div>
     );
   }
@@ -135,6 +138,7 @@ export default function AdminPage() {
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isUploadingMedia) return;
+    if (mediaFiles && (mediaFiles.length > 4 || Array.from(mediaFiles).some(f => f.size > 8 * 1024 * 1024))) { toast.error('Upload up to 4 files at a time, each under 8 MB.'); return; }
 
     setIsUploadingMedia(true);
     setUploadProgress(0);
@@ -147,6 +151,8 @@ export default function AdminPage() {
     data.append('grade', formData.grade);
     data.append('description', formData.description);
     data.append('stock', formData.stock);
+    data.append('ageLabel', formData.ageLabel);
+    data.append('safetyNotes', formData.safetyNotes);
     
     // We send mediaUpdated=true to tell the backend we are sending existingMedia (which could be empty).
     data.append('mediaUpdated', 'true');
@@ -273,6 +279,10 @@ export default function AdminPage() {
     }
 
     try {
+      if (manualSubmitting.current) return;
+      manualSubmitting.current = true;
+      const signature = JSON.stringify({manualCustomer, itemsToSubmit});
+      if (!manualKey.current || manualSignature.current !== signature) { manualKey.current = crypto.randomUUID(); manualSignature.current = signature; }
       await api.post('/orders/manual', {
         customerName: manualCustomer.name || 'Custom Real-time Order',
         customerPhone: manualCustomer.phone,
@@ -282,8 +292,9 @@ export default function AdminPage() {
           quantity: it.quantity,
           price: it.price
         }))
-      });
-      toast.success('Custom order created successfully! Email alert sent to Admin.');
+      }, { headers: { 'Idempotency-Key': manualKey.current } });
+      manualKey.current = null;
+      toast.success('Custom order created.');
       setIsManualOrderModalOpen(false);
       setManualOrderItems([]);
       setCurrentItem({ productId: '', quantity: '1', price: '' });
@@ -295,12 +306,12 @@ export default function AdminPage() {
       if (err.response?.status !== 401 && err.response?.status !== 403) {
         toast.error(err.response?.data?.message || 'Failed to create order');
       }
-    }
+    } finally { manualSubmitting.current = false; }
   };
 
   const openAddModal = () => {
     setEditingId(null);
-    setFormData({ name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '' });
+    setFormData({ name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '', ageLabel: 'Not specified', safetyNotes: '' });
     setMediaFiles(null);
     setNewMediaPreviews([]);
     setExistingMedia([]);
@@ -311,7 +322,7 @@ export default function AdminPage() {
     setEditingId(p.id);
     setFormData({
       name: p.name, price: p.price.toString(), wholesalePrice: p.wholesalePrice?.toString() || '0', category: p.category, 
-      grade: p.grade, description: p.description, stock: p.stock.toString()
+      grade: p.grade, description: p.description, stock: p.stock.toString(), ageLabel: p.ageLabel || 'Not specified', safetyNotes: p.safetyNotes || ''
     });
     setMediaFiles(null);
     setNewMediaPreviews([]);
@@ -330,7 +341,7 @@ export default function AdminPage() {
     setNewMediaPreviews([]);
   };
 
-  const updateOrderStatus = async (id: number, status: string) => {
+  const updateOrderStatus = async (id: string, status: string) => {
     try {
       await api.put(`/orders/${id}/status`, { status });
       toast.success(`Order status updated to ${status}!`);
@@ -361,7 +372,7 @@ export default function AdminPage() {
     }
   };
 
-  const updatePaymentStatus = async (id: number | string, paymentStatus: string) => {
+  const updatePaymentStatus = async (id: string, paymentStatus: string) => {
     try {
       await api.put(`/orders/${id}/payment-status`, { paymentStatus });
       toast.success(`Payment marked as ${paymentStatus === 'paid' ? 'PAID' : 'NOT PAID'}!`);
@@ -526,10 +537,8 @@ export default function AdminPage() {
       header: 'Customer Details', 
       renderCell: (o) => {
         const isCustom = isCustomOrder(o);
-        const name = isCustom 
-          ? (o.shippingAddressLine1?.includes('Custom') ? 'Real-time Custom Order' : o.shippingAddressLine1 || o.User?.name || 'Customer')
-          : (o.User?.name || 'Customer');
-        const phone = o.User?.phone && o.User.phone !== '0000000000' ? o.User.phone : null;
+        const name = o.customerName || o.User?.name || 'Customer';
+        const phone = o.customerPhone || o.User?.phone;
         return (
           <div className="flex flex-col max-w-[200px]">
             <span className="font-bold text-sm truncate text-text-main">{name}</span>
@@ -568,24 +577,7 @@ export default function AdminPage() {
             value={o.status}
             onChange={(e) => updateOrderStatus(o.id, e.target.value)}
           >
-            <option value="pending" className="bg-[#0f172a] text-amber-400 font-bold py-2" style={{ backgroundColor: '#0f172a', color: '#fbbf24' }}>
-              Pending
-            </option>
-            <option value="confirmed" className="bg-[#0f172a] text-blue-400 font-bold py-2" style={{ backgroundColor: '#0f172a', color: '#60a5fa' }}>
-              Confirmed
-            </option>
-            <option value="shipped" className="bg-[#0f172a] text-purple-400 font-bold py-2" style={{ backgroundColor: '#0f172a', color: '#c084fc' }}>
-              Shipped
-            </option>
-            <option value="delivered" className="bg-[#0f172a] text-teal-400 font-bold py-2" style={{ backgroundColor: '#0f172a', color: '#2dd4bf' }}>
-              Delivered
-            </option>
-            <option value="completed" className="bg-[#0f172a] text-emerald-400 font-bold py-2" style={{ backgroundColor: '#0f172a', color: '#4ade80' }}>
-              Completed
-            </option>
-            <option value="cancelled" className="bg-[#0f172a] text-rose-400 font-bold py-2" style={{ backgroundColor: '#0f172a', color: '#fb7185' }}>
-              Cancelled
-            </option>
+            {[o.status, ...({pending:['confirmed','cancelled'],confirmed:['shipped','completed','cancelled'],shipped:['delivered'],delivered:['completed'],completed:[],cancelled:[]} as Record<string,string[]>)[o.status] || []].map(status => <option key={status} value={status}>{status}</option>)}
           </select>
           <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-80" />
         </div>
@@ -654,7 +646,7 @@ export default function AdminPage() {
           <button onClick={() => { setSelectedOrder(o); setIsOrderViewModalOpen(true); }} className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors" title="View Details">
             <Package size={16} />
           </button>
-          <button onClick={() => { setOrderToDelete(o.id); setIsOrderDeleteModalOpen(true); }} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors" title="Delete">
+          <button disabled={o.status !== 'cancelled'} onClick={() => { setOrderToDelete(o.id); setIsOrderDeleteModalOpen(true); }} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors" title="Delete">
             <Trash2 size={16} />
           </button>
         </div>
@@ -679,7 +671,7 @@ export default function AdminPage() {
   const monthlyDataMap = new Map();
 
   orders.forEach(o => {
-    if (o.status === 'cancelled') return;
+    if (o.status === 'cancelled' || o.paymentStatus !== 'paid') return;
     
     totalRevenue += o.totalAmount;
     
@@ -694,7 +686,7 @@ export default function AdminPage() {
     let orderProfit = 0;
     o.OrderItems?.forEach((item: any) => {
       const p = products.find(prod => prod.id === item.productId);
-      const wholesale = p?.wholesalePrice || 0;
+      const wholesale = item.Product?.wholesalePrice || 0;
       orderProfit += (item.price - wholesale) * item.quantity;
       totalItemsSold += item.quantity;
     });
@@ -708,7 +700,7 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 relative">
-      <h1 className="text-3xl md:text-4xl font-black text-text-main mb-8">Super Admin Dashboard</h1>
+      <h1 className="text-3xl md:text-4xl font-black text-text-main mb-8">Store Admin Dashboard</h1>
       
       <div className="flex space-x-4 mb-8 overflow-x-auto pb-2">
         <button onClick={() => setActiveTab('products')} className={`bubble-btn whitespace-nowrap ${activeTab === 'products' ? '' : 'bubble-btn-secondary'}`}>Manage Inventory</button>
@@ -828,7 +820,7 @@ export default function AdminPage() {
               <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-[var(--radius-pill)] flex items-center justify-center mb-4">
                 <DollarSign size={32} />
               </div>
-              <h3 className="text-text-muted font-bold uppercase tracking-wider text-sm mb-1">Total Revenue</h3>
+              <h3 className="text-text-muted font-bold uppercase tracking-wider text-sm mb-1">Paid Revenue</h3>
               <p className="text-3xl font-black text-text-main">₹{totalRevenue.toFixed(2)}</p>
             </div>
             
@@ -836,7 +828,7 @@ export default function AdminPage() {
               <div className="w-16 h-16 bg-green-100 text-green-600 rounded-[var(--radius-pill)] flex items-center justify-center mb-4">
                 <TrendingUp size={32} />
               </div>
-              <h3 className="text-text-muted font-bold uppercase tracking-wider text-sm mb-1">Total Profit</h3>
+              <h3 className="text-text-muted font-bold uppercase tracking-wider text-sm mb-1">Gross Profit</h3>
               <p className="text-3xl font-black text-text-main">₹{totalProfit.toFixed(2)}</p>
             </div>
             
@@ -850,7 +842,7 @@ export default function AdminPage() {
           </div>
 
           <div className="bubble-card bg-bubble-surface p-6 md:p-8">
-            <h2 className="text-2xl font-bold mb-8">Monthly Sales & Profit</h2>
+            <h2 className="text-2xl font-bold mb-8">Monthly Paid Sales & Gross Profit</h2>
             {chartData.length > 0 ? (
               <div className="h-[400px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -962,8 +954,18 @@ export default function AdminPage() {
                 <textarea required rows={4} className="bubble-input py-3" placeholder="Write a detailed description of the product..." value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <label className="font-bold">Manufacturer recommended age
+                  <select className="bubble-input mt-2" value={formData.ageLabel} onChange={e => setFormData({...formData, ageLabel: e.target.value})}>
+                    {['Not specified','3+','6+','8+','14+','18+'].map(age => <option key={age}>{age}</option>)}
+                  </select>
+                </label>
+                <label className="font-bold">Safety and battery information
+                  <textarea className="bubble-input mt-2" maxLength={1000} placeholder="Copy verified warnings and battery details from the packaging." value={formData.safetyNotes} onChange={e => setFormData({...formData, safetyNotes: e.target.value})} />
+                </label>
+              </div>
               <div className="space-y-4 p-6 bg-bubble-input rounded-2xl border border-border-main">
-                <h3 className="font-bold text-primary mb-2">Media Upload (Images & Videos)</h3>
+                <h3 className="font-bold text-primary mb-2">Media Upload (up to 4 files per upload, 8 MB each)</h3>
                 
                 {existingMedia.length > 0 && (
                   <div className="mb-4">
@@ -1172,12 +1174,10 @@ export default function AdminPage() {
                   <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-2">Customer & Delivery Info</h4>
                   <div className="bg-bubble-input p-4 rounded-[var(--radius-bubble)] space-y-1">
                     <p className="font-bold text-base text-text-main">
-                      {isCustomOrder(selectedOrder) 
-                        ? (selectedOrder.shippingAddressLine1?.includes('Custom') ? 'Direct Custom Customer' : selectedOrder.shippingAddressLine1 || selectedOrder.User?.name || 'Customer')
-                        : (selectedOrder.User?.name || 'Unknown')}
+                      {selectedOrder.customerName || selectedOrder.User?.name || 'Customer'}
                     </p>
                     <p className="text-sm text-text-muted">{selectedOrder.User?.email || 'N/A'}</p>
-                    <p className="text-sm text-text-muted">Contact Phone: <strong className="text-primary">{selectedOrder.User?.phone && selectedOrder.User.phone !== '0000000000' ? selectedOrder.User.phone : 'Direct Counter'}</strong></p>
+                    <p className="text-sm text-text-muted">Contact Phone: <strong className="text-primary">{selectedOrder.customerPhone || selectedOrder.User?.phone || 'Not provided'}</strong></p>
                     <div className="text-xs text-text-muted mt-2 pt-2 border-t border-border-main">
                       <span className="font-bold block text-text-main mb-0.5">Address / Note:</span>
                       {selectedOrder.shippingAddressLine1 ? (
@@ -1369,7 +1369,7 @@ export default function AdminPage() {
               <AlertTriangle size={40} />
             </div>
             <h3 className="text-2xl font-black text-text-main mb-2">Delete Order?</h3>
-            <p className="text-text-muted mb-8">This action cannot be undone. Are you sure you want to completely remove this order?</p>
+            <p className="text-text-muted mb-8">Only cancelled orders can be deleted. Their stock has already been restored. This removes the order record permanently.</p>
             <div className="flex space-x-4">
               <button onClick={() => { setIsOrderDeleteModalOpen(false); setOrderToDelete(null); }} className="flex-1 bubble-btn-secondary py-3">
                 Cancel

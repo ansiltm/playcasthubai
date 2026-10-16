@@ -6,12 +6,13 @@ import { useCartStore } from '../store/useCartStore';
 import { ShoppingCart, Eye } from 'lucide-react';
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   stock: number;
   category: string;
   grade?: string;
+  ageLabel?: string;
   media?: string[];
 }
 
@@ -23,7 +24,7 @@ export default function ProductCard({ product }: { product: Product }) {
     e.preventDefault();
     if (isOutOfStock) return;
     addItem({
-      id: Date.now(), // Generate unique cart item id
+      id: product.id, // Generate unique cart item id
       productId: product.id,
       name: product.name,
       price: product.price,
@@ -40,7 +41,7 @@ export default function ProductCard({ product }: { product: Product }) {
   // Determine media to show: prioritize video if available so video autoplays on list
   const fallbackImage = '/logo.jpeg';
   const videoMedia = product.media?.find((m: string) => isVideoUrl(m));
-  const activeMedia = videoMedia || ((product.media && product.media.length > 0) ? product.media[0] : fallbackImage);
+  const activeMedia = product.media?.find(m => !isVideoUrl(m)) || videoMedia || fallbackImage;
   const isVideo = isVideoUrl(activeMedia);
 
   return (
@@ -51,15 +52,15 @@ export default function ProductCard({ product }: { product: Product }) {
           {isVideo ? (
             <video
               src={activeMedia}
-              autoPlay
               muted
               loop
               playsInline
-              preload="auto"
+              preload="none"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
             />
           ) : (
             <img
+              loading="lazy"
               src={activeMedia}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -96,6 +97,7 @@ export default function ProductCard({ product }: { product: Product }) {
           {!isOutOfStock && (
             <div className="absolute bottom-4 right-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
               <button
+                aria-label={`Add ${product.name} to cart`}
                 onClick={handleAddToCart}
                 className="bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary-dark hover:scale-110 transition-all"
               >
@@ -114,6 +116,7 @@ export default function ProductCard({ product }: { product: Product }) {
           <h3 className="text-sm sm:text-base font-bold text-text-main mb-3 line-clamp-2 flex-1 leading-snug">
             {product.name}
           </h3>
+          {product.ageLabel && product.ageLabel !== 'Not specified' && <p className="text-xs text-text-muted mb-2">Ages {product.ageLabel}</p>}
           <div className="flex items-center justify-between mt-auto">
             <span className="text-lg font-black text-primary">
               ₹{product.price.toFixed(2)}

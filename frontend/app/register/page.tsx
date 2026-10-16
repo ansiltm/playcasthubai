@@ -74,8 +74,8 @@ export default function RegisterPage() {
       toast.error('Please enter your contact phone number.');
       return;
     }
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters.');
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters.');
       return;
     }
 
@@ -230,7 +230,7 @@ export default function RegisterPage() {
                 type={showPassword ? 'text' : 'password'}
                 required
                 className="bubble-input pl-10 pr-10"
-                placeholder="Create password (min 6 characters)"
+                placeholder="Create password (min 8 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -244,7 +244,7 @@ export default function RegisterPage() {
               </button>
             </div>
             <p className="text-[11px] text-text-muted ml-1 mt-1">
-              At least 6 characters long (standard password)
+              At least 8 characters long (standard password)
             </p>
           </div>
 

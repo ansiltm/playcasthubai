@@ -7,35 +7,53 @@ import api from '../lib/api';
 
 export default function Home(): React.JSX.Element {
   const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     // Fetch trending products from backend
     const fetchTrendingProducts = async () => {
       try {
-        const res = await api.get('/products/trending?order=asc&limit=6');
+        const res = await api.get('/products/trending?order=desc&limit=6');
         setTrendingProducts(res.data);
       } catch (error) {
         console.error('Failed to fetch trending products', error);
         setTrendingProducts([]);
-      }
+        setFailed(true);
+      } finally { setLoading(false); }
     };
     fetchTrendingProducts();
   }, []);
 
   return (
     <div className="w-full">
-      {/* Featured Products (Trending Now) - Moved to top & limited to 6 */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
+        <div className="bubble-card p-8 sm:p-12 bg-gradient-to-br from-primary/10 via-bubble-surface to-secondary/10">
+          <p className="font-bold uppercase tracking-widest text-primary text-sm mb-4">Discover. Play. Collect.</p>
+          <h1 className="text-4xl sm:text-6xl font-black text-text-main max-w-3xl leading-tight">Big adventures.<br />Little moments of joy.</h1>
+          <p className="text-text-muted text-lg mt-5 max-w-2xl">Toys for curious kids, RC cars for weekend racers, and collectibles for lifelong fans. Find your next favourite at PlayCastHub.</p>
+          <div className="flex flex-wrap gap-3 mt-7">
+            <Link href="/products" className="bubble-btn px-6 py-3">Explore all toys</Link>
+            <Link href="/products?category=Vehicles%20%26%20Remote-Controlled%20(RC)" className="bubble-btn-secondary px-6 py-3">RC cars & vehicles</Link>
+            <Link href="/products?favorites=true" className="bubble-btn-secondary px-6 py-3">Saved favourites</Link>
+          </div>
+        </div>
+      </section>
+      {/* Featured Products (Latest Finds) - Moved to top & limited to 6 */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pt-12">
         <div className="flex justify-between items-end mb-8">
           <div>
-            <h2 className="text-4xl font-black text-text-main mb-2">Trending Now</h2>
-            <p className="text-text-muted">Our most popular models this week.</p>
+            <h2 className="text-4xl font-black text-text-main mb-2">Latest Finds</h2>
+            <p className="text-text-muted">Explore the latest additions to our collection.</p>
           </div>
           <Link href="/products" className="text-primary font-bold hover:text-primary-dark hover:underline">
             View All →
           </Link>
         </div>
 
+        {loading && <p role="status" className="text-text-muted py-6">Loading the collection…</p>}
+        {failed && <p role="alert" className="text-text-muted py-6">We could not load the collection. Please refresh in a moment.</p>}
+        {!loading && !failed && trendingProducts.length === 0 && <p className="text-text-muted py-6">Our collection is coming soon. Check back for new arrivals.</p>}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {trendingProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
@@ -56,7 +74,11 @@ export default function Home(): React.JSX.Element {
             { name: 'Model Kits', query: 'Scale Model Kits & Hobby Crafts', icon: '🛠️' },
             { name: 'STEM & Tech', query: 'Educational, STEM & STEAM Toys', icon: '🔬' },
             { name: 'Smart Toys', query: 'Electronic, Smart & Animatronic Toys', icon: '🤖' },
-            { name: 'Outdoor Play', query: 'Outdoor, Sports & Active Play', icon: '⛺' }
+            { name: 'Outdoor Play', query: 'Outdoor, Sports & Active Play', icon: '⛺' },
+            { name: 'Building Sets', query: 'Building Sets & Construction Toys', icon: '🧱' },
+            { name: 'Games & Puzzles', query: 'Games & Puzzles', icon: '🧩' },
+            { name: 'Soft Toys', query: 'Plush, Soft & Fabric Toys', icon: '🧸' },
+            { name: 'Dolls & Playsets', query: 'Dolls & Doll Playsets', icon: '🏠' }
           ].map((cat, i) => (
             <Link 
               key={i} 
@@ -102,8 +124,8 @@ export default function Home(): React.JSX.Element {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-2">Premium Quality</h3>
-              <p className="text-text-muted">Only the best hobby-grade items.</p>
+              <h3 className="text-xl font-bold mb-2">Play for every interest</h3>
+              <p className="text-text-muted">From everyday toys to hobby builds and display collectibles.</p>
             </div>
             <div className="flex flex-col items-center">
               <div className="w-16 h-16 bg-pink-50 rounded-[var(--radius-pill)] flex items-center justify-center text-secondary mb-6">
@@ -120,8 +142,8 @@ export default function Home(): React.JSX.Element {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-2">Fast Shipping</h3>
-              <p className="text-text-muted">Get your toys delivered quickly.</p>
+              <h3 className="text-xl font-bold mb-2">Order with confidence</h3>
+              <p className="text-text-muted">Place a COD order. Our team confirms delivery details before dispatch.</p>
             </div>
           </div>
         </div>

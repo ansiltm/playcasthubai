@@ -85,8 +85,8 @@ export default function LoginPage() {
       toast.error('Please enter the 6-digit code sent to your email.');
       return;
     }
-    if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters long.');
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters long.');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -226,7 +226,7 @@ export default function LoginPage() {
                       type={showNewPassword ? 'text' : 'password'}
                       required
                       className="bubble-input pl-10 pr-10"
-                      placeholder="At least 6 characters"
+                      placeholder="At least 8 characters"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                     />

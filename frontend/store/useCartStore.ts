@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export interface CartItem {
-  id: number;
-  productId: number;
+  id: string;
+  productId: string;
   name: string;
   price: number;
   quantity: number;
@@ -13,8 +13,8 @@ export interface CartItem {
 interface CartState {
   items: CartItem[];
   addItem: (item: CartItem) => void;
-  removeItem: (productId: number) => void;
-  updateQuantity: (productId: number, quantity: number) => void;
+  removeItem: (productId: string) => void;
+  updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
   getTotal: () => number;
 }
@@ -30,7 +30,7 @@ export const useCartStore = create<CartState>()(
           set({
             items: items.map((i) =>
               i.productId === item.productId
-                ? { ...i, quantity: i.quantity + item.quantity }
+                ? { ...i, quantity: Math.min(99, i.quantity + item.quantity) }
                 : i
             ),
           });
@@ -43,7 +43,7 @@ export const useCartStore = create<CartState>()(
       updateQuantity: (productId, quantity) =>
         set({
           items: get().items.map((i) =>
-            i.productId === productId ? { ...i, quantity } : i
+            i.productId === productId ? { ...i, quantity: Math.max(1, Math.min(99, Math.floor(quantity))) } : i
           ),
         }),
       clearCart: () => set({ items: [] }),
@@ -51,7 +51,7 @@ export const useCartStore = create<CartState>()(
         get().items.reduce((total, item) => total + item.price * item.quantity, 0),
     }),
     {
-      name: 'cart-storage',
+      name: 'playcasthub-v2-cart',
     }
   )
 );

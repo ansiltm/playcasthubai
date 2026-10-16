@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: 'admin' | 'user';
@@ -34,7 +34,7 @@ export const useAuthStore = create<AuthState>()(
       isAdmin: () => get().user?.role === 'admin',
     }),
     {
-      name: 'auth-storage',
+      name: 'playcasthub-v2-auth',
     }
   )
 );

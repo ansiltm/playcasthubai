@@ -1,87 +1,24 @@
-import mongoose, { Schema, Document } from 'mongoose';
-
-export interface IOrderItem {
-  productId?: mongoose.Types.ObjectId | string;
-  name?: string;
-  price: number;
-  quantity: number;
-  Product?: any;
-}
-
-export interface IOrder extends Document {
-  id: string;
-  orderNumber: string;
-  userId: mongoose.Types.ObjectId | string;
-  orderType: 'online' | 'custom';
-  totalAmount: number;
-  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
-  paymentMethod: string;
-  paymentStatus: string;
-  notes?: string;
-  shippingAddressLine1?: string;
-  shippingAddressLine2?: string;
-  shippingCity?: string;
-  shippingState?: string;
-  shippingPincode?: string;
-  OrderItems: IOrderItem[];
-  User?: any;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-const OrderItemSchema = new Schema<IOrderItem>(
-  {
-    productId: { type: Schema.Types.ObjectId, ref: 'Product' },
-    name: { type: String },
-    price: { type: Number, required: true },
-    quantity: { type: Number, required: true, min: 1 },
-    Product: { type: Schema.Types.Mixed },
-  },
-  { _id: true }
-);
-
-const OrderSchema = new Schema<IOrder>(
-  {
-    orderNumber: { type: String, unique: true },
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    orderType: { type: String, enum: ['online', 'custom'], default: 'online' },
-    totalAmount: { type: Number, required: true },
-    status: {
-      type: String,
-      enum: ['pending', 'confirmed', 'shipped', 'delivered', 'completed', 'cancelled'],
-      default: 'pending',
-    },
-    paymentMethod: { type: String, default: 'COD' },
-    paymentStatus: { type: String, default: 'pending' },
-    notes: { type: String, default: '' },
-    shippingAddressLine1: { type: String, default: '' },
-    shippingAddressLine2: { type: String, default: '' },
-    shippingCity: { type: String, default: '' },
-    shippingState: { type: String, default: '' },
-    shippingPincode: { type: String, default: '' },
-    OrderItems: { type: [OrderItemSchema], default: [] },
-  },
-  {
-    timestamps: true,
-    toJSON: {
-      virtuals: true,
-      transform: (_, ret: any) => {
-        ret.id = ret._id.toString();
-        delete ret.__v;
-        return ret;
-      },
-    },
-    toObject: { virtuals: true },
-  }
-);
-
-OrderSchema.pre('save', function () {
-  if (!this.orderNumber) {
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const randomStr = Math.floor(1000 + Math.random() * 9000).toString();
-    this.orderNumber = `ORD-${dateStr}-${randomStr}`;
-  }
+import mongoose from 'mongoose';
+import { randomUUID } from 'crypto';
+const itemSchema = new mongoose.Schema({
+  productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+  name: { type: String, required: true }, price: { type: Number, required: true, min: 0 },
+  quantity: { type: Number, required: true, min: 1, max: 99 }, Product: mongoose.Schema.Types.Mixed,
 });
-
-export const Order = mongoose.model<IOrder>('Order', OrderSchema);
+const schema = new mongoose.Schema({
+  orderNumber: { type: String, unique: true, default: () => `PCH-${randomUUID().slice(0, 18).toUpperCase()}` },
+  checkoutKey: { type: String, unique: true, sparse: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  orderType: { type: String, enum: ['online', 'custom'], default: 'online' },
+  totalAmount: { type: Number, required: true, min: 0 },
+  status: { type: String, enum: ['pending','confirmed','shipped','delivered','completed','cancelled'], default: 'pending' },
+  paymentMethod: { type: String, default: 'COD' },
+  paymentStatus: { type: String, enum: ['pending','paid'], default: 'pending' },
+  customerName: String, customerPhone: String, customerEmail: String,
+  notes: { type: String, default: '' },
+  shippingAddressLine1: String, shippingAddressLine2: String, shippingCity: String, shippingState: String, shippingPincode: String,
+  stockRestored: { type: Boolean, default: false },
+  OrderItems: { type: [itemSchema], default: [] },
+}, { timestamps: true, optimisticConcurrency: true, toJSON: { virtuals: true, transform: (_, ret: any) => { ret.id = ret._id.toString(); delete ret.__v; delete ret.checkoutKey; return ret; } } });
+export const Order = mongoose.model('Order', schema);
 export default Order;

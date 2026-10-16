@@ -95,7 +95,7 @@ export default function ProductDetails() {
   const handleAddToCart = () => {
     if (!product) return;
     addItem({
-      id: Date.now(),
+      id: product.id,
       productId: product.id,
       name: product.name,
       price: product.price,
@@ -279,6 +279,8 @@ export default function ProductDetails() {
                 </div>
               )}
             </div>
+            {product.ageLabel && product.ageLabel !== 'Not specified' && <p className="text-sm font-bold text-primary mb-3">Manufacturer recommended age: {product.ageLabel}</p>}
+            {product.safetyNotes && <p className="rounded-xl border border-border-main p-4 text-sm mb-4 whitespace-pre-wrap">{product.safetyNotes}</p>}
             <h1 className="text-4xl md:text-5xl font-black text-text-main mb-4">{product.name}</h1>
             <div className="text-4xl font-black text-primary mb-6">₹{product.price.toFixed(2)}</div>
             <p className="text-lg text-text-muted leading-relaxed whitespace-pre-wrap">{product.description}</p>

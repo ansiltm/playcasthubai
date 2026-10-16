@@ -1,342 +1,133 @@
-import { Router, Response } from 'express';
+import { Router } from 'express';
+import mongoose from 'mongoose';
 import { Order, Product, User } from '../models';
 import { authenticate, authorizeAdmin } from '../middleware/auth';
-import { sendAdminOrderEmailAlert } from '../services/adminEmailAlert';
-
+import { rateLimit } from '../middleware/rateLimit';
+import { asyncRoute } from '../utils/http';
+import * as v from '../utils/validation';
+import { sendOrderEmails } from '../services/orderEmails';
 const router = Router();
-
-// Create order directly from frontend payload
-router.post('/', authenticate, async (req: any, res: Response) => {
+router.use(authenticate);
+export function customerOrder(order: any) {
+  const result = typeof order.toJSON === 'function' ? order.toJSON() : { ...order };
+  delete result.notes; delete result.checkoutKey; delete result.stockRestored;
+  result.OrderItems = result.OrderItems.map((item: any) => ({ ...item, Product: item.Product ? { id: item.Product.id, name: item.Product.name, imageUrl: item.Product.imageUrl, media: item.Product.media, price: item.price } : undefined }));
+  return result;
+}
+async function createOrder(req: any, manual: boolean) {
+  const input = req.body;
+  if (!Array.isArray(input.items) || !input.items.length || input.items.length > 50) throw new v.HttpError(400, 'Choose between 1 and 50 products.');
+  const seen = new Set<string>();
+  const items = input.items.map((item: any) => {
+    const productId = v.objectId(item?.productId);
+    if (seen.has(productId)) throw new v.HttpError(400, 'A product may appear only once in an order.');
+    seen.add(productId);
+    return { productId, quantity: v.quantity(item.quantity), customPrice: manual && item.price !== undefined ? v.money(item.price) : undefined };
+  });
+  const name = v.text(manual ? input.customerName : input.name, 'customer name', 100);
+  const phone = v.phone(manual ? input.customerPhone : input.phone);
+  const address = v.text(manual ? input.customerAddress : input.addressLine1, 'address', 300);
+  const city = manual ? '' : v.text(input.city, 'city', 100);
+  const state = manual ? '' : v.text(input.state, 'state', 100);
+  const pincode = manual ? '' : v.text(input.pincode, 'pincode', 6);
+  if (!manual && !/^\d{6}$/.test(pincode)) throw new v.HttpError(400, 'Enter a six-digit pincode.');
+  const requestKey = v.text(req.header('Idempotency-Key'), 'checkout reference', 80);
+  if (!/^[a-zA-Z0-9-]{16,80}$/.test(requestKey)) throw new v.HttpError(400, 'Invalid checkout reference.');
+  const checkoutKey = `${req.user.id}:${requestKey}`;
+  const previous = await Order.findOne({ checkoutKey });
+  if (previous) return { order: previous, created: false };
+  const initialStatus = manual ? (input.status || 'pending') : 'pending';
+  if (!['pending','confirmed','shipped','delivered','completed'].includes(initialStatus)) throw new v.HttpError(400, 'Invalid initial order status.');
   try {
-    const { items, addressLine1, addressLine2, city, state, pincode, phone, name } = req.body;
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ message: 'Order is empty' });
-    }
-
-    let calculatedTotal = 0;
-    const validatedItems: Array<{ product: any; quantity: number; price: number }> = [];
-
-    // Verify stock and calculate total
-    for (const item of items) {
-      const product = await Product.findById(item.productId);
-      if (!product) {
-        return res.status(404).json({ message: `Product ${item.productId} not found` });
+    const order = await mongoose.connection.transaction(async session => {
+      const orderItems = [];
+      let totalCents = 0;
+      for (const item of items) {
+        const product = await Product.findOneAndUpdate({ _id: item.productId, stock: { $gte: item.quantity } }, { $inc: { stock: -item.quantity } }, { session, new: true });
+        if (!product) throw new v.HttpError(409, 'A product is unavailable or has insufficient stock. Please update your cart.');
+        const price = item.customPrice ?? product.price;
+        totalCents += Math.round(price * 100) * item.quantity;
+        orderItems.push({ productId: product._id, name: product.name, price, quantity: item.quantity, Product: { id: product.id, name: product.name, price, wholesalePrice: product.wholesalePrice, media: product.media, imageUrl: product.imageUrl } });
       }
-      if (product.stock < item.quantity) {
-        return res.status(400).json({ message: `Insufficient stock for ${product.name} (Stock: ${product.stock})` });
-      }
-      const price = product.price;
-      calculatedTotal += price * item.quantity;
-      validatedItems.push({ product, quantity: item.quantity, price });
-    }
-
-    // Update user default contact info if available
-    const user = await User.findById(req.user.id);
-    if (user) {
-      if (addressLine1) user.addressLine1 = addressLine1;
-      if (addressLine2) user.addressLine2 = addressLine2;
-      if (city) user.city = city;
-      if (state) user.state = state;
-      if (pincode) user.pincode = pincode;
-      if (phone) user.phone = phone;
-      await user.save();
-    }
-
-    const orderItemsData = validatedItems.map(v => ({
-      productId: v.product._id,
-      name: v.product.name,
-      price: v.price,
-      quantity: v.quantity,
-      Product: {
-        id: v.product.id,
-        name: v.product.name,
-        media: v.product.media,
-        imageUrl: v.product.imageUrl || v.product.media?.[0],
-        price: v.product.price,
-        wholesalePrice: v.product.wholesalePrice,
-      },
-    }));
-
-    // Create Order
-    const order = await Order.create({
-      userId: req.user.id,
-      orderType: 'online',
-      totalAmount: calculatedTotal,
-      status: 'pending',
-      paymentMethod: 'COD',
-      paymentStatus: 'pending',
-      shippingAddressLine1: addressLine1 || '',
-      shippingAddressLine2: addressLine2 || '',
-      shippingCity: city || '',
-      shippingState: state || '',
-      shippingPincode: pincode || '',
-      OrderItems: orderItemsData,
+      const [created] = await Order.create([{
+        checkoutKey, userId: req.user.id, orderType: manual ? 'custom' : 'online', totalAmount: totalCents / 100,
+        status: initialStatus, paymentMethod: manual ? 'Custom / Cash' : 'COD', paymentStatus: 'pending',
+        customerName: name, customerPhone: phone, customerEmail: manual ? '' : req.user.email,
+        shippingAddressLine1: address, shippingAddressLine2: manual ? '' : v.text(input.addressLine2, 'address line 2', 300, false),
+        shippingCity: city, shippingState: state, shippingPincode: pincode, OrderItems: orderItems,
+      }], { session });
+      if (!manual) await User.updateOne({ _id: req.user.id }, { $set: { phone, addressLine1: address, addressLine2: created.shippingAddressLine2, city, state, pincode } }, { session });
+      return created;
     });
-
-    // Deduct stock
-    for (const v of validatedItems) {
-      v.product.stock = Math.max(0, v.product.stock - v.quantity);
-      await v.product.save();
+    return { order, created: true };
+  } catch (error: any) {
+    if (error.code === 11000) {
+      const existing = await Order.findOne({ checkoutKey });
+      if (existing) return { order: existing, created: false };
     }
-
-    // Trigger Admin Email Alert asynchronously
-    const summaryItems = validatedItems.map(v => ({
-      name: v.product.name,
-      quantity: v.quantity,
-      price: v.price,
-    }));
-
-    sendAdminOrderEmailAlert({
-      orderNumber: order.orderNumber,
-      customerName: name || user?.name || 'Customer',
-      customerPhone: phone || user?.phone || 'N/A',
-      customerEmail: user?.email,
-      totalAmount: calculatedTotal,
-      shippingAddress: {
-        addressLine1,
-        addressLine2,
-        city,
-        state,
-        pincode,
-      },
-      items: summaryItems,
-    }).catch(err => console.error('Admin order email alert error:', err));
-
-    res.status(201).json(order);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    throw error;
   }
-});
-
-// Create manual order (Admin only)
-router.post('/manual', authenticate, authorizeAdmin, async (req: any, res: Response) => {
-  try {
-    const { productId, quantity, price, items, customerName, customerPhone, customerAddress, status } = req.body;
-
-    let orderItemsInput: Array<{ productId: string; quantity: number; price?: number }> = [];
-    if (Array.isArray(items) && items.length > 0) {
-      orderItemsInput = items;
-    } else if (productId && quantity) {
-      orderItemsInput = [{
-        productId: productId.toString(),
-        quantity: parseInt(quantity),
-        price: price ? parseFloat(price) : undefined,
-      }];
-    } else {
-      return res.status(400).json({ message: 'Missing order items' });
-    }
-
-    let calculatedTotal = 0;
-    const validatedItems: Array<{ product: any; quantity: number; price: number }> = [];
-
-    for (const it of orderItemsInput) {
-      const product = await Product.findById(it.productId);
-      if (!product) {
-        return res.status(404).json({ message: `Product ${it.productId} not found` });
+}
+router.post('/', rateLimit('checkout', 20, 3600000), asyncRoute(async (req, res) => {
+  const { order, created } = await createOrder(req, false);
+  if (created) void sendOrderEmails(order);
+  res.status(created ? 201 : 200).json(customerOrder(order));
+}));
+router.post('/manual', authorizeAdmin, asyncRoute(async (req, res) => {
+  const { order, created } = await createOrder(req, true);
+  if (created) void sendOrderEmails(order);
+  res.status(created ? 201 : 200).json(order);
+}));
+router.get('/', asyncRoute(async (req, res) => {
+  const orders = await Order.find({ userId: req.user.id }).sort({ createdAt: -1 });
+  res.json(orders.map(customerOrder));
+}));
+router.get('/all', authorizeAdmin, asyncRoute(async (_req, res) => {
+  const orders = await Order.find().populate('userId', 'name email phone').sort({ createdAt: -1 });
+  res.json(orders.map(order => ({ ...order.toJSON(), User: order.userId })));
+}));
+const transitions: Record<string, string[]> = {
+  pending: ['confirmed','cancelled'], confirmed: ['shipped','completed','cancelled'],
+  shipped: ['delivered'], delivered: ['completed'], completed: [], cancelled: [],
+};
+async function updateOrder(req: any, fields: string[]) {
+  const id = v.objectId(req.params.id);
+  let changedStatus = false;
+  const result = await mongoose.connection.transaction(async session => {
+    changedStatus = false;
+    const order = await Order.findById(id).session(session);
+    if (!order) throw new v.HttpError(404, 'Order not found.');
+    if (fields.includes('status') && req.body.status !== undefined && req.body.status !== order.status) {
+      const status = req.body.status;
+      if (!transitions[order.status]?.includes(status)) throw new v.HttpError(400, `Cannot change ${order.status} to ${String(status)}.`);
+      if (status === 'cancelled' && !order.stockRestored) {
+        for (const item of order.OrderItems) await Product.updateOne({ _id: item.productId }, { $inc: { stock: item.quantity } }, { session });
+        order.stockRestored = true;
       }
-      if (product.stock < it.quantity) {
-        return res.status(400).json({ message: `Insufficient stock for ${product.name} (Stock: ${product.stock})` });
-      }
-      const actualPrice = it.price !== undefined ? parseFloat(it.price.toString()) : product.price;
-      calculatedTotal += actualPrice * it.quantity;
-      validatedItems.push({ product, quantity: it.quantity, price: actualPrice });
+      order.status = status; changedStatus = true;
     }
-
-    const orderItemsData = validatedItems.map(v => ({
-      productId: v.product._id,
-      name: v.product.name,
-      price: v.price,
-      quantity: v.quantity,
-      Product: {
-        id: v.product.id,
-        name: v.product.name,
-        media: v.product.media,
-        imageUrl: v.product.imageUrl || v.product.media?.[0],
-        price: v.product.price,
-        wholesalePrice: v.product.wholesalePrice,
-      },
-    }));
-
-    const order = await Order.create({
-      userId: req.user.id,
-      orderType: 'custom',
-      totalAmount: calculatedTotal,
-      status: status || 'pending',
-      paymentMethod: 'Custom / Cash',
-      paymentStatus: 'paid',
-      shippingAddressLine1: customerAddress || 'Custom Real-time Order',
-      OrderItems: orderItemsData,
-    });
-
-    // Deduct stock
-    for (const v of validatedItems) {
-      v.product.stock = Math.max(0, v.product.stock - v.quantity);
-      await v.product.save();
+    if (fields.includes('paymentStatus') && req.body.paymentStatus !== undefined) {
+      if (!['pending','paid'].includes(req.body.paymentStatus)) throw new v.HttpError(400, 'Invalid payment status.');
+      order.paymentStatus = req.body.paymentStatus;
     }
-
-    const summaryItems = validatedItems.map(v => ({
-      name: v.product.name,
-      quantity: v.quantity,
-      price: v.price,
-    }));
-
-    sendAdminOrderEmailAlert({
-      orderNumber: order.orderNumber,
-      customerName: customerName || 'Custom Real-time Order',
-      customerPhone: customerPhone || 'N/A',
-      totalAmount: calculatedTotal,
-      shippingAddress: {
-        addressLine1: customerAddress || 'Direct Custom Order',
-      },
-      items: summaryItems,
-    }).catch(err => console.error('Manual order email error:', err));
-
-    res.status(201).json(order);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
-  }
-});
-
-// GET user orders
-router.get('/', authenticate, async (req: any, res: Response) => {
-  try {
-    const orders = await Order.find({ userId: req.user.id }).sort({ createdAt: -1 });
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
-  }
-});
-
-// GET all orders (Admin only)
-router.get('/all', authenticate, authorizeAdmin, async (req: any, res: Response) => {
-  try {
-    const rawOrders = await Order.find()
-      .populate('userId', 'id name email phone addressLine1 addressLine2 city state pincode')
-      .lean();
-
-    const formattedOrders = rawOrders.map((o: any) => ({
-      ...o,
-      id: o._id.toString(),
-      User: o.userId || null,
-    }));
-
-    // Sort pending orders first, and ascending by order date
-    formattedOrders.sort((a: any, b: any) => {
-      const aPending = a.status === 'pending';
-      const bPending = b.status === 'pending';
-      if (aPending && !bPending) return -1;
-      if (!aPending && bPending) return 1;
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    });
-
-    res.json(formattedOrders);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
-  }
-});
-
-// Update order status (Admin)
-router.put('/:id/status', authenticate, authorizeAdmin, async (req: any, res: Response) => {
-  try {
-    const order = await Order.findById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
-    }
-
-    const { status } = req.body;
-    order.status = status;
-    await order.save();
-
-    res.json(order);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
-  }
-});
-
-// Update order payment status (Admin)
-router.put('/:id/payment-status', authenticate, authorizeAdmin, async (req: any, res: Response) => {
-  try {
-    const order = await Order.findById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
-    }
-
-    const { paymentStatus } = req.body;
-    if (paymentStatus) {
-      order.paymentStatus = paymentStatus;
-    }
-    await order.save();
-
-    res.json(order);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
-  }
-});
-
-// Update order notes (Admin)
-router.put('/:id/notes', authenticate, authorizeAdmin, async (req: any, res: Response) => {
-  try {
-    const order = await Order.findById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
-    }
-
-    const { notes } = req.body;
-    order.notes = notes ?? '';
-    await order.save();
-
-    res.json(order);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
-  }
-});
-
-// General update order (Admin)
-router.put('/:id', authenticate, authorizeAdmin, async (req: any, res: Response) => {
-  try {
-    const order = await Order.findById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
-    }
-
-    const { status, paymentStatus, notes } = req.body;
-    if (status !== undefined) order.status = status;
-    if (paymentStatus !== undefined) order.paymentStatus = paymentStatus;
-    if (notes !== undefined) order.notes = notes;
-    await order.save();
-
-    res.json(order);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
-  }
-});
-
-// Delete order (Admin)
-router.delete('/:id', authenticate, authorizeAdmin, async (req: any, res: Response) => {
-  try {
-    const order = await Order.findById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
-    }
-
-    // Restore stock if not cancelled
-    if (order.status !== 'cancelled' && Array.isArray(order.OrderItems)) {
-      for (const item of order.OrderItems) {
-        if (item.productId) {
-          const product = await Product.findById(item.productId);
-          if (product) {
-            product.stock += item.quantity;
-            await product.save();
-          }
-        }
-      }
-    }
-
-    await Order.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Order deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
-  }
-});
-
+    if (fields.includes('notes') && req.body.notes !== undefined) order.notes = v.text(req.body.notes, 'notes', 2000, false);
+    await order.save({ session });
+    return order;
+  });
+  if (changedStatus) void sendOrderEmails(result, true);
+  return result;
+}
+for (const [path, fields] of [['/:id/status',['status']], ['/:id/payment-status',['paymentStatus']], ['/:id/notes',['notes']], ['/:id',['status','paymentStatus','notes']]] as [string, string[]][]) {
+  router.put(path, authorizeAdmin, asyncRoute(async (req, res) => res.json(await updateOrder(req, fields))));
+}
+router.delete('/:id', authorizeAdmin, asyncRoute(async (req, res) => {
+  const id = v.objectId(req.params.id);
+  await mongoose.connection.transaction(async session => {
+    const order = await Order.findById(id).session(session);
+    if (!order) throw new v.HttpError(404, 'Order not found.');
+    if (order.status !== 'cancelled') throw new v.HttpError(400, 'Only cancelled orders can be deleted. Keep completed orders for your sales records.');
+    await order.deleteOne({ session });
+  });
+  res.json({ message: 'Cancelled order deleted.' });
+}));
 export default router;

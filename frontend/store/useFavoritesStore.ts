@@ -2,16 +2,16 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface FavoritesState {
-  favorites: number[];
-  toggleFavorite: (id: number) => void;
-  isFavorite: (id: number) => boolean;
+  favorites: string[];
+  toggleFavorite: (id: string) => void;
+  isFavorite: (id: string) => boolean;
 }
 
 export const useFavoritesStore = create<FavoritesState>()(
   persist(
     (set, get) => ({
       favorites: [],
-      toggleFavorite: (id: number) => {
+      toggleFavorite: (id: string) => {
         const { favorites } = get();
         if (favorites.includes(id)) {
           set({ favorites: favorites.filter((favId) => favId !== id) });
@@ -19,10 +19,10 @@ export const useFavoritesStore = create<FavoritesState>()(
           set({ favorites: [...favorites, id] });
         }
       },
-      isFavorite: (id: number) => get().favorites.includes(id),
+      isFavorite: (id: string) => get().favorites.includes(id),
     }),
     {
-      name: 'favorites-storage',
+      name: 'playcasthub-v2-favorites',
     }
   )
 );

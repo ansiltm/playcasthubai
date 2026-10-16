@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '../../store/useCartStore';
@@ -11,6 +11,9 @@ import api from '../../lib/api';
 
 export default function CartPage() {
   const router = useRouter();
+  const checkoutKey = useRef<string | null>(null);
+  const submitting = useRef(false);
+  const checkoutSignature = useRef('');
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
   const { user } = useAuthStore();
   
@@ -68,7 +71,7 @@ export default function CartPage() {
       router.push('/login');
       return;
     }
-    if (!phone.trim()) {
+    if (!/^[6-9]\d{9}$/.test(phone)) {
       toast.error('Please provide a valid contact phone number');
       return;
     }
@@ -80,6 +83,10 @@ export default function CartPage() {
   };
 
   const handleFinalOrderSubmit = async () => {
+    if (submitting.current) return;
+    submitting.current = true;
+    const signature = JSON.stringify({items, fullName, phone, addressLine1, addressLine2, city, state, pincode});
+    if (!checkoutKey.current || checkoutSignature.current !== signature) { checkoutKey.current = crypto.randomUUID(); checkoutSignature.current = signature; }
     setIsProcessing(true);
 
     try {
@@ -92,20 +99,22 @@ export default function CartPage() {
         city,
         state,
         pincode
-      });
+      }, { headers: { 'Idempotency-Key': checkoutKey.current } });
       
-      const orderNumber = res.data?.orderNumber || `ORD-${Date.now().toString().slice(-6)}`;
+      const orderNumber = res.data.orderNumber;
       setConfirmedOrderNumber(orderNumber);
       clearCart();
+      checkoutKey.current = null;
       setShowConfirmModal(false);
       setShowSuccessModal(true);
-      toast.success('Order confirmed!');
+      toast.success('Order received!');
     } catch (err: any) {
       if (err.response?.status !== 401 && err.response?.status !== 403) {
         toast.error(err.response?.data?.message || 'Failed to place order. Please try again.');
       }
     } finally {
       setIsProcessing(false);
+      submitting.current = false;
     }
   };
 
@@ -275,19 +284,17 @@ export default function CartPage() {
                 <span className="font-bold text-text-main">₹{getTotal().toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Shipping</span>
-                <span className="font-bold text-text-main">Free</span>
+                <span>Delivery charge</span>
+                <span className="font-bold text-text-main">Confirmed before dispatch</span>
               </div>
-              <div className="flex justify-between">
-                <span>Tax</span>
-                <span className="font-bold text-text-main">₹{(getTotal() * 0.1).toFixed(2)}</span>
-              </div>
+
               <div className="border-t pt-4 flex justify-between text-xl">
-                <span className="font-black text-text-main">Total</span>
-                <span className="font-black text-primary">₹{(getTotal() * 1.1).toFixed(2)}</span>
+                <span className="font-black text-text-main">Item total</span>
+                <span className="font-black text-primary">₹{(getTotal()).toFixed(2)}</span>
               </div>
             </div>
             
+            <p className="text-xs text-text-muted mb-4">Any delivery charge will be confirmed with you before dispatch.</p>
             {step === 'cart' && (
               <button onClick={() => setStep('shipping')} className="bubble-btn w-full flex items-center justify-center space-x-2 py-4">
                 <span>Proceed to Delivery</span> <ArrowRight size={20} />
@@ -346,8 +353,8 @@ export default function CartPage() {
                 </span>
               </div>
               <div className="flex justify-between border-t border-border-main pt-3 text-base">
-                <span className="font-bold text-text-main">Total Payable:</span>
-                <span className="font-black text-primary">₹{(getTotal() * 1.1).toFixed(2)}</span>
+                <span className="font-bold text-text-main">Item total:</span>
+                <span className="font-black text-primary">₹{(getTotal()).toFixed(2)}</span>
               </div>
             </div>
 
@@ -394,7 +401,7 @@ export default function CartPage() {
               <CheckCircle size={44} />
             </div>
 
-            <h3 className="text-3xl font-black text-text-main mb-2">Order Confirmed!</h3>
+            <h3 className="text-3xl font-black text-text-main mb-2">Order Received!</h3>
             {confirmedOrderNumber && (
               <span className="inline-block bg-primary/10 text-primary text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider mb-4">
                 #{confirmedOrderNumber}

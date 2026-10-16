@@ -8,7 +8,7 @@ import { ThemeProvider } from '../components/ThemeProvider';
 
 export const metadata: Metadata = {
   title: 'PlaycastHub',
-  description: 'The ultimate store for RC, Diecast, and Hobby items',
+  description: 'Discover toys, RC cars, diecast models, puzzles and collectibles for kids and hobby enthusiasts.',
   icons: {
     icon: '/logo.jpeg',
     shortcut: '/logo.jpeg',

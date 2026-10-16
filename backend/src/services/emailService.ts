@@ -1,68 +1,19 @@
-import sgMail from '@sendgrid/mail';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
-// Initialize SendGrid API key from environment
-const apiKey = process.env.SENDGRID_API_KEY || '';
-if (apiKey && apiKey !== 'SG.your_actual_api_key_here') {
-  sgMail.setApiKey(apiKey);
+import { consumeLimit } from '../middleware/rateLimit';
+import { HttpError } from '../utils/validation';
+export interface EmailOptions { to: string; subject: string; html: string; }
+export async function sendTransactionalEmail({ to, subject, html }: EmailOptions): Promise<void> {
+  const apiKey = process.env.BREVO_API_KEY;
+  const sender = process.env.EMAIL_FROM;
+  if (!apiKey || !sender) throw new HttpError(503, 'Email is not configured yet. Please contact the store.');
+  // Reserve capacity before sending. Keep a margin under Brevo's free daily allowance.
+  const configuredLimit = Number(process.env.EMAIL_DAILY_LIMIT || 250);
+  const dailyLimit = Number.isSafeInteger(configuredLimit) && configuredLimit > 0 ? Math.min(configuredLimit, 250) : 250;
+  await consumeLimit('email:daily', dailyLimit, 86400000);
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: { 'api-key': apiKey, 'Content-Type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify({ sender: { name: 'PlayCastHub', email: sender }, to: [{ email: to }], subject, htmlContent: html }),
+    signal: AbortSignal.timeout(12000),
+  });
+  if (!response.ok) throw new HttpError(503, 'Email delivery is temporarily unavailable. Please try again later.');
 }
-
-// Configurable sender email address with fallback placeholder
-const DEFAULT_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'no-reply@playcasthub.com';
-
-export interface EmailOptions {
-  to: string;
-  subject: string;
-  text?: string;
-  html?: string;
-  from?: string;
-}
-
-/**
- * Reusable asynchronous function to send transactional emails via Twilio SendGrid
- * @param {EmailOptions} options - Email destination, subject, and body content
- * @returns {Promise<any>} - SendGrid response or throws error
- */
-export const sendTransactionalEmail = async ({
-  to,
-  subject,
-  text,
-  html,
-  from = DEFAULT_FROM_EMAIL,
-}: EmailOptions): Promise<any> => {
-  try {
-    // If the API key was updated at runtime or lazily set
-    const currentApiKey = process.env.SENDGRID_API_KEY || '';
-    if (currentApiKey && currentApiKey !== 'SG.your_actual_api_key_here') {
-      sgMail.setApiKey(currentApiKey);
-    } else {
-      console.warn('[SendGrid] SENDGRID_API_KEY is not configured with a valid key. Email sending simulated.');
-      return { simulated: true, to, subject };
-    }
-
-    const msg = {
-      to,
-      from, // Verified sender email in SendGrid
-      subject,
-      text: text || (html ? html.replace(/<[^>]+>/g, '') : ''),
-      html: html || text || '',
-    };
-
-    const response = await sgMail.send(msg);
-    console.log(`[SendGrid] Transactional email successfully sent to: ${to}`);
-    return response;
-  } catch (error: any) {
-    console.error('[SendGrid] Error sending transactional email:', {
-      message: error?.message,
-      code: error?.code,
-      response: error?.response?.body ? JSON.stringify(error.response.body, null, 2) : error?.response,
-    });
-    throw error;
-  }
-};
-
-export default {
-  sendTransactionalEmail,
-};

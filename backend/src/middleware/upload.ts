@@ -1,40 +1,21 @@
 import multer from 'multer';
 import cloudinary from '../config/cloudinary';
-
-// Store incoming files in memory for fast direct streaming to Cloudinary
-const storage = multer.memoryStorage();
-
+import { HttpError } from '../utils/validation';
 export const upload = multer({
-  storage,
-  limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB max file size
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024, files: 4, fields: 25, fieldSize: 20000 },
+  fileFilter: (_req, file, callback) => {
+    if (!['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm'].includes(file.mimetype)) return callback(new HttpError(400, 'Use JPG, PNG, WebP, GIF, MP4 or WebM files.'));
+    callback(null, true);
   },
 });
-
-/**
- * Uploads a file buffer from Multer directly to Cloudinary CDN
- */
-export const uploadToCloudinary = (
-  file: Express.Multer.File,
-  folder: string = 'playcasthub_products'
-): Promise<string> => {
+export function uploadToCloudinary(file: Express.Multer.File): Promise<string> {
+  if (!process.env.CLOUDINARY_API_SECRET || !process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY) throw new HttpError(503, 'Media uploads are not configured yet.');
   return new Promise((resolve, reject) => {
-    const isVideo = file.mimetype ? file.mimetype.startsWith('video') : false;
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-        resource_type: isVideo ? 'video' : 'auto',
-      },
-      (error, result) => {
-        if (error) {
-          return reject(error);
-        }
-        if (!result?.secure_url) {
-          return reject(new Error('Cloudinary upload returned no secure URL'));
-        }
-        resolve(result.secure_url);
-      }
-    );
-    uploadStream.end(file.buffer);
+    const stream = cloudinary.uploader.upload_stream({ folder: 'playcasthub_products', resource_type: file.mimetype.startsWith('video/') ? 'video' : 'image' }, (error, result) => {
+      if (error || !result?.secure_url) return reject(new HttpError(502, 'Media upload failed. Please try again.'));
+      resolve(result.secure_url);
+    });
+    stream.end(file.buffer);
   });
-};
+}
