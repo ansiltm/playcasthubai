@@ -113,3 +113,21 @@ model-viewer {
   background-color: transparent;
   --poster-color: transparent;
 }
+
+/* Hide Netlify Injected HUD & "Powered by Netlify" Badge */
+#nl-badge-frame,
+#nl-hud-frame,
+iframe[title="Powered by Netlify"],
+iframe[title="Netlify"],
+iframe[id^="nl-"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: fixed !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  z-index: -99999 !important;
+}
