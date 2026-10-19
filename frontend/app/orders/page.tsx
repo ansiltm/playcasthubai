@@ -27,6 +27,7 @@ interface OrderItem {
   name: string;
   price: number;
   quantity: number;
+  color?: string;
   Product?: {
     id?: string;
     name?: string;
@@ -326,7 +327,10 @@ export default function OrdersPage() {
                           </div>
                           <div className="text-left">
                             <p className="text-xs font-bold text-text-main truncate max-w-[140px]">{it.name}</p>
-                            <p className="text-[11px] text-text-muted">Qty: {it.quantity} × ₹{it.price}</p>
+                            <p className="text-[11px] text-text-muted">
+                              {it.color && <span className="font-bold text-primary mr-1">({it.color})</span>}
+                              Qty: {it.quantity} × ₹{it.price}
+                            </p>
                           </div>
                         </div>
                       );
@@ -416,6 +420,11 @@ export default function OrdersPage() {
                           </div>
                           <div>
                             <p className="font-bold text-sm text-text-main">{item.name}</p>
+                            {item.color && (
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary mt-0.5 mb-1">
+                                Color: {item.color}
+                              </span>
+                            )}
                             <p className="text-xs text-text-muted">Quantity: {item.quantity} × ₹{item.price.toFixed(2)}</p>
                           </div>
                         </div>

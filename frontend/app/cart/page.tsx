@@ -149,23 +149,32 @@ export default function CartPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2 space-y-6">
           {step === 'cart' && (
-            items.map((item) => (
-              <div key={item.productId} className="bubble-card bg-bubble-surface p-6 flex flex-col sm:flex-row items-center gap-6">
-                <img src={item.imageUrl} alt={item.name} className="w-32 h-32 object-cover rounded-2xl bg-bubble-bg" />
-                <div className="flex-1 text-center sm:text-left">
-                  <h3 className="text-xl font-bold text-text-main mb-2">{item.name}</h3>
-                  <div className="text-2xl font-black text-primary">₹{item.price.toFixed(2)}</div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center bg-bubble-bg rounded-full border border-gray-200">
-                    <button onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))} className="p-3 text-text-muted hover:text-primary transition-colors" aria-label="Decrease quantity"><Minus size={16} /></button>
-                    <span className="font-bold w-8 text-center">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.productId, item.quantity + 1)} className="p-3 text-text-muted hover:text-primary transition-colors" aria-label="Increase quantity"><Plus size={16} /></button>
+            items.map((item) => {
+              const itemKey = item.id || item.productId;
+              return (
+                <div key={itemKey} className="bubble-card bg-bubble-surface p-6 flex flex-col sm:flex-row items-center gap-6">
+                  <img src={item.imageUrl} alt={item.name} className="w-32 h-32 object-cover rounded-2xl bg-bubble-bg" />
+                  <div className="flex-1 text-center sm:text-left">
+                    <h3 className="text-xl font-bold text-text-main mb-1">{item.name}</h3>
+                    {item.color && (
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary mb-2">
+                        <span>Color:</span>
+                        <span className="font-black">{item.color}</span>
+                      </div>
+                    )}
+                    <div className="text-2xl font-black text-primary">₹{item.price.toFixed(2)}</div>
                   </div>
-                  <button onClick={() => removeItem(item.productId)} className="p-3 text-red-500 bg-red-50 rounded-full hover:bg-red-100 transition-colors" aria-label="Remove item"><Trash2 size={20} /></button>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center bg-bubble-bg rounded-full border border-gray-200">
+                      <button onClick={() => updateQuantity(itemKey, Math.max(1, item.quantity - 1))} className="p-3 text-text-muted hover:text-primary transition-colors" aria-label="Decrease quantity"><Minus size={16} /></button>
+                      <span className="font-bold w-8 text-center">{item.quantity}</span>
+                      <button onClick={() => updateQuantity(itemKey, item.quantity + 1)} className="p-3 text-text-muted hover:text-primary transition-colors" aria-label="Increase quantity"><Plus size={16} /></button>
+                    </div>
+                    <button onClick={() => removeItem(itemKey)} className="p-3 text-red-500 bg-red-50 rounded-full hover:bg-red-100 transition-colors" aria-label="Remove item"><Trash2 size={20} /></button>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
 
           {step === 'shipping' && (

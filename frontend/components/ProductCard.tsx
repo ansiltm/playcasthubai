@@ -13,6 +13,7 @@ interface Product {
   category: string;
   grade?: string;
   ageLabel?: string;
+  colors?: string[];
   media?: string[];
 }
 
@@ -116,13 +117,18 @@ export default function ProductCard({ product }: { product: Product }) {
           <h3 className="text-sm sm:text-base font-bold text-text-main mb-3 line-clamp-2 flex-1 leading-snug">
             {product.name}
           </h3>
-          {product.ageLabel && product.ageLabel !== 'Not specified' && (
-            <div className="flex items-center gap-1.5 mb-2.5">
+          <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+            {product.ageLabel && product.ageLabel !== 'Not specified' && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
                 Age: {product.ageLabel}
               </span>
-            </div>
-          )}
+            )}
+            {product.colors && product.colors.length > 0 && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                {product.colors.length} {product.colors.length === 1 ? 'Color' : 'Colors'}
+              </span>
+            )}
+          </div>
           <div className="flex items-center justify-between mt-auto">
             <span className="text-lg font-black text-primary">
               ₹{product.price.toFixed(2)}

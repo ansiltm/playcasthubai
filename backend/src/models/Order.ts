@@ -4,6 +4,7 @@ const itemSchema = new mongoose.Schema({
   productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
   name: { type: String, required: true }, price: { type: Number, required: true, min: 0 },
   quantity: { type: Number, required: true, min: 1, max: 99 }, Product: mongoose.Schema.Types.Mixed,
+  color: { type: String, default: '' },
 });
 const schema = new mongoose.Schema({
   orderNumber: { type: String, unique: true, default: () => `PCH-${randomUUID().slice(0, 18).toUpperCase()}` },

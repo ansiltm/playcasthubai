@@ -57,6 +57,21 @@ async function productData(req: any, product?: any) {
     data.ageLabel = req.body.ageLabel;
   }
   if (req.body.safetyNotes !== undefined) data.safetyNotes = v.text(req.body.safetyNotes, 'safety notes', 1000, false);
+  if (req.body.colors !== undefined) {
+    let colorsList: string[] = [];
+    if (Array.isArray(req.body.colors)) {
+      colorsList = req.body.colors.map((c: any) => v.text(c, 'color', 40));
+    } else if (typeof req.body.colors === 'string') {
+      try {
+        const parsed = JSON.parse(req.body.colors);
+        if (Array.isArray(parsed)) colorsList = parsed.map((c: any) => v.text(c, 'color', 40));
+        else colorsList = req.body.colors.split(',').map((c: string) => c.trim()).filter(Boolean);
+      } catch {
+        colorsList = req.body.colors.split(',').map((c: string) => c.trim()).filter(Boolean);
+      }
+    }
+    data.colors = colorsList.slice(0, 10);
+  }
   const files = (req.files || []) as Express.Multer.File[];
   let media: string[] = product?.media || [];
   if (!product || req.body.mediaUpdated === 'true' || req.body.existingMedia !== undefined) media = req.body.existingMedia ? (Array.isArray(req.body.existingMedia) ? req.body.existingMedia : [req.body.existingMedia]).map(mediaUrl) : [];

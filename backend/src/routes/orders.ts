@@ -11,7 +11,7 @@ router.use(authenticate);
 export function customerOrder(order: any) {
   const result = typeof order.toJSON === 'function' ? order.toJSON() : { ...order };
   delete result.notes; delete result.checkoutKey; delete result.stockRestored;
-  result.OrderItems = result.OrderItems.map((item: any) => ({ ...item, Product: item.Product ? { id: item.Product.id, name: item.Product.name, imageUrl: item.Product.imageUrl, media: item.Product.media, price: item.price } : undefined }));
+  result.OrderItems = result.OrderItems.map((item: any) => ({ ...item, color: item.color || '', Product: item.Product ? { id: item.Product.id, name: item.Product.name, imageUrl: item.Product.imageUrl, media: item.Product.media, price: item.price, colors: item.Product.colors } : undefined }));
   return result;
 }
 async function createOrder(req: any, manual: boolean) {
@@ -20,9 +20,11 @@ async function createOrder(req: any, manual: boolean) {
   const seen = new Set<string>();
   const items = input.items.map((item: any) => {
     const productId = v.objectId(item?.productId);
-    if (seen.has(productId)) throw new v.HttpError(400, 'A product may appear only once in an order.');
-    seen.add(productId);
-    return { productId, quantity: v.quantity(item.quantity), customPrice: manual && item.price !== undefined ? v.money(item.price) : undefined };
+    const color = item.color ? v.text(item.color, 'color', 50, false) : '';
+    const itemKey = `${productId}:${color}`;
+    if (seen.has(itemKey)) throw new v.HttpError(400, 'A product line may appear only once in an order.');
+    seen.add(itemKey);
+    return { productId, color, quantity: v.quantity(item.quantity), customPrice: manual && item.price !== undefined ? v.money(item.price) : undefined };
   });
   const name = v.text(manual ? input.customerName : input.name, 'customer name', 100);
   const phone = v.phone(manual ? input.customerPhone : input.phone);
@@ -47,7 +49,7 @@ async function createOrder(req: any, manual: boolean) {
         if (!product) throw new v.HttpError(409, 'A product is unavailable or has insufficient stock. Please update your cart.');
         const price = item.customPrice ?? product.price;
         totalCents += Math.round(price * 100) * item.quantity;
-        orderItems.push({ productId: product._id, name: product.name, price, quantity: item.quantity, Product: { id: product.id, name: product.name, price, wholesalePrice: product.wholesalePrice, media: product.media, imageUrl: product.imageUrl } });
+        orderItems.push({ productId: product._id, name: product.name, color: item.color || '', price, quantity: item.quantity, Product: { id: product.id, name: product.name, price, wholesalePrice: product.wholesalePrice, media: product.media, imageUrl: product.imageUrl, colors: product.colors } });
       }
       const [created] = await Order.create([{
         checkoutKey, userId: req.user.id, orderType: manual ? 'custom' : 'online', totalAmount: totalCents / 100,

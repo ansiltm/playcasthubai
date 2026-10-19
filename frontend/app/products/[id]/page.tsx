@@ -1,14 +1,60 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useCartStore } from '../../../store/useCartStore';
 import { useFavoritesStore } from '../../../store/useFavoritesStore';
-import { ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight, Volume2, VolumeX, RotateCcw, Video, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight, Volume2, VolumeX, RotateCcw, Video, ShieldCheck, CheckCircle2, Zap, Check, Plus, Minus, Truck, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../../lib/api';
 
+const COLOR_PALETTE: Record<string, { bg: string; border?: string }> = {
+  'Red': { bg: '#EF4444' },
+  'Cherry Red': { bg: '#DC2626' },
+  'Metallic Red': { bg: '#E11D48' },
+  'Racing Red': { bg: '#F43F5E' },
+  'Blue': { bg: '#3B82F6' },
+  'Electric Blue': { bg: '#0EA5E9' },
+  'Navy Blue': { bg: '#1E3A8A' },
+  'Sky Blue': { bg: '#38BDF8' },
+  'Police Blue': { bg: '#1D4ED8' },
+  'Yellow': { bg: '#EAB308' },
+  'Industrial Yellow': { bg: '#FACC15' },
+  'Vibrant Yellow': { bg: '#FDE047' },
+  'Bright Yellow': { bg: '#FEF08A' },
+  'Black': { bg: '#1E293B' },
+  'Gloss Black': { bg: '#09090B' },
+  'Matte Black': { bg: '#18181B' },
+  'Black & White': { bg: 'linear-gradient(135deg, #09090B 50%, #F8FAFC 50%)' },
+  'Green': { bg: '#10B981' },
+  'Forest Green': { bg: '#059669' },
+  'Neon Green': { bg: '#22C55E' },
+  'Army Green': { bg: '#4D7C0F' },
+  'Military Green': { bg: '#3F6212' },
+  'Orange': { bg: '#F97316' },
+  'Construction Orange': { bg: '#EA580C' },
+  'Pink': { bg: '#EC4899' },
+  'Baby Pink': { bg: '#F472B6' },
+  'White': { bg: '#F8FAFC', border: '#94A3B8' },
+  'Pure White': { bg: '#FFFFFF', border: '#CBD5E1' },
+  'Obsidian White': { bg: '#F1F5F9', border: '#CBD5E1' },
+  'Silver': { bg: '#94A3B8' },
+  'Desert Sand': { bg: '#D4B996' },
+  'Multicolor': { bg: 'linear-gradient(135deg, #EF4444 0%, #EAB308 33%, #3B82F6 66%, #10B981 100%)' },
+  'Multicolor Set': { bg: 'linear-gradient(135deg, #EF4444 0%, #EAB308 33%, #3B82F6 66%, #10B981 100%)' },
+};
+
+function getColorSwatch(color: string) {
+  if (COLOR_PALETTE[color]) return COLOR_PALETTE[color];
+  const lower = color.toLowerCase();
+  for (const [key, val] of Object.entries(COLOR_PALETTE)) {
+    if (lower.includes(key.toLowerCase())) return val;
+  }
+  return { bg: '#64748B' };
+}
+
 export default function ProductDetails() {
+  const router = useRouter();
   const { id } = useParams();
   const [product, setProduct] = useState<any>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -16,6 +62,8 @@ export default function ProductDetails() {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [isMuted, setIsMuted] = useState(true);
+  const [selectedColor, setSelectedColor] = useState<string>('');
+  const [quantity, setQuantity] = useState(1);
   const videoRef = useRef<HTMLVideoElement>(null);
   const addItem = useCartStore((state) => state.addItem);
   
@@ -44,6 +92,9 @@ export default function ProductDetails() {
       try {
         const res = await api.get(`/products/${id}`);
         setProduct(res.data);
+        if (res.data?.colors && Array.isArray(res.data.colors) && res.data.colors.length > 0) {
+          setSelectedColor(res.data.colors[0]);
+        }
         // If product has a video in media, start by displaying the video first
         if (res.data?.media && Array.isArray(res.data.media)) {
           const videoIndex = res.data.media.findIndex(
@@ -95,14 +146,29 @@ export default function ProductDetails() {
   const handleAddToCart = () => {
     if (!product) return;
     addItem({
-      id: product.id,
+      id: `${product.id}-${selectedColor || 'default'}`,
       productId: product.id,
       name: product.name,
       price: product.price,
-      quantity: 1,
-      imageUrl: product.media?.[0]
+      quantity,
+      imageUrl: product.media?.[0] || product.imageUrl,
+      color: selectedColor || undefined,
     });
-    toast.success('Added to cart!');
+    toast.success(`Added ${quantity > 1 ? `${quantity}x ` : ''}${product.name}${selectedColor ? ` (${selectedColor})` : ''} to cart!`);
+  };
+
+  const handleBuyNow = () => {
+    if (!product) return;
+    addItem({
+      id: `${product.id}-${selectedColor || 'default'}`,
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      quantity,
+      imageUrl: product.media?.[0] || product.imageUrl,
+      color: selectedColor || undefined,
+    });
+    router.push('/cart');
   };
 
   const nextMedia = () => {
@@ -286,38 +352,140 @@ export default function ProductDetails() {
             <p className="text-lg text-text-muted leading-relaxed whitespace-pre-wrap">{product.description}</p>
           </div>
 
-          <div className="p-6 bg-bubble-input rounded-[var(--radius-bubble)] border border-border-main">
-            <div className="flex items-center justify-between mb-4">
+          <div className="p-6 bg-bubble-input rounded-[var(--radius-bubble)] border border-border-main space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-border-main">
               <span className="font-bold text-text-main">Availability:</span>
               <span className={`font-bold ${product.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                {product.stock > 0 ? `In Stock (${product.stock})` : 'Out of Stock'}
+                {product.stock > 0 ? `In Stock (${product.stock} available)` : 'Out of Stock'}
               </span>
             </div>
-            
-            <div className="flex gap-4">
-              <button 
-                onClick={handleAddToCart}
-                disabled={product.stock <= 0}
-                className="flex-1 bubble-btn py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-lg"
-              >
-                <ShoppingCart size={24} />
-                <span>Add to Cart</span>
-              </button>
-              <button 
-                onClick={() => toggleFavorite(product.id)}
-                className={`bubble-btn-secondary p-4 rounded-[var(--radius-pill)] transition-colors ${isFavorite(product.id) ? 'bg-red-50 border-red-200' : ''}`}
-              >
-                <Heart size={24} className={isFavorite(product.id) ? 'fill-red-500 text-red-500' : ''} />
-              </button>
-              <button 
-                onClick={handleShare}
-                className="bubble-btn-secondary p-4 rounded-[var(--radius-pill)] hover:text-primary"
-              >
-                <Share2 size={24} />
-              </button>
+
+            {/* Available Colors Selection */}
+            {product.colors && Array.isArray(product.colors) && product.colors.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-text-main flex items-center gap-2">
+                    <span>Available Color:</span>
+                    <span className="text-primary font-black">{selectedColor || 'Default'}</span>
+                  </span>
+                  <span className="text-xs text-text-muted">{product.colors.length} {product.colors.length === 1 ? 'choice' : 'choices'}</span>
+                </div>
+                
+                <div className="flex flex-wrap gap-2.5">
+                  {product.colors.map((colorName: string) => {
+                    const isSelected = selectedColor === colorName;
+                    const swatch = getColorSwatch(colorName);
+                    return (
+                      <button
+                        key={colorName}
+                        type="button"
+                        onClick={() => setSelectedColor(colorName)}
+                        className={`group relative flex items-center gap-2 px-3 py-2 rounded-2xl border-2 transition-all duration-200 text-xs font-bold ${
+                          isSelected
+                            ? 'border-primary bg-primary/10 text-primary shadow-sm scale-105'
+                            : 'border-border-main bg-bubble-surface text-text-main hover:border-primary/50'
+                        }`}
+                        title={colorName}
+                      >
+                        <span
+                          className="w-4 h-4 rounded-full border border-black/15 shadow-inner flex items-center justify-center shrink-0"
+                          style={{
+                            background: swatch.bg,
+                            borderColor: swatch.border || 'rgba(0,0,0,0.15)',
+                          }}
+                        >
+                          {isSelected && (
+                            <Check size={10} className={swatch.bg.includes('#F8FAFC') || swatch.bg.includes('#FFFFFF') || swatch.bg.includes('#FDE047') ? 'text-black' : 'text-white'} strokeWidth={3} />
+                          )}
+                        </span>
+                        <span>{colorName}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Quantity Controls */}
+            <div className="flex items-center justify-between py-2 border-y border-border-main">
+              <span className="text-sm font-bold text-text-main">Quantity:</span>
+              <div className="flex items-center bg-bubble-surface rounded-full border border-border-main p-1">
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  disabled={quantity <= 1}
+                  className="p-2 text-text-muted hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-full"
+                  aria-label="Decrease quantity"
+                >
+                  <Minus size={16} />
+                </button>
+                <span className="font-black text-sm px-4 min-w-[2.5rem] text-center text-text-main">
+                  {quantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => Math.min(product.stock || 99, q + 1))}
+                  disabled={quantity >= (product.stock || 99)}
+                  className="p-2 text-text-muted hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-full"
+                  aria-label="Increase quantity"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
             </div>
 
-            <p className="text-xs text-center text-text-muted font-bold mt-4 flex items-center justify-center gap-1.5">
+            {/* Action Buttons: Add to Cart + Buy Now + Wishlist + Share */}
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button 
+                  onClick={handleAddToCart}
+                  disabled={product.stock <= 0}
+                  className="flex-1 bubble-btn-secondary py-3.5 text-base font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 border-2 border-primary/30 hover:border-primary transition-all"
+                >
+                  <ShoppingCart size={20} />
+                  <span>Add to Cart</span>
+                </button>
+                <button 
+                  onClick={handleBuyNow}
+                  disabled={product.stock <= 0}
+                  className="flex-1 bubble-btn py-3.5 text-base font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-lg"
+                >
+                  <Zap size={20} className="fill-current" />
+                  <span>Buy Now</span>
+                </button>
+              </div>
+
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => toggleFavorite(product.id)}
+                  className={`flex-1 bubble-btn-secondary py-2.5 rounded-[var(--radius-pill)] transition-colors flex items-center justify-center gap-2 text-xs font-bold ${isFavorite(product.id) ? 'bg-red-50 border-red-200 text-red-600' : ''}`}
+                >
+                  <Heart size={16} className={isFavorite(product.id) ? 'fill-red-500 text-red-500' : ''} />
+                  <span>{isFavorite(product.id) ? 'Wishlisted' : 'Add to Wishlist'}</span>
+                </button>
+                <button 
+                  onClick={handleShare}
+                  className="bubble-btn-secondary px-4 py-2.5 rounded-[var(--radius-pill)] hover:text-primary flex items-center justify-center gap-1.5 text-xs font-bold"
+                >
+                  <Share2 size={16} />
+                  <span>Share</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Trust and Delivery Highlights */}
+            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border-main text-xs text-text-muted">
+              <div className="flex items-center gap-1.5">
+                <Truck size={14} className="text-primary shrink-0" />
+                <span>Express Dispatch</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Sparkles size={14} className="text-secondary shrink-0" />
+                <span>100% Inspected</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-center text-text-muted font-bold pt-2 flex items-center justify-center gap-1.5 border-t border-border-main">
               <RotateCcw size={14} className="text-emerald-500" />
               <span>7-Day Return Policy Enabled • Live Unboxing Video Mandatory</span>
             </p>

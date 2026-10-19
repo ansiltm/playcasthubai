@@ -53,7 +53,7 @@ export default function AdminPage() {
   // Form State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '', ageLabel: 'Not specified', safetyNotes: ''
+    name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '', ageLabel: 'Not specified', safetyNotes: '', colors: ''
   });
   const [mediaFiles, setMediaFiles] = useState<FileList | null>(null);
   const [existingMedia, setExistingMedia] = useState<string[]>([]);
@@ -153,6 +153,7 @@ export default function AdminPage() {
     data.append('stock', formData.stock);
     data.append('ageLabel', formData.ageLabel);
     data.append('safetyNotes', formData.safetyNotes);
+    data.append('colors', formData.colors);
     
     // We send mediaUpdated=true to tell the backend we are sending existingMedia (which could be empty).
     data.append('mediaUpdated', 'true');
@@ -311,7 +312,7 @@ export default function AdminPage() {
 
   const openAddModal = () => {
     setEditingId(null);
-    setFormData({ name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '', ageLabel: 'Not specified', safetyNotes: '' });
+    setFormData({ name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '', ageLabel: 'Not specified', safetyNotes: '', colors: '' });
     setMediaFiles(null);
     setNewMediaPreviews([]);
     setExistingMedia([]);
@@ -320,9 +321,10 @@ export default function AdminPage() {
 
   const openEditModal = (p: any) => {
     setEditingId(p.id);
+    const colorStr = Array.isArray(p.colors) ? p.colors.join(', ') : (p.colors || '');
     setFormData({
       name: p.name, price: p.price.toString(), wholesalePrice: p.wholesalePrice?.toString() || '0', category: p.category, 
-      grade: p.grade, description: p.description, stock: p.stock.toString(), ageLabel: p.ageLabel || 'Not specified', safetyNotes: p.safetyNotes || ''
+      grade: p.grade, description: p.description, stock: p.stock.toString(), ageLabel: p.ageLabel || 'Not specified', safetyNotes: p.safetyNotes || '', colors: colorStr
     });
     setMediaFiles(null);
     setNewMediaPreviews([]);
@@ -965,6 +967,21 @@ export default function AdminPage() {
                   <textarea className="bubble-input mt-2" maxLength={1000} placeholder="Copy verified warnings and battery details from the packaging." value={formData.safetyNotes} onChange={e => setFormData({...formData, safetyNotes: e.target.value})} />
                 </label>
               </div>
+
+              <div>
+                <label className="block text-sm font-bold text-text-main mb-2">Available Colors (comma-separated)</label>
+                <input 
+                  type="text" 
+                  className="bubble-input py-3" 
+                  placeholder="e.g. Red, Metallic Blue, Gloss Black, White" 
+                  value={formData.colors} 
+                  onChange={e => setFormData({...formData, colors: e.target.value})} 
+                />
+                <p className="text-xs text-text-muted mt-1.5">
+                  Enter color names separated by commas. These will display as interactive color swatches for buyers on the storefront product page.
+                </p>
+              </div>
+
               <div className="space-y-4 p-6 bg-bubble-input rounded-2xl border border-border-main">
                 <h3 className="font-bold text-primary mb-2">Media Upload (up to 4 files per upload, 8 MB each)</h3>
                 
@@ -1277,6 +1294,11 @@ export default function AdminPage() {
                       </div>
                       <div className="flex-grow">
                         <p className="font-bold text-text-main">{item.Product?.name || item.name || `Product ID: ${item.productId}`}</p>
+                        {item.color && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary mt-1">
+                            Color: {item.color}
+                          </span>
+                        )}
                         <p className="text-xs text-text-muted mt-0.5">Quantity: <strong className="text-text-main">{item.quantity}</strong></p>
                       </div>
                       <div className="text-right">

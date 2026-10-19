@@ -8,13 +8,14 @@ export interface CartItem {
   price: number;
   quantity: number;
   imageUrl: string;
+  color?: string;
 }
 
 interface CartState {
   items: CartItem[];
   addItem: (item: CartItem) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeItem: (idOrProductId: string) => void;
+  updateQuantity: (idOrProductId: string, quantity: number) => void;
   clearCart: () => void;
   getTotal: () => number;
 }
@@ -25,25 +26,33 @@ export const useCartStore = create<CartState>()(
       items: [],
       addItem: (item) => {
         const items = get().items;
-        const existingItem = items.find((i) => i.productId === item.productId);
-        if (existingItem) {
+        const itemId = item.id || `${item.productId}-${item.color || 'default'}`;
+        const normalizedItem = { ...item, id: itemId };
+        const existingIndex = items.findIndex(
+          (i) => i.id === itemId || (i.productId === item.productId && (i.color || '') === (item.color || ''))
+        );
+        if (existingIndex > -1) {
           set({
-            items: items.map((i) =>
-              i.productId === item.productId
+            items: items.map((i, idx) =>
+              idx === existingIndex
                 ? { ...i, quantity: Math.min(99, i.quantity + item.quantity) }
                 : i
             ),
           });
         } else {
-          set({ items: [...items, item] });
+          set({ items: [...items, normalizedItem] });
         }
       },
-      removeItem: (productId) =>
-        set({ items: get().items.filter((i) => i.productId !== productId) }),
-      updateQuantity: (productId, quantity) =>
+      removeItem: (id) =>
+        set({
+          items: get().items.filter((i) => (i.id || i.productId) !== id),
+        }),
+      updateQuantity: (id, quantity) =>
         set({
           items: get().items.map((i) =>
-            i.productId === productId ? { ...i, quantity: Math.max(1, Math.min(99, Math.floor(quantity))) } : i
+            (i.id || i.productId) === id
+              ? { ...i, quantity: Math.max(1, Math.min(99, Math.floor(quantity))) }
+              : i
           ),
         }),
       clearCart: () => set({ items: [] }),

@@ -13,6 +13,7 @@ export interface IProduct extends Document {
   stock: number;
   imageUrl?: string;
   media: string[];
+  colors: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,6 +31,7 @@ const ProductSchema = new Schema<IProduct>(
     stock: { type: Number, required: true, default: 0, min: 0 },
     imageUrl: { type: String, default: '' },
     media: { type: [String], default: [] },
+    colors: { type: [String], default: [] },
   },
   {
     timestamps: true,
