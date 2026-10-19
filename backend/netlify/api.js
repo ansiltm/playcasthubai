@@ -17,7 +17,7 @@ if (!process.env.BREVO_SMTP_KEY && !process.env.SMTP_PASS) {
   process.env.BREVO_SMTP_PORT = process.env.BREVO_SMTP_PORT || '587';
   process.env.BREVO_SMTP_USER = process.env.BREVO_SMTP_USER || Buffer.from('YmVkNzUzMDAxQHNtdHAtYnJldm8uY29t', 'base64').toString('utf8');
   process.env.BREVO_SMTP_KEY = Buffer.from('eHNtdHBzaWItMjJhODIwMTRkODA0ZmFjYTc1OGY3ZGNhNTJlZjQzYmU1NTEyZmEyYzYxYTdkOTY5NjUyYTk1ZGM4MWMyODY2MC1rUnU3TVAzQmRKYVFqVzNt', 'base64').toString('utf8');
-  process.env.EMAIL_FROM = process.env.EMAIL_FROM || 'ansiltm2002@gmail.com';
+  process.env.EMAIL_FROM = process.env.EMAIL_FROM || 'playcasthub@gmail.com';
 }
 
 const app = require('../dist/server').default;

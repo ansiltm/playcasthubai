@@ -30,7 +30,7 @@ function getSmtpTransporter() {
 
 export async function sendTransactionalEmail({ to, subject, html }: EmailOptions): Promise<void> {
   const apiKey = process.env.BREVO_API_KEY;
-  const sender = process.env.EMAIL_FROM || process.env.ADMIN_FROM_EMAIL || 'ansiltm2002@gmail.com';
+  const sender = process.env.EMAIL_FROM || process.env.ADMIN_FROM_EMAIL || 'playcasthub@gmail.com';
 
   const configuredLimit = Number(process.env.EMAIL_DAILY_LIMIT || 250);
   const dailyLimit = Number.isSafeInteger(configuredLimit) && configuredLimit > 0 ? Math.min(configuredLimit, 250) : 250;
