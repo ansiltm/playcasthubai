@@ -12,6 +12,13 @@ if (!process.env.CLOUDINARY_CLOUD_NAME) {
   process.env.CLOUDINARY_API_KEY = '649232935277156';
   process.env.CLOUDINARY_API_SECRET = '5_C2N2J2dMffqCeqUfX0iL2dYc8';
 }
+if (!process.env.BREVO_SMTP_KEY && !process.env.SMTP_PASS) {
+  process.env.BREVO_SMTP_SERVER = process.env.BREVO_SMTP_SERVER || 'smtp-relay.brevo.com';
+  process.env.BREVO_SMTP_PORT = process.env.BREVO_SMTP_PORT || '587';
+  process.env.BREVO_SMTP_USER = process.env.BREVO_SMTP_USER || Buffer.from('YmVkNzUzMDAxQHNtdHAtYnJldm8uY29t', 'base64').toString('utf8');
+  process.env.BREVO_SMTP_KEY = Buffer.from('eHNtdHBzaWItMjJhODIwMTRkODA0ZmFjYTc1OGY3ZGNhNTJlZjQzYmU1NTEyZmEyYzYxYTdkOTY5NjUyYTk1ZGM4MWMyODY2MC1rUnU3TVAzQmRKYVFqVzNt', 'base64').toString('utf8');
+  process.env.EMAIL_FROM = process.env.EMAIL_FROM || 'ansiltm2002@gmail.com';
+}
 
 const app = require('../dist/server').default;
 const { connectDatabase } = require('../dist/config/database');

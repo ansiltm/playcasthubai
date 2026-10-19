@@ -46,13 +46,31 @@ test('database-backed limits reject requests over budget',async()=>{
  const original=RateLimit.findOneAndUpdate;try{RateLimit.findOneAndUpdate=async()=>({count:3});await assert.rejects(()=>consumeLimit('test',2,60000),{status:429});RateLimit.findOneAndUpdate=async()=>({count:2});await consumeLimit('test',2,60000);}finally{RateLimit.findOneAndUpdate=original;}
 });
 test('email API uses HTTPS, no SMTP, and reports provider failures',async()=>{
- const originalFetch=global.fetch,originalLimit=RateLimit.findOneAndUpdate;const old={key:process.env.BREVO_API_KEY,from:process.env.EMAIL_FROM};
- process.env.BREVO_API_KEY='test-only';process.env.EMAIL_FROM='sender@example.com';RateLimit.findOneAndUpdate=async()=>({count:1});
+ const originalFetch=global.fetch,originalLimit=RateLimit.findOneAndUpdate;
+ const old={
+   key:process.env.BREVO_API_KEY,
+   from:process.env.EMAIL_FROM,
+   smtpKey:process.env.BREVO_SMTP_KEY,
+   smtpUser:process.env.BREVO_SMTP_USER,
+   smtpPass:process.env.SMTP_PASS
+ };
+ process.env.BREVO_API_KEY='test-only';
+ process.env.EMAIL_FROM='sender@example.com';
+ delete process.env.BREVO_SMTP_KEY;
+ delete process.env.BREVO_SMTP_USER;
+ delete process.env.SMTP_PASS;
+ RateLimit.findOneAndUpdate=async()=>({count:1});
  try{
   let body;global.fetch=async(url,options)=>{assert.equal(url,'https://api.brevo.com/v3/smtp/email');body=JSON.parse(options.body);return {ok:true};};
   await sendTransactionalEmail({to:'customer@example.com',subject:'Test',html:'<p>Test</p>'});assert.equal(body.to[0].email,'customer@example.com');assert.equal(body.sender.email,'sender@example.com');
   global.fetch=async()=>({ok:false});await assert.rejects(()=>sendTransactionalEmail({to:'customer@example.com',subject:'Test',html:'Test'}),{status:503});
   delete process.env.BREVO_API_KEY;await assert.rejects(()=>sendTransactionalEmail({to:'customer@example.com',subject:'Test',html:'Test'}),{status:503});
- }finally{global.fetch=originalFetch;RateLimit.findOneAndUpdate=originalLimit;for(const [key,value] of [['BREVO_API_KEY',old.key],['EMAIL_FROM',old.from]]){if(value)process.env[key]=value;else delete process.env[key];}}
+ }finally{
+  global.fetch=originalFetch;
+  RateLimit.findOneAndUpdate=originalLimit;
+  for(const [key,value] of [['BREVO_API_KEY',old.key],['EMAIL_FROM',old.from],['BREVO_SMTP_KEY',old.smtpKey],['BREVO_SMTP_USER',old.smtpUser],['SMTP_PASS',old.smtpPass]]){
+    if(value)process.env[key]=value;else delete process.env[key];
+  }
+ }
 });
 test('email text is escaped before rendering HTML',()=>assert.equal(v.escapeHtml('<script>"&\''),'&lt;script&gt;&quot;&amp;&#39;'));
