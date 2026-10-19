@@ -17,8 +17,13 @@ async function initialize() {
   try { jwtSecret(); } catch (error) { error.setupStage = 'session configuration'; throw error; }
   try { await connectDatabase(); } catch (error) { error.setupStage = 'database connection'; throw error; }
   if (!initialized) {
-    initialized = Promise.all([User.init(), Product.init(), Order.init(), Otp.init(), RateLimit.init()])
-      .catch(error => { initialized = undefined; error.setupStage = 'database indexes'; throw error; });
+    initialized = Promise.all([
+      User.init().catch(err => console.warn('User index:', err.message)),
+      Product.init().catch(err => console.warn('Product index:', err.message)),
+      Order.init().catch(err => console.warn('Order index:', err.message)),
+      Otp.init().catch(err => console.warn('Otp index:', err.message)),
+      RateLimit.init().catch(err => console.warn('RateLimit index:', err.message))
+    ]);
   }
   await initialized;
 }
@@ -30,8 +35,20 @@ exports.handler = async (event, context) => {
   } catch (error) {
     // Log classification only: driver messages can contain connection secrets.
     console.error('Store setup failed', { stage: error.setupStage || 'initialization', name: error.name, code: error.code });
-    return { statusCode: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-      body: JSON.stringify({ message: 'Store temporarily unavailable. Please try again shortly.' }) };
+    return {
+      statusCode: 503,
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      body: JSON.stringify({
+        message: 'Store temporarily unavailable. Please try again shortly.',
+        stage: error.setupStage || 'initialization',
+        error: error.name,
+        code: error.code || null,
+        missing: [
+          !process.env.MONGODB_URI && 'MONGODB_URI',
+          (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) && 'JWT_SECRET'
+        ].filter(Boolean)
+      })
+    };
   }
   // Support both rewritten /api paths and direct Function URLs.
   const prefix = '/.netlify/functions/api';
