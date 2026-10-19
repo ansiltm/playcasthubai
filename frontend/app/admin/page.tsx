@@ -435,6 +435,7 @@ export default function AdminPage() {
     },
     { header: 'Category', accessorKey: 'category' },
     { header: 'Grade', renderCell: (p) => <span className="px-3 py-1 bg-bubble-input rounded-full text-[10px] font-bold uppercase tracking-wider inline-block whitespace-nowrap">{p.grade}</span> },
+    { header: 'Age', renderCell: (p) => <span className="px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full text-[10px] font-bold inline-block whitespace-nowrap border border-blue-500/20">{p.ageLabel || 'Not specified'}</span> },
     { header: 'Cost (Wholesale)', renderCell: (p) => <span className="font-bold text-orange-500 whitespace-nowrap">₹{p.wholesalePrice?.toFixed(2) || '0.00'}</span> },
     { header: 'Selling Price', renderCell: (p) => <span className="font-bold text-primary whitespace-nowrap">₹{p.price.toFixed(2)}</span> },
     { header: 'Stock', renderCell: (p) => (

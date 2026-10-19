@@ -14,7 +14,7 @@ function ProductsList() {
   const onlyFavorites = searchParams.get('favorites') === 'true';
   const { favorites } = useFavoritesStore();
   const [sort, setSort] = useState('newest');
-  const [age, setAge] = useState('');
+  const [age, setAge] = useState(searchParams.get('age') || searchParams.get('ageLabel') || '');
   const [inStock, setInStock] = useState(false);
   const [error, setError] = useState(false);
   
@@ -90,6 +90,7 @@ function ProductsList() {
       };
       return gradeMap[gradeQuery] || gradeQuery;
     }
+    if (age) return `Products for Ages ${age}`;
     return onlyFavorites ? 'Saved Favourites' : 'All Products';
   };
 
@@ -106,6 +107,15 @@ function ProductsList() {
         <label className="text-sm font-bold">Sort <select className="bubble-input mt-1" value={sort} onChange={e => setSort(e.target.value)}><option value="newest">Newest first</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></label>
         <label className="text-sm font-bold">Labelled age <select className="bubble-input mt-1" value={age} onChange={e => setAge(e.target.value)}><option value="">All ages</option>{['3+','6+','8+','14+','18+'].map(a => <option key={a}>{a}</option>)}</select></label>
         <label className="flex gap-2 items-center text-sm"><input type="checkbox" checked={inStock} onChange={e => setInStock(e.target.checked)} />In stock only</label>
+        {age && (
+          <button
+            onClick={() => setAge('')}
+            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+            title="Clear age filter"
+          >
+            Age: {age} ✕
+          </button>
+        )}
       </div>
       {error ? <p role="alert" className="p-8 text-text-muted">The collection could not be loaded. Please refresh and try again.</p> : loading ? (
         <div className="flex justify-center items-center h-64">
