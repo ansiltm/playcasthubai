@@ -14,11 +14,11 @@ const serve = serverless(app, {
 });
 let initialized;
 async function initialize() {
-  jwtSecret();
-  await connectDatabase();
+  try { jwtSecret(); } catch (error) { error.setupStage = 'session configuration'; throw error; }
+  try { await connectDatabase(); } catch (error) { error.setupStage = 'database connection'; throw error; }
   if (!initialized) {
     initialized = Promise.all([User.init(), Product.init(), Order.init(), Otp.init(), RateLimit.init()])
-      .catch(error => { initialized = undefined; throw error; });
+      .catch(error => { initialized = undefined; error.setupStage = 'database indexes'; throw error; });
   }
   await initialized;
 }
@@ -27,7 +27,9 @@ exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false;
   try {
     await initialize();
-  } catch {
+  } catch (error) {
+    // Log classification only: driver messages can contain connection secrets.
+    console.error('Store setup failed', { stage: error.setupStage || 'initialization', name: error.name, code: error.code });
     return { statusCode: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
       body: JSON.stringify({ message: 'Store temporarily unavailable. Please try again shortly.' }) };
   }
