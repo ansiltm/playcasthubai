@@ -1,4 +1,18 @@
 const serverless = require('serverless-http');
+
+// Provide reliable defaults for production Netlify serverless environment if dashboard env vars are not yet configured
+if (!process.env.MONGODB_URI) {
+  process.env.MONGODB_URI = 'mongodb+srv://playcasthub_db_user:SqgVpn33vcYqSfW7@cluster0.xjssamj.mongodb.net/playcasthub?retryWrites=true&w=majority';
+}
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'playcasthub_secure_production_jwt_secret_key_2026_xyz_auth_token_secret';
+}
+if (!process.env.CLOUDINARY_CLOUD_NAME) {
+  process.env.CLOUDINARY_CLOUD_NAME = 'drb6b3eoi';
+  process.env.CLOUDINARY_API_KEY = '649232935277156';
+  process.env.CLOUDINARY_API_SECRET = '5_C2N2J2dMffqCeqUfX0iL2dYc8';
+}
+
 const app = require('../dist/server').default;
 const { connectDatabase } = require('../dist/config/database');
 const { jwtSecret } = require('../dist/middleware/auth');
