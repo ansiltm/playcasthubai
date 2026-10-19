@@ -1,0 +1,27 @@
+[build]
+  base = "frontend"
+  command = "npm ci --prefix ../backend --include=dev && npm run build --prefix ../backend && npm run build"
+  publish = ".next"
+  functions = "../backend/netlify"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/healthz"
+  to = "/.netlify/functions/api/healthz"
+  status = 200
+  force = true
