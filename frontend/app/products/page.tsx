@@ -5,11 +5,13 @@ import { useSearchParams } from 'next/navigation';
 import ProductCard from '../../components/ProductCard';
 import api from '../../lib/api';
 import { useFavoritesStore } from '../../store/useFavoritesStore';
+import { shopCategories } from '../../lib/categories';
 
 function ProductsList() {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search');
   const categoryQuery = searchParams.get('category');
+  const activeCategory = shopCategories.find(category => category.query === categoryQuery);
   const gradeQuery = searchParams.get('grade');
   const onlyFavorites = searchParams.get('favorites') === 'true';
   const { favorites } = useFavoritesStore();
@@ -100,7 +102,11 @@ function ProductsList() {
         <h1 className="text-3xl md:text-4xl font-black text-text-main mb-2">
           {getDisplayTitle()}
         </h1>
-        <p className="text-text-muted">Showing {products.length} products</p>
+        <p className="text-text-muted" role="status">{loading ? 'Loading products…' : error ? 'Products could not be loaded.' : `Showing ${products.length} products`}</p>
+        {activeCategory && <figure className="mt-5 flex items-center gap-5 rounded-2xl bg-bubble-input overflow-hidden">
+          <img src={`/images/category-${activeCategory.image}.webp`} alt={`${activeCategory.name} category illustration`} width={160} height={160} className="w-28 sm:w-40 aspect-square object-cover" />
+          <figcaption className="text-sm pr-4"><strong className="block mb-2">Explore {activeCategory.name}</strong><span className="text-xs text-text-muted">Category illustration. Check individual product photos, colours and specifications before ordering.</span></figcaption>
+        </figure>}
       </div>
 
       <div className="flex flex-wrap items-center gap-4 mb-8">

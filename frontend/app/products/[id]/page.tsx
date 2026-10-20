@@ -7,6 +7,8 @@ import { useFavoritesStore } from '../../../store/useFavoritesStore';
 import { ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight, Volume2, VolumeX, RotateCcw, Video, ShieldCheck, CheckCircle2, Zap, Check, Plus, Minus, Truck, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../../lib/api';
+import ProductPhoto from '../../../components/ProductPhoto';
+import { productCover, productMedia, videoPoster } from '../../../lib/productMedia';
 
 const COLOR_PALETTE: Record<string, { bg: string; border?: string }> = {
   'Red': { bg: '#EF4444' },
@@ -91,18 +93,10 @@ export default function ProductDetails() {
     const fetchProduct = async () => {
       try {
         const res = await api.get(`/products/${id}`);
-        setProduct(res.data);
+        setProduct({ ...res.data, media: productMedia(res.data) });
+        setCurrentIndex(0);
         if (res.data?.colors && Array.isArray(res.data.colors) && res.data.colors.length > 0) {
           setSelectedColor(res.data.colors[0]);
-        }
-        // If product has a video in media, start by displaying the video first
-        if (res.data?.media && Array.isArray(res.data.media)) {
-          const videoIndex = res.data.media.findIndex(
-            (url: string) => typeof url === 'string' && (Boolean(url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i)) || url.includes('/video/upload/'))
-          );
-          if (videoIndex !== -1) {
-            setCurrentIndex(videoIndex);
-          }
         }
       } catch (err) {
         console.error('Failed to fetch product details', err);
@@ -151,7 +145,7 @@ export default function ProductDetails() {
       name: product.name,
       price: product.price,
       quantity,
-      imageUrl: product.media?.[0] || product.imageUrl,
+      imageUrl: productCover(product) || '',
       color: selectedColor || undefined,
     });
     toast.success(`Added ${quantity > 1 ? `${quantity}x ` : ''}${product.name}${selectedColor ? ` (${selectedColor})` : ''} to cart!`);
@@ -165,7 +159,7 @@ export default function ProductDetails() {
       name: product.name,
       price: product.price,
       quantity,
-      imageUrl: product.media?.[0] || product.imageUrl,
+      imageUrl: productCover(product) || '',
       color: selectedColor || undefined,
     });
     router.push('/cart');
@@ -222,7 +216,7 @@ export default function ProductDetails() {
         {/* Media Viewer Carousel Area */}
         <div className="space-y-4">
           <div 
-            className="bubble-card p-2 bg-bubble-surface h-[500px] flex items-center justify-center overflow-hidden relative group"
+            className="bubble-card p-2 bg-bubble-surface h-[320px] sm:h-[500px] flex items-center justify-center overflow-hidden relative group"
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -236,6 +230,7 @@ export default function ProductDetails() {
                       ref={videoRef}
                       key={currentMediaUrl}
                       src={currentMediaUrl} 
+                      poster={videoPoster(currentMediaUrl)}
                       controls 
                       autoPlay 
                       muted={isMuted}
@@ -266,10 +261,10 @@ export default function ProductDetails() {
                     </button>
                   </div>
                 ) : (
-                  <img 
+                  <ProductPhoto
                     key={currentMediaUrl}
                     src={currentMediaUrl} 
-                    alt={product.name} 
+                    name={product.name}
                     className="w-full h-full object-contain rounded-[var(--radius-bubble-sm)] animate-in fade-in duration-300"
                   />
                 )}
@@ -279,12 +274,14 @@ export default function ProductDetails() {
                   <>
                     <button 
                       onClick={prevMedia} 
+                      aria-label="Previous product photo or video"
                       className="absolute left-4 p-3 bg-bubble-surface/80 backdrop-blur-sm text-text-main hover:text-primary rounded-full shadow-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     >
                       <ChevronLeft size={24} />
                     </button>
                     <button 
                       onClick={nextMedia} 
+                      aria-label="Next product photo or video"
                       className="absolute right-4 p-3 bg-bubble-surface/80 backdrop-blur-sm text-text-main hover:text-primary rounded-full shadow-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     >
                       <ChevronRight size={24} />
@@ -302,7 +299,7 @@ export default function ProductDetails() {
                 )}
               </>
             ) : (
-              <div className="text-gray-400 font-bold">No media available</div>
+              <ProductPhoto name={product.name} className="w-full h-full" />
             )}
           </div>
           
@@ -315,11 +312,12 @@ export default function ProductDetails() {
                   <button 
                     key={idx} 
                     onClick={() => setCurrentIndex(idx)}
+                    aria-label={`View ${isThumbVideo ? 'video' : 'photo'} ${idx + 1} of ${product.name}`}
                     className={`relative flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border-4 transition-all ${idx === currentIndex ? 'border-primary opacity-100 scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}
                   >
                     {isThumbVideo ? (
                       <>
-                        <video src={url} muted autoPlay loop playsInline preload="auto" className="w-full h-full object-cover pointer-events-none" />
+                        <ProductPhoto src={videoPoster(url)} name={`${product.name} video preview`} className="w-full h-full object-contain" />
                         <span className="absolute bottom-1 right-1 px-1 py-0.5 rounded text-[8px] font-black bg-black/80 text-white flex items-center gap-0.5">
                           ▶ Vid
                         </span>

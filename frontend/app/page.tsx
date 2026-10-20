@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import ProductCard from '../components/ProductCard';
 import api from '../lib/api';
+import { shopCategories } from '../lib/categories';
 
 export default function Home(): React.JSX.Element {
   const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
@@ -38,6 +39,10 @@ export default function Home(): React.JSX.Element {
             <Link href="/products?favorites=true" className="bubble-btn-secondary px-6 py-3">Saved favourites</Link>
           </div>
         </div>
+        <figure className="mt-6 overflow-hidden rounded-3xl bg-bubble-input">
+          <img src="/images/toy-collection.webp" alt="Toy collection inspiration: miniature excavator, RC buggy, diecast cars and a kids camera" width={1774} height={887} fetchPriority="high" className="w-full h-auto" />
+          <figcaption className="px-5 py-2 text-xs text-text-muted">Play inspiration · AI-created scene. See each product for its actual photos and specifications.</figcaption>
+        </figure>
       </section>
       {/* Featured Products (Latest Finds) - Moved to top & limited to 6 */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pt-12">
@@ -68,28 +73,18 @@ export default function Home(): React.JSX.Element {
           <span className="text-xs text-text-muted font-bold md:hidden animate-pulse">Swipe to explore →</span>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-4 snap-x custom-scrollbar">
-          {[
-            { name: 'Vehicles & RC', query: 'Vehicles & Remote-Controlled (RC)', icon: '🏎️' },
-            { name: 'Action Figures', query: 'Action Figures & Pop-Culture Collectibles', icon: '🦸‍♂️' },
-            { name: 'Model Kits', query: 'Scale Model Kits & Hobby Crafts', icon: '🛠️' },
-            { name: 'STEM & Tech', query: 'Educational, STEM & STEAM Toys', icon: '🔬' },
-            { name: 'Smart Toys', query: 'Electronic, Smart & Animatronic Toys', icon: '🤖' },
-            { name: 'Outdoor Play', query: 'Outdoor, Sports & Active Play', icon: '⛺' },
-            { name: 'Building Sets', query: 'Building Sets & Construction Toys', icon: '🧱' },
-            { name: 'Games & Puzzles', query: 'Games & Puzzles', icon: '🧩' },
-            { name: 'Soft Toys', query: 'Plush, Soft & Fabric Toys', icon: '🧸' },
-            { name: 'Dolls & Playsets', query: 'Dolls & Doll Playsets', icon: '🏠' }
-          ].map((cat, i) => (
+          {shopCategories.map((cat, i) => (
             <Link 
               key={i} 
               href={`/products?category=${encodeURIComponent(cat.query)}`}
-              className="bubble-card flex-shrink-0 w-36 p-4 flex flex-col items-center justify-center text-center gap-3 snap-start hover:bg-primary hover:text-white transition-all group"
+              className="bubble-card overflow-hidden flex-shrink-0 w-44 sm:w-48 pb-4 flex flex-col items-center text-center gap-3 snap-start hover:shadow-lg transition-all group"
             >
-              <div className="text-4xl group-hover:scale-110 transition-transform">{cat.icon}</div>
-              <h3 className="font-bold text-sm">{cat.name}</h3>
+              <img src={`/images/category-${cat.image}.webp`} alt={`${cat.name} category illustration`} width={480} height={480} loading="lazy" className="w-full aspect-square object-cover group-hover:scale-105 transition-transform" />
+              <h3 className="font-bold text-sm px-3">{cat.name}</h3>
             </Link>
           ))}
         </div>
+        <p className="text-xs text-text-muted">Category images are AI-created illustrations; product listings show available product photos.</p>
       </section>
 
       {/* Shop by Grade */}

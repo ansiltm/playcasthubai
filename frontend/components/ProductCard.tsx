@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+import ProductPhoto from './ProductPhoto';
+import { productCover, productMedia, isVideoMedia } from '../lib/productMedia';
 import { useCartStore } from '../store/useCartStore';
-import { ShoppingCart, Eye } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -15,6 +16,7 @@ interface Product {
   ageLabel?: string;
   colors?: string[];
   media?: string[];
+  imageUrl?: string;
 }
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -30,43 +32,18 @@ export default function ProductCard({ product }: { product: Product }) {
       name: product.name,
       price: product.price,
       quantity: 1,
-      imageUrl: (product.media && product.media.length > 0) ? product.media[0] : '/logo.jpeg'
+      imageUrl: productCover(product) || ''
     });
   };
 
-  const isVideoUrl = (url?: string) => {
-    if (!url || typeof url !== 'string') return false;
-    return Boolean(url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i)) || url.includes('/video/upload/');
-  };
-
-  // Determine media to show: prioritize video if available so video autoplays on list
-  const fallbackImage = '/logo.jpeg';
-  const videoMedia = product.media?.find((m: string) => isVideoUrl(m));
-  const activeMedia = product.media?.find(m => !isVideoUrl(m)) || videoMedia || fallbackImage;
-  const isVideo = isVideoUrl(activeMedia);
-
   return (
-    <Link href={`/products/${product.id}`} className="group block h-full">
+    <article className="group block h-full">
       <div className={`bubble-card overflow-hidden bg-bubble-surface h-full flex flex-col ${isOutOfStock ? 'opacity-75 grayscale-[0.2]' : ''}`}>
         {/* Image/Video Container */}
         <div className="relative aspect-[4/3] sm:aspect-[4/3] w-full overflow-hidden bg-bubble-bg shrink-0">
-          {isVideo ? (
-            <video
-              src={activeMedia}
-              muted
-              loop
-              playsInline
-              preload="none"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
-            />
-          ) : (
-            <img
-              loading="lazy"
-              src={activeMedia}
-              alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-          )}
+          <Link href={`/products/${product.id}`} aria-label={`View ${product.name}`} className="block w-full h-full">
+            <ProductPhoto src={productCover(product)} name={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
+          </Link>
           
           {/* Grade Badge overlay on image */}
           {product.grade && (
@@ -78,7 +55,7 @@ export default function ProductCard({ product }: { product: Product }) {
           )}
 
           {/* Live Video Badge */}
-          {isVideo && (
+          {productMedia(product).some(isVideoMedia) && (
             <div className="absolute top-2.5 right-2.5 z-10 pointer-events-none">
               <span className="flex items-center gap-1.5 text-[9px] font-black bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm border border-white/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -96,10 +73,11 @@ export default function ProductCard({ product }: { product: Product }) {
           )}
 
           {!isOutOfStock && (
-            <div className="absolute bottom-4 right-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+            <div className="absolute bottom-3 right-3 transition-all duration-300">
               <button
                 aria-label={`Add ${product.name} to cart`}
-                onClick={handleAddToCart}
+                onClick={product.colors?.length ? undefined : handleAddToCart}
+                hidden={Boolean(product.colors?.length)}
                 className="bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary-dark hover:scale-110 transition-all"
               >
                 <ShoppingCart size={20} />
@@ -115,7 +93,7 @@ export default function ProductCard({ product }: { product: Product }) {
             {product.category}
           </div>
           <h3 className="text-sm sm:text-base font-bold text-text-main mb-3 line-clamp-2 flex-1 leading-snug">
-            {product.name}
+            <Link href={`/products/${product.id}`} className="hover:text-primary">{product.name}</Link>
           </h3>
           <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
             {product.ageLabel && product.ageLabel !== 'Not specified' && (
@@ -129,6 +107,7 @@ export default function ProductCard({ product }: { product: Product }) {
               </span>
             )}
           </div>
+          <Link href={`/products/${product.id}`} className="mt-3 text-xs font-bold text-primary underline underline-offset-4">{product.colors?.length ? 'Choose colour & view details' : 'View details'}</Link>
           <div className="flex items-center justify-between mt-auto">
             <span className="text-lg font-black text-primary">
               ₹{product.price.toFixed(2)}
@@ -136,6 +115,6 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
       </div>
-    </Link>
+    </article>
   );
 }
