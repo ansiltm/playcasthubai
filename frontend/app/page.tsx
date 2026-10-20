@@ -39,10 +39,6 @@ export default function Home(): React.JSX.Element {
             <Link href="/products?favorites=true" className="bubble-btn-secondary px-6 py-3">Saved favourites</Link>
           </div>
         </div>
-        <figure className="mt-6 overflow-hidden rounded-3xl bg-bubble-input">
-          <img src="/images/toy-collection.webp" alt="Toy collection inspiration: miniature excavator, RC buggy, diecast cars and a kids camera" width={1774} height={887} fetchPriority="high" className="w-full h-auto" />
-          <figcaption className="px-5 py-2 text-xs text-text-muted">Play inspiration · AI-created scene. See each product for its actual photos and specifications.</figcaption>
-        </figure>
       </section>
       {/* Featured Products (Latest Finds) - Moved to top & limited to 6 */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pt-12">

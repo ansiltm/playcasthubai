@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import ProductPhoto from './ProductPhoto';
-import { productCover, productMedia, isVideoMedia } from '../lib/productMedia';
+import { productCover, productMedia, productColors, isVideoMedia } from '../lib/productMedia';
 import { useCartStore } from '../store/useCartStore';
 import { ShoppingCart } from 'lucide-react';
 
@@ -15,6 +15,7 @@ interface Product {
   grade?: string;
   ageLabel?: string;
   colors?: string[];
+  colorMedia?: Array<{ color: string; media: string[] }>;
   media?: string[];
   imageUrl?: string;
 }
@@ -22,10 +23,11 @@ interface Product {
 export default function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((state) => state.addItem);
   const isOutOfStock = product.stock <= 0;
+  const colors = productColors(product);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (isOutOfStock) return;
+    if (isOutOfStock || colors.length) return;
     addItem({
       id: product.id, // Generate unique cart item id
       productId: product.id,
@@ -76,8 +78,8 @@ export default function ProductCard({ product }: { product: Product }) {
             <div className="absolute bottom-3 right-3 transition-all duration-300">
               <button
                 aria-label={`Add ${product.name} to cart`}
-                onClick={product.colors?.length ? undefined : handleAddToCart}
-                hidden={Boolean(product.colors?.length)}
+                onClick={colors.length ? undefined : handleAddToCart}
+                hidden={Boolean(colors.length)}
                 className="bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary-dark hover:scale-110 transition-all"
               >
                 <ShoppingCart size={20} />
@@ -101,13 +103,13 @@ export default function ProductCard({ product }: { product: Product }) {
                 Age: {product.ageLabel}
               </span>
             )}
-            {product.colors && product.colors.length > 0 && (
+            {colors.length > 0 && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                {product.colors.length} {product.colors.length === 1 ? 'Color' : 'Colors'}
+                {colors.length} {colors.length === 1 ? 'Color' : 'Colors'}
               </span>
             )}
           </div>
-          <Link href={`/products/${product.id}`} className="mt-3 text-xs font-bold text-primary underline underline-offset-4">{product.colors?.length ? 'Choose colour & view details' : 'View details'}</Link>
+          <Link href={`/products/${product.id}`} className="mt-3 text-xs font-bold text-primary underline underline-offset-4">{colors.length ? 'Choose colour & view details' : 'View details'}</Link>
           <div className="flex items-center justify-between mt-auto">
             <span className="text-lg font-black text-primary">
               ₹{product.price.toFixed(2)}

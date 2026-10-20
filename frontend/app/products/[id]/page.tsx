@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCartStore } from '../../../store/useCartStore';
 import { useFavoritesStore } from '../../../store/useFavoritesStore';
@@ -8,16 +9,18 @@ import { ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight, Volume2, Volume
 import toast from 'react-hot-toast';
 import api from '../../../lib/api';
 import ProductPhoto from '../../../components/ProductPhoto';
-import { productCover, productMedia, videoPoster } from '../../../lib/productMedia';
+import { productCover, productMedia, videoPoster, isVideoMedia, productColors, colorHasMedia } from '../../../lib/productMedia';
 
 import { getColorSwatch } from '../../../lib/colors';
 
 export default function ProductDetails() {
   const router = useRouter();
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<any>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [retry, setRetry] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [isMuted, setIsMuted] = useState(true);
@@ -26,11 +29,7 @@ export default function ProductDetails() {
 
   /** Active media: color-specific if available, otherwise falls back to the product's generic media array. */
   const activeMedia = useMemo<string[]>(() => {
-    if (selectedColor && product?.colorMedia?.length) {
-      const cm = product.colorMedia.find((c: any) => c.color === selectedColor);
-      if (cm?.media?.length) return cm.media;
-    }
-    return product?.media || [];
+    return productMedia(product, selectedColor);
   }, [selectedColor, product]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const addItem = useCartStore((state) => state.addItem);
@@ -56,35 +55,39 @@ export default function ProductDetails() {
   };
 
   useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    setLoading(true);
+    setLoadError('');
+    setProduct(null);
+    setSelectedColor('');
+    setQuantity(1);
     const fetchProduct = async () => {
       try {
-        const res = await api.get(`/products/${id}`);
-        setProduct({ ...res.data, media: productMedia(res.data) });
+        const res = await api.get(`/products/${id}`, { signal: controller.signal });
+        if (!active) return;
+        const colors = productColors(res.data);
+        setProduct({ ...res.data, colors });
         setCurrentIndex(0);
-        if (res.data?.colors && Array.isArray(res.data.colors) && res.data.colors.length > 0) {
-          setSelectedColor(res.data.colors[0]);
-        }
-      } catch (err) {
-        console.error('Failed to fetch product details', err);
+        setSelectedColor(colors[0] || '');
+      } catch (err: any) {
+        if (!active) return;
+        setLoadError(err?.response?.status === 404 ? 'This product is no longer available.' : 'We could not load this product. Please try again.');
         setProduct(null);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
     if (id) fetchProduct();
-  }, [id]);
+    return () => { active = false; controller.abort(); };
+  }, [id, retry]);
 
   // When selected color changes, reset carousel to index 0 (or first video in active media)
   useEffect(() => {
     setCurrentIndex(0);
   }, [selectedColor]);
 
-  const isVideoMedia = (url?: string) => {
-    if (!url || typeof url !== 'string') return false;
-    return Boolean(url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i)) || url.includes('/video/upload/');
-  };
-
-  const currentMediaUrl = activeMedia[currentIndex];
+  const currentMediaUrl = activeMedia[currentIndex] || activeMedia[0];
   const isVideo = isVideoMedia(currentMediaUrl);
 
   const toggleMute = (e: React.MouseEvent) => {
@@ -109,12 +112,11 @@ export default function ProductDetails() {
   }, [currentIndex, isVideo, isMuted]);
 
   const activeCoverImage = useMemo(() => {
-    const img = activeMedia.find((url: string) => !isVideoMedia(url));
-    return img || productCover(product) || '';
-  }, [activeMedia, product]);
+    return productCover(product, selectedColor) || '';
+  }, [selectedColor, product]);
 
   const handleAddToCart = () => {
-    if (!product) return;
+    if (!product || product.stock < quantity) return;
     addItem({
       id: `${product.id}-${selectedColor || 'default'}`,
       productId: product.id,
@@ -128,7 +130,7 @@ export default function ProductDetails() {
   };
 
   const handleBuyNow = () => {
-    if (!product) return;
+    if (!product || product.stock < quantity) return;
     addItem({
       id: `${product.id}-${selectedColor || 'default'}`,
       productId: product.id,
@@ -165,7 +167,7 @@ export default function ProductDetails() {
   };
 
   const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
+    if (touchStart === null || touchEnd === null) return;
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
@@ -183,7 +185,7 @@ export default function ProductDetails() {
   }
 
   if (!product) {
-    return <div className="min-h-screen flex items-center justify-center font-bold text-red-500">Product not found.</div>;
+    return <div className="min-h-[60vh] flex flex-col gap-5 items-center justify-center p-6 text-center"><p role="alert">{loadError || 'Product not found.'}</p><button className="bubble-btn px-6 py-3" onClick={() => setRetry(value => value + 1)}>Try again</button><Link href="/products" className="text-primary underline">Browse all products</Link></div>;
   }
 
   return (
@@ -191,6 +193,7 @@ export default function ProductDetails() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Media Viewer Carousel Area */}
         <div className="space-y-4">
+          {selectedColor && <p className="text-sm text-text-muted" role="status">{colorHasMedia(product, selectedColor) ? `Showing ${selectedColor}` : `General product media — ${selectedColor} photos are not available yet.`}</p>}
           <div 
             className="bubble-card p-2 bg-bubble-surface h-[320px] sm:h-[500px] flex items-center justify-center overflow-hidden relative group"
             onTouchStart={handleTouchStart}
@@ -353,7 +356,8 @@ export default function ProductDetails() {
                       <button
                         key={colorName}
                         type="button"
-                        onClick={() => setSelectedColor(colorName)}
+                        onClick={() => { setCurrentIndex(0); setSelectedColor(colorName); }}
+                        aria-pressed={isSelected}
                         className={`group relative flex items-center gap-2 px-3 py-2 rounded-2xl border-2 transition-all duration-200 text-xs font-bold ${
                           isSelected
                             ? 'border-primary bg-primary/10 text-primary shadow-sm scale-105'
@@ -398,8 +402,8 @@ export default function ProductDetails() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => setQuantity((q) => Math.min(product.stock || 99, q + 1))}
-                  disabled={quantity >= (product.stock || 99)}
+                  onClick={() => setQuantity((q) => Math.min(product.stock, 99, q + 1))}
+                  disabled={quantity >= Math.min(product.stock, 99)}
                   className="p-2 text-text-muted hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-full"
                   aria-label="Increase quantity"
                 >

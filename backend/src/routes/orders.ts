@@ -6,6 +6,7 @@ import { rateLimit } from '../middleware/rateLimit';
 import { asyncRoute } from '../utils/http';
 import * as v from '../utils/validation';
 import { sendOrderEmails } from '../services/orderEmails';
+import { resolveProductColor } from '../utils/productColor';
 const router = Router();
 router.use(authenticate);
 export function customerOrder(order: any) {
@@ -47,9 +48,12 @@ async function createOrder(req: any, manual: boolean) {
       for (const item of items) {
         const product = await Product.findOneAndUpdate({ _id: item.productId, stock: { $gte: item.quantity } }, { $inc: { stock: -item.quantity } }, { session, new: true });
         if (!product) throw new v.HttpError(409, 'A product is unavailable or has insufficient stock. Please update your cart.');
+        const color = resolveProductColor(product, item.color, manual);
+        const selectedMedia = product.colorMedia?.find(entry => entry.color.trim().toLowerCase() === color.toLowerCase())?.media;
+        const media = selectedMedia?.length ? selectedMedia : product.media;
         const price = item.customPrice ?? product.price;
         totalCents += Math.round(price * 100) * item.quantity;
-        orderItems.push({ productId: product._id, name: product.name, color: item.color || '', price, quantity: item.quantity, Product: { id: product.id, name: product.name, price, wholesalePrice: product.wholesalePrice, media: product.media, imageUrl: product.imageUrl, colors: product.colors } });
+        orderItems.push({ productId: product._id, name: product.name, color, price, quantity: item.quantity, Product: { id: product.id, name: product.name, price, wholesalePrice: product.wholesalePrice, media, imageUrl: media.find(url => !url.includes('/video/upload/') && !/\.(mp4|webm|mov|ogg)(\?|$)/i.test(url)) || (selectedMedia?.length ? '' : product.imageUrl), colors: product.colors } });
       }
       const [created] = await Order.create([{
         checkoutKey, userId: req.user.id, orderType: manual ? 'custom' : 'online', totalAmount: totalCents / 100,

@@ -4,7 +4,16 @@ import { authenticate, authorizeAdmin, optionalAuthenticate } from '../middlewar
 import { upload, uploadToCloudinary } from '../middleware/upload';
 import { asyncRoute } from '../utils/http';
 import * as v from '../utils/validation';
+import cloudinary from '../config/cloudinary';
+import { randomUUID } from 'crypto';
+import { rateLimit } from '../middleware/rateLimit';
 const router = Router();
+router.post('/media/sign', authenticate, authorizeAdmin, rateLimit('media-sign', 100, 3600000), asyncRoute(async (_req, res) => {
+  const { CLOUDINARY_API_SECRET: secret, CLOUDINARY_API_KEY: apiKey, CLOUDINARY_CLOUD_NAME: cloudName } = process.env;
+  if (!secret || !apiKey || !cloudName) throw new v.HttpError(503, 'Media uploads are not configured yet.');
+  const params = { timestamp: Math.floor(Date.now() / 1000), folder: 'playcasthub_products', public_id: randomUUID(), overwrite: false };
+  res.json({ params, apiKey, cloudName, signature: cloudinary.utils.api_sign_request(params, secret) });
+}));
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const list = asyncRoute(async (req, res) => {
   const search = v.text(req.query.search || req.query.q || '', 'search', 100, false);
@@ -40,7 +49,7 @@ function mediaUrl(value: unknown): string {
   } catch {}
   throw new v.HttpError(400, 'Media URLs must use valid HTTPS links.');
 }
-async function productData(req: any, product?: any) {
+export async function productData(req: any, product?: any) {
   const data: any = {};
   for (const [field, max] of [['name',150],['description',5000],['category',100],['grade',100]] as [string, number][]) {
     if (!product || req.body[field] !== undefined) data[field] = v.text(req.body[field], field, max);
@@ -97,7 +106,10 @@ async function productData(req: any, product?: any) {
   // colorMediaExisting_{idx} = existing saved URLs for that color (to keep)
   if (req.body.colorMediaColors !== undefined) {
     let colorNames: string[] = [];
-    try { colorNames = JSON.parse(req.body.colorMediaColors); } catch {}
+    try { colorNames = JSON.parse(req.body.colorMediaColors); } catch { throw new v.HttpError(400, 'Invalid colour media list.'); }
+    if (!Array.isArray(colorNames) || colorNames.length > 10 || colorNames.some(color => typeof color !== 'string' || !color.trim())) throw new v.HttpError(400, 'Use up to 10 named colours.');
+    colorNames = colorNames.map(color => v.text(color, 'color', 40));
+    if (new Set(colorNames.map(color => color.toLowerCase())).size !== colorNames.length) throw new v.HttpError(400, 'Each colour must be unique.');
     const colorMediaResult: Array<{ color: string; media: string[] }> = [];
     for (let idx = 0; idx < colorNames.length; idx++) {
       const color = colorNames[idx];
@@ -133,7 +145,8 @@ async function productData(req: any, product?: any) {
           }))
           .slice(0, 10);
       }
-    } catch { /* ignore malformed */ }
+      else throw new v.HttpError(400, 'Invalid colour media list.');
+    } catch (error) { if (error instanceof v.HttpError) throw error; throw new v.HttpError(400, 'Invalid colour media list.'); }
   }
 
   return data;

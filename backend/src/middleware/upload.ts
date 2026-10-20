@@ -4,8 +4,8 @@ import { HttpError } from '../utils/validation';
 
 export const upload = multer({
   storage: multer.memoryStorage(),
-  // Allow up to 4 general media + 8 per-color files across up to 10 colors = 84 max files
-  limits: { fileSize: 8 * 1024 * 1024, files: 84, fields: 50, fieldSize: 20000 },
+  // Current admin sends direct-upload URLs; bound legacy multipart uploads.
+  limits: { fileSize: 8 * 1024 * 1024, files: 8, fields: 150, fieldSize: 20000 },
   fileFilter: (_req, file, callback) => {
     if (!['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm'].includes(file.mimetype)) return callback(new HttpError(400, 'Use JPG, PNG, WebP, GIF, MP4 or WebM files.'));
     callback(null, true);

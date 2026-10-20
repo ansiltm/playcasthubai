@@ -9,7 +9,7 @@
     "dev": "nodemon --exec ts-node src/server.ts",
     "build": "tsc",
     "lint": "tsc --noEmit",
-    "test": "npm run build && node --test tests/security.test.cjs tests/netlify.test.cjs",
+    "test": "npm run build && node --test tests/security.test.cjs tests/netlify.test.cjs tests/product-colors.test.cjs",
     "test:integration": "npm run build && node --test tests/store.test.cjs"
   },
   "dependencies": {

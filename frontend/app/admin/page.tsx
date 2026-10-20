@@ -10,6 +10,7 @@ import DataTable, { Column } from '../../components/DataTable';
 import SearchableSelect from '../../components/SearchableSelect';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getColorSwatch } from '../../lib/colors';
+import { uploadProductMedia } from '../../lib/uploadMedia';
 
 export default function AdminPage() {
   const { user, isAdmin, token } = useAuthStore();
@@ -210,9 +211,21 @@ export default function AdminPage() {
     if (isUploadingMedia) return;
     if (mediaFiles && (mediaFiles.length > 4 || Array.from(mediaFiles).some(f => f.size > 8 * 1024 * 1024))) { toast.error('Upload up to 4 files at a time, each under 8 MB.'); return; }
 
+    const selectedColors = formData.colors.split(',').map((color: string) => color.trim()).filter(Boolean);
+    if (selectedColors.length > 10 || new Set(selectedColors.map(color => color.toLowerCase())).size !== selectedColors.length) { toast.error('Use up to 10 unique colours.'); return; }
+    if (existingMedia.length + (mediaFiles?.length || 0) > 8 || selectedColors.some(color => (colorMediaState[color]?.existingUrls.length || 0) + (colorMediaState[color]?.newFiles.length || 0) > 8)) { toast.error('Use at most 8 files for general media and each colour.'); return; }
+
     setIsUploadingMedia(true);
     setUploadProgress(0);
-
+    try {
+    const pendingFiles = [...Array.from(mediaFiles || []), ...selectedColors.flatMap(color => colorMediaState[color]?.newFiles || [])];
+    let completed = 0;
+    const uploadFile = async (file: File) => {
+      const url = await uploadProductMedia(file);
+      completed++;
+      setUploadProgress(Math.round(completed / Math.max(1, pendingFiles.length) * 90));
+      return url;
+    };
     const data = new FormData();
     data.append('name', formData.name);
     data.append('price', formData.price);
@@ -226,21 +239,20 @@ export default function AdminPage() {
     data.append('colors', formData.colors);
     const colorsArr = formData.colors.split(',').map((c: string) => c.trim()).filter(Boolean);
     data.append('colorMediaColors', JSON.stringify(colorsArr));
-    colorsArr.forEach((color: string, idx: number) => {
+    for (const [idx, color] of colorsArr.entries()) {
       const entry = colorMediaState[color];
       if (entry) {
         entry.existingUrls.forEach(url => data.append(`colorMediaExisting_${idx}`, url));
-        entry.newFiles.forEach(f => data.append(`colorMedia_${idx}`, f));
+        for (const file of entry.newFiles) data.append(`colorMediaExisting_${idx}`, await uploadFile(file));
       }
-    });
+    }
     
     // We send mediaUpdated=true to tell the backend we are sending existingMedia (which could be empty).
     data.append('mediaUpdated', 'true');
     existingMedia.forEach(url => data.append('existingMedia', url));
     
-    if (mediaFiles) Array.from(mediaFiles).forEach(f => data.append('media', f));
+    for (const file of Array.from(mediaFiles || [])) data.append('existingMedia', await uploadFile(file));
 
-    try {
       const config = {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent: any) => {
@@ -262,7 +274,7 @@ export default function AdminPage() {
       fetchProducts();
     } catch (err: any) {
       if (err.response?.status !== 401 && err.response?.status !== 403) {
-        toast.error(err.response?.data?.message || 'Error saving product');
+        toast.error(err.response?.data?.message || err.message || 'Error saving product');
       }
     } finally {
       setIsUploadingMedia(false);
