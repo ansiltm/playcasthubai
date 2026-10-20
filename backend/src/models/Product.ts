@@ -14,6 +14,8 @@ export interface IProduct extends Document {
   imageUrl?: string;
   media: string[];
   colors: string[];
+  /** Per-color media overrides: when a buyer selects this color the carousel shows these URLs instead of `media`. */
+  colorMedia: Array<{ color: string; media: string[] }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,6 +34,10 @@ const ProductSchema = new Schema<IProduct>(
     imageUrl: { type: String, default: '' },
     media: { type: [String], default: [] },
     colors: { type: [String], default: [] },
+    colorMedia: {
+      type: [{ color: { type: String }, media: { type: [String] } }],
+      default: [],
+    },
   },
   {
     timestamps: true,

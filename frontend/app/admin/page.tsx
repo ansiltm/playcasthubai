@@ -55,6 +55,8 @@ export default function AdminPage() {
   const [formData, setFormData] = useState({
     name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '', ageLabel: 'Not specified', safetyNotes: '', colors: ''
   });
+  /** Rows for per-color media URLs. Rebuilt whenever colors field changes or when editing a product. */
+  const [colorMediaRows, setColorMediaRows] = useState<Array<{ color: string; urls: string }>>([]);
   const [mediaFiles, setMediaFiles] = useState<FileList | null>(null);
   const [existingMedia, setExistingMedia] = useState<string[]>([]);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
@@ -154,6 +156,11 @@ export default function AdminPage() {
     data.append('ageLabel', formData.ageLabel);
     data.append('safetyNotes', formData.safetyNotes);
     data.append('colors', formData.colors);
+    // Serialize colorMedia as JSON string for the backend
+    const colorMediaParsed = colorMediaRows
+      .filter(row => row.color && row.urls.trim())
+      .map(row => ({ color: row.color, media: row.urls.split(',').map((u: string) => u.trim()).filter(Boolean) }));
+    data.append('colorMedia', JSON.stringify(colorMediaParsed));
     
     // We send mediaUpdated=true to tell the backend we are sending existingMedia (which could be empty).
     data.append('mediaUpdated', 'true');
@@ -316,6 +323,7 @@ export default function AdminPage() {
     setMediaFiles(null);
     setNewMediaPreviews([]);
     setExistingMedia([]);
+    setColorMediaRows([]);
     setIsProductModalOpen(true);
   };
 
@@ -329,6 +337,7 @@ export default function AdminPage() {
     setMediaFiles(null);
     setNewMediaPreviews([]);
     setExistingMedia(p.media || []);
+    setColorMediaRows(Array.isArray(p.colorMedia) ? p.colorMedia.map((cm: any) => ({ color: cm.color, urls: (cm.media || []).join(', ') })) : []);
     setIsProductModalOpen(true);
   };
 
@@ -341,6 +350,7 @@ export default function AdminPage() {
     setEditingId(null);
     setMediaFiles(null);
     setNewMediaPreviews([]);
+    setColorMediaRows([]);
   };
 
   const updateOrderStatus = async (id: string, status: string) => {

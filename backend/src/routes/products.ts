@@ -58,6 +58,24 @@ async function productData(req: any, product?: any) {
     data.ageLabel = req.body.ageLabel;
   }
   if (req.body.safetyNotes !== undefined) data.safetyNotes = v.text(req.body.safetyNotes, 'safety notes', 1000, false);
+  if (req.body.colorMedia !== undefined) {
+    try {
+      const parsed = typeof req.body.colorMedia === 'string'
+        ? JSON.parse(req.body.colorMedia)
+        : req.body.colorMedia;
+      if (Array.isArray(parsed)) {
+        data.colorMedia = parsed
+          .filter((cm: any) => cm && cm.color)
+          .map((cm: any) => ({
+            color: v.text(cm.color, 'color', 40),
+            media: Array.isArray(cm.media)
+              ? cm.media.map((u: unknown) => mediaUrl(u)).slice(0, 8)
+              : [],
+          }))
+          .slice(0, 10);
+      }
+    } catch { /* ignore malformed */ }
+  }
   if (req.body.colors !== undefined) {
     let colorsList: string[] = [];
     if (Array.isArray(req.body.colors)) {

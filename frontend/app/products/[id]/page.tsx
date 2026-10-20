@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCartStore } from '../../../store/useCartStore';
 import { useFavoritesStore } from '../../../store/useFavoritesStore';
@@ -66,6 +66,15 @@ export default function ProductDetails() {
   const [isMuted, setIsMuted] = useState(true);
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
+
+  /** Active media: color-specific if available, otherwise falls back to the product's generic media array. */
+  const activeMedia = useMemo(() => {
+    if (selectedColor && product?.colorMedia?.length) {
+      const cm = product.colorMedia.find((c: any) => c.color === selectedColor);
+      if (cm?.media?.length) return cm.media;
+    }
+    return product?.media || [];
+  }, [selectedColor, product]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const addItem = useCartStore((state) => state.addItem);
   
@@ -108,12 +117,17 @@ export default function ProductDetails() {
     if (id) fetchProduct();
   }, [id]);
 
+  // When selected color changes, reset carousel to index 0 (or first video in active media)
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [selectedColor]);
+
   const isVideoMedia = (url?: string) => {
     if (!url || typeof url !== 'string') return false;
     return Boolean(url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i)) || url.includes('/video/upload/');
   };
 
-  const currentMediaUrl = product?.media?.[currentIndex];
+  const currentMediaUrl = activeMedia[currentIndex];
   const isVideo = isVideoMedia(currentMediaUrl);
 
   const toggleMute = (e: React.MouseEvent) => {
@@ -166,14 +180,14 @@ export default function ProductDetails() {
   };
 
   const nextMedia = () => {
-    if (product?.media && product.media.length > 0) {
-      setCurrentIndex((prev) => (prev + 1) % product.media.length);
+    if (activeMedia.length > 0) {
+      setCurrentIndex((prev) => (prev + 1) % activeMedia.length);
     }
   };
 
   const prevMedia = () => {
-    if (product?.media && product.media.length > 0) {
-      setCurrentIndex((prev) => (prev - 1 + product.media.length) % product.media.length);
+    if (activeMedia.length > 0) {
+      setCurrentIndex((prev) => (prev - 1 + activeMedia.length) % activeMedia.length);
     }
   };
 
@@ -222,7 +236,7 @@ export default function ProductDetails() {
             onTouchEnd={handleTouchEnd}
           >
             
-            {product.media && product.media.length > 0 ? (
+            {activeMedia.length > 0 ? (
               <>
                 {isVideo ? (
                   <div className="relative w-full h-full flex items-center justify-center">
@@ -270,7 +284,7 @@ export default function ProductDetails() {
                 )}
 
                 {/* Carousel Controls */}
-                {product.media.length > 1 && (
+                {activeMedia.length > 1 && (
                   <>
                     <button 
                       onClick={prevMedia} 
@@ -288,7 +302,7 @@ export default function ProductDetails() {
                     </button>
                     {/* Dots */}
                     <div className="absolute bottom-4 flex gap-2">
-                      {product.media.map((_: any, idx: number) => (
+                      {activeMedia.map((_: any, idx: number) => (
                         <div 
                           key={idx} 
                           className={`w-2.5 h-2.5 rounded-full transition-all ${idx === currentIndex ? 'bg-primary scale-125' : 'bg-gray-300'}`}
@@ -304,9 +318,9 @@ export default function ProductDetails() {
           </div>
           
           {/* Thumbnails */}
-          {product.media && product.media.length > 1 && (
+          {activeMedia.length > 1 && (
             <div className="flex gap-2 overflow-x-auto pb-2 px-1">
-              {product.media.map((url: string, idx: number) => {
+              {activeMedia.map((url: string, idx: number) => {
                 const isThumbVideo = isVideoMedia(url);
                 return (
                   <button 
