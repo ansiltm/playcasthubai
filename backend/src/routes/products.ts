@@ -58,7 +58,66 @@ async function productData(req: any, product?: any) {
     data.ageLabel = req.body.ageLabel;
   }
   if (req.body.safetyNotes !== undefined) data.safetyNotes = v.text(req.body.safetyNotes, 'safety notes', 1000, false);
-  if (req.body.colorMedia !== undefined) {
+  if (req.body.colors !== undefined) {
+    let colorsList: string[] = [];
+    if (Array.isArray(req.body.colors)) {
+      colorsList = req.body.colors.map((c: any) => v.text(c, 'color', 40));
+    } else if (typeof req.body.colors === 'string') {
+      try {
+        const parsed = JSON.parse(req.body.colors);
+        if (Array.isArray(parsed)) colorsList = parsed.map((c: any) => v.text(c, 'color', 40));
+        else colorsList = req.body.colors.split(',').map((c: string) => c.trim()).filter(Boolean);
+      } catch {
+        colorsList = req.body.colors.split(',').map((c: string) => c.trim()).filter(Boolean);
+      }
+    }
+    data.colors = colorsList.slice(0, 10);
+  }
+
+  // All uploaded files (general media + per-color files)
+  const allFiles = (req.files || []) as Express.Multer.File[];
+
+  // ── General media ─────────────────────────────────────────────────────────
+  const generalFiles = allFiles.filter(f => f.fieldname === 'media');
+  let media: string[] = product?.media || [];
+  if (!product || req.body.mediaUpdated === 'true' || req.body.existingMedia !== undefined) {
+    media = req.body.existingMedia
+      ? (Array.isArray(req.body.existingMedia) ? req.body.existingMedia : [req.body.existingMedia]).map(mediaUrl)
+      : [];
+  }
+  if (media.length + generalFiles.length > 8) throw new v.HttpError(400, 'Use no more than 8 media files per product.');
+  // Serial uploads avoid multiplying memory usage on the free server.
+  for (const file of generalFiles) media.push(await uploadToCloudinary(file));
+  data.media = media;
+  data.imageUrl = media.find(url => !url.includes('/video/upload/')) || '';
+
+  // ── Per-color media ───────────────────────────────────────────────────────
+  // colorMediaColors = JSON array of color names, one per index
+  // colorMedia_{idx} = uploaded files for that color
+  // colorMediaExisting_{idx} = existing saved URLs for that color (to keep)
+  if (req.body.colorMediaColors !== undefined) {
+    let colorNames: string[] = [];
+    try { colorNames = JSON.parse(req.body.colorMediaColors); } catch {}
+    const colorMediaResult: Array<{ color: string; media: string[] }> = [];
+    for (let idx = 0; idx < colorNames.length; idx++) {
+      const color = colorNames[idx];
+      if (!color) continue;
+      // Existing saved URLs
+      const existingField = `colorMediaExisting_${idx}`;
+      let urls: string[] = [];
+      if (req.body[existingField]) {
+        const raw = req.body[existingField];
+        urls = (Array.isArray(raw) ? raw : [raw]).map(mediaUrl);
+      }
+      // Newly uploaded files for this color
+      const colorFiles = allFiles.filter(f => f.fieldname === `colorMedia_${idx}`);
+      if (urls.length + colorFiles.length > 8) throw new v.HttpError(400, `Color "${color}" has too many media files (max 8).`);
+      for (const file of colorFiles) urls.push(await uploadToCloudinary(file));
+      // Always include the entry so empty color-media is persisted (clears old data)
+      colorMediaResult.push({ color: v.text(color, 'color', 40), media: urls.slice(0, 8) });
+    }
+    data.colorMedia = colorMediaResult;
+  } else if (req.body.colorMedia !== undefined) {
     try {
       const parsed = typeof req.body.colorMedia === 'string'
         ? JSON.parse(req.body.colorMedia)
@@ -76,33 +135,12 @@ async function productData(req: any, product?: any) {
       }
     } catch { /* ignore malformed */ }
   }
-  if (req.body.colors !== undefined) {
-    let colorsList: string[] = [];
-    if (Array.isArray(req.body.colors)) {
-      colorsList = req.body.colors.map((c: any) => v.text(c, 'color', 40));
-    } else if (typeof req.body.colors === 'string') {
-      try {
-        const parsed = JSON.parse(req.body.colors);
-        if (Array.isArray(parsed)) colorsList = parsed.map((c: any) => v.text(c, 'color', 40));
-        else colorsList = req.body.colors.split(',').map((c: string) => c.trim()).filter(Boolean);
-      } catch {
-        colorsList = req.body.colors.split(',').map((c: string) => c.trim()).filter(Boolean);
-      }
-    }
-    data.colors = colorsList.slice(0, 10);
-  }
-  const files = (req.files || []) as Express.Multer.File[];
-  let media: string[] = product?.media || [];
-  if (!product || req.body.mediaUpdated === 'true' || req.body.existingMedia !== undefined) media = req.body.existingMedia ? (Array.isArray(req.body.existingMedia) ? req.body.existingMedia : [req.body.existingMedia]).map(mediaUrl) : [];
-  if (media.length + files.length > 8) throw new v.HttpError(400, 'Use no more than 8 media files per product.');
-  // Serial uploads avoid multiplying memory usage on the free server.
-  for (const file of files) media.push(await uploadToCloudinary(file));
-  data.media = media;
-  data.imageUrl = media.find(url => !url.includes('/video/upload/')) || '';
+
   return data;
 }
-router.post('/', authenticate, authorizeAdmin, upload.array('media', 4), asyncRoute(async (req, res) => res.status(201).json(await Product.create(await productData(req)))));
-router.put('/:id', authenticate, authorizeAdmin, upload.array('media', 4), asyncRoute(async (req, res) => {
+// Use upload.any() so multer accepts both 'media' and per-color 'colorMedia_{idx}' fields
+router.post('/', authenticate, authorizeAdmin, upload.any(), asyncRoute(async (req, res) => res.status(201).json(await Product.create(await productData(req)))));
+router.put('/:id', authenticate, authorizeAdmin, upload.any(), asyncRoute(async (req, res) => {
   const id = v.objectId(req.params.id);
   const product = await Product.findById(id);
   if (!product) throw new v.HttpError(404, 'Product not found.');

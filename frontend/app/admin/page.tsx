@@ -9,6 +9,7 @@ import { Trash2, Edit, CheckCircle, Plus, Search, X, AlertTriangle, TrendingUp, 
 import DataTable, { Column } from '../../components/DataTable';
 import SearchableSelect from '../../components/SearchableSelect';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { getColorSwatch } from '../../lib/colors';
 
 export default function AdminPage() {
   const { user, isAdmin, token } = useAuthStore();
@@ -55,8 +56,75 @@ export default function AdminPage() {
   const [formData, setFormData] = useState({
     name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '', ageLabel: 'Not specified', safetyNotes: '', colors: ''
   });
-  /** Rows for per-color media URLs. Rebuilt whenever colors field changes or when editing a product. */
-  const [colorMediaRows, setColorMediaRows] = useState<Array<{ color: string; urls: string }>>([]);
+  type ColorMediaItem = {
+    existingUrls: string[];
+    newFiles: File[];
+    newPreviews: Array<{ url: string; isVideo: boolean; name: string; size: string }>;
+  };
+  const [colorMediaState, setColorMediaState] = useState<Record<string, ColorMediaItem>>({});
+
+  const handleColorMediaUpload = (color: string, filesList: FileList | null) => {
+    if (!filesList || filesList.length === 0) return;
+    const files = Array.from(filesList);
+    const oversized = files.find(f => f.size > 8 * 1024 * 1024);
+    if (oversized) {
+      toast.error(`"${oversized.name}" exceeds the 8 MB limit.`);
+      return;
+    }
+    const previews = files.map(file => {
+      const isVideo = file.type.startsWith('video/') || Boolean(file.name.match(/\.(mp4|webm|mov|ogg)$/i));
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+      return {
+        url: URL.createObjectURL(file),
+        isVideo,
+        name: file.name,
+        size: `${sizeMb} MB`,
+      };
+    });
+    setColorMediaState(prev => {
+      const current = prev[color] || { existingUrls: [], newFiles: [], newPreviews: [] };
+      return {
+        ...prev,
+        [color]: {
+          ...current,
+          newFiles: [...current.newFiles, ...files],
+          newPreviews: [...current.newPreviews, ...previews],
+        }
+      };
+    });
+    toast.success(`Added ${files.length} file(s) for ${color}`);
+  };
+
+  const handleRemoveExistingColorMedia = (color: string, urlToRemove: string) => {
+    setColorMediaState(prev => {
+      const current = prev[color];
+      if (!current) return prev;
+      return {
+        ...prev,
+        [color]: {
+          ...current,
+          existingUrls: current.existingUrls.filter(u => u !== urlToRemove),
+        }
+      };
+    });
+  };
+
+  const handleRemoveNewColorMedia = (color: string, indexToRemove: number) => {
+    setColorMediaState(prev => {
+      const current = prev[color];
+      if (!current) return prev;
+      const preview = current.newPreviews[indexToRemove];
+      if (preview?.url) URL.revokeObjectURL(preview.url);
+      return {
+        ...prev,
+        [color]: {
+          ...current,
+          newFiles: current.newFiles.filter((_, i) => i !== indexToRemove),
+          newPreviews: current.newPreviews.filter((_, i) => i !== indexToRemove),
+        }
+      };
+    });
+  };
   const [mediaFiles, setMediaFiles] = useState<FileList | null>(null);
   const [existingMedia, setExistingMedia] = useState<string[]>([]);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
@@ -156,11 +224,15 @@ export default function AdminPage() {
     data.append('ageLabel', formData.ageLabel);
     data.append('safetyNotes', formData.safetyNotes);
     data.append('colors', formData.colors);
-    // Serialize colorMedia as JSON string for the backend
-    const colorMediaParsed = colorMediaRows
-      .filter(row => row.color && row.urls.trim())
-      .map(row => ({ color: row.color, media: row.urls.split(',').map((u: string) => u.trim()).filter(Boolean) }));
-    data.append('colorMedia', JSON.stringify(colorMediaParsed));
+    const colorsArr = formData.colors.split(',').map((c: string) => c.trim()).filter(Boolean);
+    data.append('colorMediaColors', JSON.stringify(colorsArr));
+    colorsArr.forEach((color: string, idx: number) => {
+      const entry = colorMediaState[color];
+      if (entry) {
+        entry.existingUrls.forEach(url => data.append(`colorMediaExisting_${idx}`, url));
+        entry.newFiles.forEach(f => data.append(`colorMedia_${idx}`, f));
+      }
+    });
     
     // We send mediaUpdated=true to tell the backend we are sending existingMedia (which could be empty).
     data.append('mediaUpdated', 'true');
@@ -323,7 +395,7 @@ export default function AdminPage() {
     setMediaFiles(null);
     setNewMediaPreviews([]);
     setExistingMedia([]);
-    setColorMediaRows([]);
+    setColorMediaState({});
     setIsProductModalOpen(true);
   };
 
@@ -337,7 +409,19 @@ export default function AdminPage() {
     setMediaFiles(null);
     setNewMediaPreviews([]);
     setExistingMedia(p.media || []);
-    setColorMediaRows(Array.isArray(p.colorMedia) ? p.colorMedia.map((cm: any) => ({ color: cm.color, urls: (cm.media || []).join(', ') })) : []);
+    const initialColorMap: Record<string, ColorMediaItem> = {};
+    if (Array.isArray(p.colorMedia)) {
+      p.colorMedia.forEach((cm: any) => {
+        if (cm?.color) {
+          initialColorMap[cm.color] = {
+            existingUrls: Array.isArray(cm.media) ? [...cm.media] : [],
+            newFiles: [],
+            newPreviews: [],
+          };
+        }
+      });
+    }
+    setColorMediaState(initialColorMap);
     setIsProductModalOpen(true);
   };
 
@@ -350,7 +434,12 @@ export default function AdminPage() {
     setEditingId(null);
     setMediaFiles(null);
     setNewMediaPreviews([]);
-    setColorMediaRows([]);
+    Object.values(colorMediaState).forEach(entry => {
+      entry.newPreviews.forEach(p => {
+        if (p?.url) URL.revokeObjectURL(p.url);
+      });
+    });
+    setColorMediaState({});
   };
 
   const updateOrderStatus = async (id: string, status: string) => {
@@ -991,6 +1080,145 @@ export default function AdminPage() {
                   Enter color names separated by commas. These will display as interactive color swatches for buyers on the storefront product page.
                 </p>
               </div>
+
+              {/* Color-Specific Media Upload Section */}
+              {formData.colors.split(',').map(c => c.trim()).filter(Boolean).length > 0 && (
+                <div className="space-y-4 p-5 bg-bubble-input rounded-2xl border-2 border-primary/20">
+                  <div>
+                    <h3 className="font-black text-text-main text-sm sm:text-base flex items-center gap-2">
+                      <span>Color-Specific Media (Images & Videos)</span>
+                      <span className="text-[11px] font-bold bg-primary/10 text-primary px-2.5 py-0.5 rounded-full">
+                        Per Color Variant
+                      </span>
+                    </h3>
+                    <p className="text-xs text-text-muted mt-1">
+                      Upload photos and videos for each color variant. When buyers click that color on the storefront, the gallery instantly switches to show these media files!
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 pt-1">
+                    {formData.colors.split(',').map(c => c.trim()).filter(Boolean).map(color => {
+                      const entry = colorMediaState[color] || { existingUrls: [], newFiles: [], newPreviews: [] };
+                      const swatch = getColorSwatch(color);
+                      const totalMediaCount = entry.existingUrls.length + entry.newPreviews.length;
+
+                      return (
+                        <div key={color} className="p-4 rounded-xl border border-border-main bg-bubble-surface/80 space-y-3 shadow-xs">
+                          {/* Color Title Bar */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="w-4 h-4 rounded-full border border-black/15 shadow-inner shrink-0"
+                                style={{
+                                  background: swatch.bg,
+                                  borderColor: swatch.border || 'rgba(0,0,0,0.15)',
+                                }}
+                              />
+                              <span className="font-bold text-sm text-text-main">{color}</span>
+                            </div>
+                            <span className="text-xs text-text-muted font-bold">
+                              {totalMediaCount} file{totalMediaCount === 1 ? '' : 's'}
+                            </span>
+                          </div>
+
+                          {/* Existing Uploaded Media for this Color */}
+                          {entry.existingUrls.length > 0 && (
+                            <div>
+                              <label className="block text-[11px] font-bold text-text-muted mb-1.5">
+                                Current Saved Media ({entry.existingUrls.length})
+                              </label>
+                              <div className="flex flex-wrap gap-2.5">
+                                {entry.existingUrls.map((url, idx) => {
+                                  const isVideo = Boolean(url.match(/\.(mp4|webm|mov|ogg)$/i)) || url.includes('/video/upload/');
+                                  return (
+                                    <div key={idx} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border-main group bg-black/5">
+                                      {isVideo ? (
+                                        <div className="w-full h-full relative">
+                                          <video src={url} className="w-full h-full object-cover" muted />
+                                          <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 rounded text-[8px] font-bold bg-black/80 text-white">
+                                            ▶ Vid
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <img src={url} alt={`${color} ${idx}`} className="w-full h-full object-cover" />
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveExistingColorMedia(color, url)}
+                                        aria-label={`Remove media for ${color}`}
+                                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"
+                                      >
+                                        <X size={10} />
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Newly Queued Previews for this Color */}
+                          {entry.newPreviews.length > 0 && (
+                            <div>
+                              <label className="block text-[11px] font-bold text-primary mb-1.5">
+                                Queued for Upload ({entry.newPreviews.length})
+                              </label>
+                              <div className="flex flex-wrap gap-2.5">
+                                {entry.newPreviews.map((item, idx) => (
+                                  <div key={idx} className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-primary/50 group bg-black/5">
+                                    {item.isVideo ? (
+                                      <div className="w-full h-full relative">
+                                        <video src={item.url} className="w-full h-full object-cover" muted />
+                                        <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 rounded text-[8px] font-bold bg-black/80 text-white">
+                                          ▶ Vid
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveNewColorMedia(color, idx)}
+                                      aria-label={`Remove queued file ${item.name}`}
+                                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"
+                                    >
+                                      <X size={10} />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Upload Action for this Color */}
+                          <div className="pt-1 flex items-center gap-2 flex-wrap">
+                            <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold cursor-pointer transition-colors">
+                              <Plus size={13} />
+                              <span>Upload Photos/Videos for {color}</span>
+                              <input
+                                type="file"
+                                multiple
+                                accept="image/*,video/*"
+                                disabled={isUploadingMedia}
+                                onChange={e => {
+                                  handleColorMediaUpload(color, e.target.files);
+                                  e.target.value = '';
+                                }}
+                                className="hidden"
+                              />
+                            </label>
+                            {totalMediaCount === 0 && (
+                              <span className="text-[11px] text-text-muted">
+                                (Uses default product media if none uploaded)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-4 p-6 bg-bubble-input rounded-2xl border border-border-main">
                 <h3 className="font-bold text-primary mb-2">Media Upload (up to 4 files per upload, 8 MB each)</h3>
