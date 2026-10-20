@@ -33,11 +33,12 @@ router.get('/:id', optionalAuthenticate, asyncRoute(async (req, res) => {
 }));
 function mediaUrl(value: unknown): string {
   const url = v.text(value, 'media URL', 1500);
+  if (url.startsWith('/') && !url.startsWith('//')) return url;
   try {
     const parsed = new URL(url);
-    if (parsed.protocol === 'https:' && parsed.hostname === 'res.cloudinary.com') return url;
+    if (parsed.protocol === 'https:' && parsed.hostname) return url;
   } catch {}
-  throw new v.HttpError(400, 'Media URLs must use Cloudinary HTTPS links.');
+  throw new v.HttpError(400, 'Media URLs must use valid HTTPS links.');
 }
 async function productData(req: any, product?: any) {
   const data: any = {};
