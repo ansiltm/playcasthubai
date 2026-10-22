@@ -44,7 +44,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* Image/Video Container */}
         <div className="relative aspect-[4/3] sm:aspect-[4/3] w-full overflow-hidden bg-bubble-bg shrink-0">
           <Link href={`/products/${product.id}`} aria-label={`View ${product.name}`} className="block w-full h-full">
-            <ProductPhoto src={productCover(product)} name={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
+            <ProductPhoto src={productCover(product)} name={product.name} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" />
           </Link>
           
           {/* Grade Badge overlay on image */}
@@ -90,6 +90,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {/* Content */}
         <div className="p-3.5 sm:p-4 flex-1 flex flex-col">
+          {productCover(product)?.startsWith('/images/products/ai-') && <p className="text-[10px] text-text-muted mb-2">AI illustration · Actual product may vary</p>}
           {/* Full-width Category */}
           <div className="text-[10px] sm:text-[11px] font-bold text-secondary dark:text-cyan-400 uppercase tracking-wider line-clamp-1 mb-1.5" title={product.category}>
             {product.category}
@@ -120,3 +121,4 @@ export default function ProductCard({ product }: { product: Product }) {
     </article>
   );
 }
+

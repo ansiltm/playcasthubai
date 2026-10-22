@@ -195,7 +195,7 @@ export default function ProductDetails() {
         <div className="space-y-4">
           {selectedColor && <p className="text-sm text-text-muted" role="status">{colorHasMedia(product, selectedColor) ? `Showing ${selectedColor}` : `General product media — ${selectedColor} photos are not available yet.`}</p>}
           <div 
-            className="bubble-card p-2 bg-bubble-surface h-[320px] sm:h-[500px] flex items-center justify-center overflow-hidden relative group"
+            className="bubble-card bg-white aspect-square w-full flex items-center justify-center overflow-hidden relative group"
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -530,3 +530,4 @@ export default function ProductDetails() {
     </div>
   );
 }
+

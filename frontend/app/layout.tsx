@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import ApiLoadingIndicator from '../components/ApiLoadingIndicator';
 import { Toaster } from 'react-hot-toast';
 
 import { ThemeProvider } from '../components/ThemeProvider';
@@ -60,6 +61,7 @@ export default function RootLayout({
       <body className="bg-bubble-bg text-text-main min-h-screen flex flex-col transition-colors duration-300" suppressHydrationWarning>
         <ThemeProvider>
           <Toaster position="top-center" />
+          <ApiLoadingIndicator />
           <Navbar />
           <main className="flex-grow">{children}</main>
           <Footer />
@@ -68,3 +70,4 @@ export default function RootLayout({
     </html>
   );
 }
+

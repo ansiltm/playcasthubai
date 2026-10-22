@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { externalApi } from './externalApi';
 import api from './api';
 
 export async function uploadProductMedia(file: File): Promise<string> {
@@ -11,7 +11,8 @@ export async function uploadProductMedia(file: File): Promise<string> {
   body.append('signature', data.signature);
   for (const [key, value] of Object.entries(data.params)) body.append(key, String(value));
   // Deliberately use a separate client: never send the store's login token to Cloudinary.
-  const response = await axios.post(`https://api.cloudinary.com/v1_1/${encodeURIComponent(data.cloudName)}/${file.type.startsWith('video/') ? 'video' : 'image'}/upload`, body, { timeout: 120000 });
+  const response = await externalApi.post(`https://api.cloudinary.com/v1_1/${encodeURIComponent(data.cloudName)}/${file.type.startsWith('video/') ? 'video' : 'image'}/upload`, body, { timeout: 120000 });
   if (!response.data?.secure_url) throw new Error('Upload did not return an image URL. Please try again.');
   return response.data.secure_url;
 }
+

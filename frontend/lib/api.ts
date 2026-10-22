@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 import toast from 'react-hot-toast';
-const api = axios.create({ baseURL: '/api', timeout: 90000 });
+import { trackRequests } from './requestLoading';
+const api = trackRequests(axios.create({ baseURL: '/api', timeout: 90000 }));
 api.interceptors.request.use(config => {
   const token = useAuthStore.getState().token;
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -16,3 +17,4 @@ api.interceptors.response.use(response => response, error => {
   return Promise.reject(error);
 });
 export default api;
+

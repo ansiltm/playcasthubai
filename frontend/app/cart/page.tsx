@@ -8,6 +8,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { Trash2, Plus, Minus, ArrowRight, MapPin, CheckCircle, PhoneCall, X, ShoppingBag, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
+import { externalApi } from '../../lib/externalApi';
 
 export default function CartPage() {
   const router = useRouter();
@@ -49,8 +50,7 @@ export default function CartPage() {
     
     if (val.length === 6) {
       try {
-        const res = await fetch(`https://api.postalpincode.in/pincode/${val}`);
-        const data = await res.json();
+        const { data } = await externalApi.get(`https://api.postalpincode.in/pincode/${val}`);
         if (data && data[0] && data[0].Status === 'Success') {
           const postOffice = data[0].PostOffice[0];
           setCity(postOffice.District);
@@ -455,3 +455,4 @@ export default function CartPage() {
     </div>
   );
 }
+
