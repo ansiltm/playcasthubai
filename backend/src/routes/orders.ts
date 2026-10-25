@@ -1,14 +1,13 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
 import { Order, Product, User } from '../models';
-import { authenticate, authorizeAdmin } from '../middleware/auth';
+import { authenticate, optionalAuthenticate, authorizeAdmin } from '../middleware/auth';
 import { rateLimit } from '../middleware/rateLimit';
 import { asyncRoute } from '../utils/http';
 import * as v from '../utils/validation';
 import { sendOrderEmails } from '../services/orderEmails';
 import { resolveProductColor } from '../utils/productColor';
 const router = Router();
-router.use(authenticate);
 export function customerOrder(order: any) {
   const result = typeof order.toJSON === 'function' ? order.toJSON() : { ...order };
   delete result.notes; delete result.checkoutKey; delete result.stockRestored;
@@ -36,7 +35,7 @@ async function createOrder(req: any, manual: boolean) {
   if (!manual && !/^\d{6}$/.test(pincode)) throw new v.HttpError(400, 'Enter a six-digit pincode.');
   const requestKey = v.text(req.header('Idempotency-Key'), 'checkout reference', 80);
   if (!/^[a-zA-Z0-9-]{16,80}$/.test(requestKey)) throw new v.HttpError(400, 'Invalid checkout reference.');
-  const checkoutKey = `${req.user.id}:${requestKey}`;
+  const checkoutKey = `${req.user?.id || 'guest'}:${requestKey}`;
   const previous = await Order.findOne({ checkoutKey });
   if (previous) return { order: previous, created: false };
   const initialStatus = manual ? (input.status || 'pending') : 'pending';
@@ -56,13 +55,13 @@ async function createOrder(req: any, manual: boolean) {
         orderItems.push({ productId: product._id, name: product.name, color, price, quantity: item.quantity, Product: { id: product.id, name: product.name, price, wholesalePrice: product.wholesalePrice, media, imageUrl: media.find(url => !url.includes('/video/upload/') && !/\.(mp4|webm|mov|ogg)(\?|$)/i.test(url)) || (selectedMedia?.length ? '' : product.imageUrl), colors: product.colors } });
       }
       const [created] = await Order.create([{
-        checkoutKey, userId: req.user.id, orderType: manual ? 'custom' : 'online', totalAmount: totalCents / 100,
+        checkoutKey, userId: req.user?.id || null, orderType: manual ? 'custom' : 'online', totalAmount: totalCents / 100,
         status: initialStatus, paymentMethod: manual ? 'Custom / Cash' : 'COD', paymentStatus: 'pending',
-        customerName: name, customerPhone: phone, customerEmail: manual ? '' : req.user.email,
+        customerName: name, customerPhone: phone, customerEmail: manual ? '' : (req.user?.email || ''),
         shippingAddressLine1: address, shippingAddressLine2: manual ? '' : v.text(input.addressLine2, 'address line 2', 300, false),
         shippingCity: city, shippingState: state, shippingPincode: pincode, OrderItems: orderItems,
       }], { session });
-      if (!manual) await User.updateOne({ _id: req.user.id }, { $set: { phone, addressLine1: address, addressLine2: created.shippingAddressLine2, city, state, pincode } }, { session });
+      if (!manual && req.user) await User.updateOne({ _id: req.user.id }, { $set: { phone, addressLine1: address, addressLine2: created.shippingAddressLine2, city, state, pincode } }, { session });
       return created;
     });
     return { order, created: true };
@@ -74,11 +73,13 @@ async function createOrder(req: any, manual: boolean) {
     throw error;
   }
 }
-router.post('/', rateLimit('checkout', 20, 3600000), asyncRoute(async (req, res) => {
+router.post('/', rateLimit('checkout', 20, 3600000), optionalAuthenticate, asyncRoute(async (req, res) => {
   const { order, created } = await createOrder(req, false);
   if (created) void sendOrderEmails(order);
   res.status(created ? 201 : 200).json(customerOrder(order));
 }));
+// Guest access ends here. Order history and every management route remain private.
+router.use(authenticate);
 router.post('/manual', authorizeAdmin, asyncRoute(async (req, res) => {
   const { order, created } = await createOrder(req, true);
   if (created) void sendOrderEmails(order);
@@ -137,3 +138,4 @@ router.delete('/:id', authorizeAdmin, asyncRoute(async (req, res) => {
   res.json({ message: 'Cancelled order deleted.' });
 }));
 export default router;
+

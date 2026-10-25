@@ -66,16 +66,15 @@ export default function CartPage() {
   };
 
   const handleOpenConfirm = () => {
-    if (!user) {
-      toast.error('Please login to place an order');
-      router.push('/login');
+    if (!fullName.trim()) {
+      toast.error('Please enter your full name');
       return;
     }
     if (!/^[6-9]\d{9}$/.test(phone)) {
       toast.error('Please provide a valid contact phone number');
       return;
     }
-    if (!addressLine1.trim() || !pincode.trim() || !city.trim() || !state.trim()) {
+    if (!addressLine1.trim() || !/^\d{6}$/.test(pincode) || !city.trim() || !state.trim()) {
       toast.error('Please fill in your delivery address');
       return;
     }
@@ -145,6 +144,7 @@ export default function CartPage() {
       <h1 className="text-4xl font-black text-text-main mb-8">
         {step === 'cart' ? 'Shopping Cart' : 'Delivery Details'}
       </h1>
+      {!user && <p className="text-text-muted mb-6">Guest checkout — no account needed. Enter your name, phone number and delivery address to order.</p>}
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2 space-y-6">
@@ -430,18 +430,18 @@ export default function CartPage() {
             </div>
 
             <p className="text-xs text-text-muted mb-6">
-              Please keep your phone available. You can close this popup at your convenience.
+              Please save your order number and keep your phone available for delivery updates.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Link 
+              {user && <Link 
                 href="/orders" 
-                onClick={handleCloseSuccess}
+                onClick={() => setShowSuccessModal(false)}
                 className="bubble-btn w-full py-3.5 justify-center flex items-center gap-2"
               >
                 <Package size={18} />
                 <span>Track Order in History</span>
-              </Link>
+              </Link>}
               <button 
                 onClick={handleCloseSuccess}
                 className="bubble-btn-secondary w-full py-3.5 justify-center"

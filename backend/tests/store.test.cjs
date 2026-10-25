@@ -86,6 +86,29 @@ test('password reset invalidates previous sessions',async()=>{
  assert.equal((await request(app).get('/api/orders').set('Authorization',oldToken)).status,401);
  assert.equal((await request(app).post('/api/auth/login').send({email:customer.email,password:'Changed-pass-123'})).status,200);
 });
+test('guests can order, retry safely and appear in admin orders without an account',async()=>{
+ const toy=await Product.create({name:'Guest toy',description:'Test',category:'Toys',price:125,stock:3});
+ const key=randomUUID(),userCount=await User.countDocuments();
+ const body={items:[{productId:toy.id,quantity:1,price:1}],name:'Guest Buyer',phone:'9876543210',addressLine1:'Guest delivery street',city:'Kochi',state:'Kerala',pincode:'682001',userId:admin.id,role:'admin'};
+ const submit=()=>request(app).post('/api/orders').set('Idempotency-Key',key).send(body);
+ const r=await submit();assert.equal(r.status,201);assert.equal(r.body.userId,null);assert.equal(r.body.totalAmount,125);assert.equal(r.body.customerName,'Guest Buyer');
+ assert.equal(r.body.OrderItems[0].Product.wholesalePrice,undefined);assert.equal(r.body.checkoutKey,undefined);
+ const retry=await submit();assert.equal(retry.status,200);assert.equal(retry.body.id,r.body.id);assert.equal((await Product.findById(toy.id)).stock,2);
+ assert.equal(await User.countDocuments(),userCount);
+ const all=await request(app).get('/api/orders/all').set('Authorization',auth(admin));
+ const saved=all.body.find(o=>o.id===r.body.id);assert.ok(saved);assert.equal(saved.User,null);assert.equal(saved.customerPhone,body.phone);assert.equal(saved.shippingCity,'Kochi');
+ const own=await request(app).get('/api/orders').set('Authorization',auth(other));assert.ok(!own.body.some(o=>o.id===r.body.id));
+ assert.equal((await request(app).get('/api/orders')).status,401);
+ assert.equal((await request(app).get('/api/orders/all')).status,401);
+ assert.equal((await request(app).post('/api/orders/manual').send(body)).status,401);
+ assert.equal((await request(app).put(`/api/orders/${r.body.id}/status`).send({status:'confirmed'})).status,401);
+ assert.equal((await request(app).delete(`/api/orders/${r.body.id}`)).status,401);
+});
+test('guest details are validated before stock is changed',async()=>{
+ const r=await request(app).post('/api/orders').set('Idempotency-Key',randomUUID()).send({items:[{productId:product.id,quantity:1}],name:'Guest',phone:'123'});
+ assert.equal(r.status,400);
+});
 test('failed email delivery reports failure and removes undelivered OTP',async()=>{
  global.fetch=async()=>({ok:false});const r=await request(app).post('/api/auth/send-register-otp').send({email:'failed@example.com'});assert.equal(r.status,503);assert.equal(await Otp.countDocuments({email:'failed@example.com'}),0);
 });
+

@@ -23,6 +23,8 @@ export default function AdminPage() {
   
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState('');
   
   // Filter States
   const [orderStatusFilter, setOrderStatusFilter] = useState('all');
@@ -190,10 +192,16 @@ export default function AdminPage() {
   };
 
   const fetchOrders = async () => {
+    setOrdersLoading(true);
+    setOrdersError('');
     try {
       const res = await api.get('/orders/all');
       setOrders(sortOrders(res.data));
-    } catch (err) {}
+    } catch (err) {
+      setOrdersError('Could not load orders. Please refresh to try again.');
+    } finally {
+      setOrdersLoading(false);
+    }
   };
 
   if (!mounted) return null;
@@ -631,7 +639,7 @@ export default function AdminPage() {
               </span>
             ) : (
               <span className="inline-block mt-1 px-2 py-0.5 bg-blue-500/15 text-blue-700 dark:text-blue-300 rounded-full text-[10px] font-black uppercase tracking-wider w-fit">
-                Online Store
+                {o.userId ? 'Online Store' : 'Guest Order'}
               </span>
             )}
           </div>
@@ -818,7 +826,7 @@ export default function AdminPage() {
       
       <div className="flex space-x-4 mb-8 overflow-x-auto pb-2">
         <button onClick={() => setActiveTab('products')} className={`bubble-btn whitespace-nowrap ${activeTab === 'products' ? '' : 'bubble-btn-secondary'}`}>Manage Inventory</button>
-        <button onClick={() => setActiveTab('orders')} className={`relative bubble-btn whitespace-nowrap ${activeTab === 'orders' ? '' : 'bubble-btn-secondary'}`}>
+        <button onClick={() => { setActiveTab('orders'); void fetchOrders(); }} className={`relative bubble-btn whitespace-nowrap ${activeTab === 'orders' ? '' : 'bubble-btn-secondary'}`}>
           Manage Orders
           {pendingOrdersCount > 0 && (
             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
@@ -854,8 +862,10 @@ export default function AdminPage() {
 
       {activeTab === 'orders' && (
         <div className="bubble-card bg-bubble-surface p-6 md:p-8 overflow-hidden flex flex-col">
+          {ordersError && <p role="alert" className="mb-4 text-red-500">{ordersError}</p>}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h2 className="text-2xl font-bold">Customer Orders</h2>
+            <button type="button" onClick={fetchOrders} disabled={ordersLoading} className="bubble-btn-secondary px-4 py-2 disabled:opacity-50">{ordersLoading ? 'Loading orders…' : 'Refresh orders'}</button>
             
             <div className="flex flex-wrap w-full md:w-auto items-center gap-3">
               {/* Type Filter */}
@@ -1428,7 +1438,7 @@ export default function AdminPage() {
                   </span>
                 ) : (
                   <span className="px-3 py-1 bg-blue-500/15 text-blue-700 dark:text-blue-300 rounded-full text-xs font-black uppercase tracking-wider">
-                    Online Store
+                {selectedOrder.userId ? 'Online Store' : 'Guest Order'}
                   </span>
                 )}
               </div>
@@ -1444,7 +1454,7 @@ export default function AdminPage() {
                     <p className="font-bold text-base text-text-main">
                       {selectedOrder.customerName || selectedOrder.User?.name || 'Customer'}
                     </p>
-                    <p className="text-sm text-text-muted">{selectedOrder.User?.email || 'N/A'}</p>
+                    <p className="text-sm text-text-muted">{selectedOrder.customerEmail || selectedOrder.User?.email || 'Guest checkout — contact by phone'}</p>
                     <p className="text-sm text-text-muted">Contact Phone: <strong className="text-primary">{selectedOrder.customerPhone || selectedOrder.User?.phone || 'Not provided'}</strong></p>
                     <div className="text-xs text-text-muted mt-2 pt-2 border-t border-border-main">
                       <span className="font-bold block text-text-main mb-0.5">Address / Note:</span>
@@ -1865,3 +1875,4 @@ export default function AdminPage() {
     </div>
   );
 }
+
