@@ -20,6 +20,7 @@ export default function CartPage() {
   
   const [step, setStep] = useState<'cart' | 'shipping'>('cart');
   const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [pincode, setPincode] = useState('');
   const [addressLine1, setAddressLine1] = useState('');
@@ -34,6 +35,7 @@ export default function CartPage() {
 
   useEffect(() => {
     if (user) {
+      setEmail(user.email || '');
       setFullName(user.name || '');
       setPhone(user.phone && user.phone !== '0000000000' ? user.phone : '');
       setPincode(user.pincode || '');
@@ -66,6 +68,7 @@ export default function CartPage() {
   };
 
   const handleOpenConfirm = () => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { toast.error('Please enter a valid email address'); return; }
     if (!fullName.trim()) {
       toast.error('Please enter your full name');
       return;
@@ -84,7 +87,7 @@ export default function CartPage() {
   const handleFinalOrderSubmit = async () => {
     if (submitting.current) return;
     submitting.current = true;
-    const signature = JSON.stringify({items, fullName, phone, addressLine1, addressLine2, city, state, pincode});
+    const signature = JSON.stringify({items, fullName, email, phone, addressLine1, addressLine2, city, state, pincode});
     if (!checkoutKey.current || checkoutSignature.current !== signature) { checkoutKey.current = crypto.randomUUID(); checkoutSignature.current = signature; }
     setIsProcessing(true);
 
@@ -92,6 +95,7 @@ export default function CartPage() {
       const res = await api.post('/orders', { 
         items,
         name: fullName,
+        email: email.trim().toLowerCase(),
         phone,
         addressLine1,
         addressLine2,
@@ -137,14 +141,14 @@ export default function CartPage() {
     );
   }
 
-  const isFormValid = Boolean(fullName && phone && addressLine1 && pincode && city && state);
+  const isFormValid = Boolean(email.trim() && fullName && phone && addressLine1 && pincode && city && state);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <h1 className="text-4xl font-black text-text-main mb-8">
         {step === 'cart' ? 'Shopping Cart' : 'Delivery Details'}
       </h1>
-      {!user && <p className="text-text-muted mb-6">Guest checkout — no account needed. Enter your name, phone number and delivery address to order.</p>}
+      {!user && <p className="text-text-muted mb-6">Guest checkout — no account needed. Enter your name, email, phone number and delivery address to order.</p>}
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2 space-y-6">
@@ -213,6 +217,11 @@ export default function CartPage() {
                 </div>
               </div>
 
+              <div>
+                <label htmlFor="checkout-email" className="block text-sm font-bold text-text-muted mb-2">Email for order tracking *</label>
+                <input id="checkout-email" type="email" autoComplete="email" maxLength={254} value={email} readOnly={!!user} onChange={e => setEmail(e.target.value)} className="bubble-input w-full" required />
+                <p className="text-xs text-text-muted mt-2">Register and verify this same email to see your guest orders later.</p>
+              </div>
               <div className="space-y-4 pt-2 border-t border-border-main">
                 <div>
                   <label className="block text-sm font-bold text-text-muted mb-2">Postal Code (Pincode) *</label>
@@ -430,9 +439,12 @@ export default function CartPage() {
             </div>
 
             <p className="text-xs text-text-muted mb-6">
-              Please save your order number and keep your phone available for delivery updates.
+              Please save your order number. Register or log in with the same checkout email to track this order in My Orders.
             </p>
 
+            <div className="mb-4 text-sm break-words">Order email: {email}
+              {!user && <div className="flex gap-4 justify-center mt-3"><Link href="/register" className="font-bold text-primary underline">Register to track</Link><Link href="/login" className="font-bold text-primary underline">Login to track</Link></div>}
+            </div>
             <div className="flex flex-col sm:flex-row gap-3">
               {user && <Link 
                 href="/orders" 

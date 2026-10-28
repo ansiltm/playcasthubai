@@ -25,7 +25,7 @@ test('guest checkout persists customer details, replays once and is admin-visibl
     Order.create = async ([data]) => { const doc = new Order(data); doc.validateSync() && assert.fail('Invalid order schema'); records.push(doc); return [doc]; };
     Order.find = filter => ({ populate: () => ({ sort: async () => records }), sort: async () => records.filter(o => String(o.userId) === filter.userId) });
     const key = randomUUID();
-    const body = { items: [{ productId: id, quantity: 1, price: 1 }], name: 'Guest Buyer', phone: '9876543210', addressLine1: 'Test address', city: 'Kochi', state: 'Kerala', pincode: '682001', userId: id, role: 'admin' };
+    const body = { items: [{ productId: id, quantity: 1, price: 1 }], name: 'Guest Buyer', email: 'guest@example.com', phone: '9876543210', addressLine1: 'Test address', city: 'Kochi', state: 'Kerala', pincode: '682001', userId: id, role: 'admin' };
     const submit = () => request(app).post('/orders').set('Idempotency-Key', key).send(body);
     let res = await submit(); assert.equal(res.status, 201); assert.equal(res.body.userId, null); assert.equal(res.body.customerName, 'Guest Buyer'); assert.equal(res.body.totalAmount, 125); assert.equal(res.body.checkoutKey, undefined); assert.equal(res.body.OrderItems[0].Product.wholesalePrice, undefined);
     const orderId = res.body.id;

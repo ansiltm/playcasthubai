@@ -49,7 +49,7 @@ export default function LoginPage() {
       const res = await api.post('/auth/login', { email, password });
       login(res.data.user, res.data.token);
       toast.success(`Welcome back, ${res.data.user.name}!`);
-      router.push('/');
+      router.push('/orders');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {

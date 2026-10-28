@@ -5,6 +5,7 @@ export interface IUser extends Document {
   tokenVersion: number;
   name: string;
   email: string;
+  emailVerified: boolean;
   password?: string;
   phone?: string;
   role: 'admin' | 'user';
@@ -22,6 +23,7 @@ const UserSchema = new Schema<IUser>(
     tokenVersion: { type: Number, default: 0 },
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    emailVerified: { type: Boolean, default: false },
     password: { type: String, required: true },
     phone: { type: String, default: '' },
     role: { type: String, enum: ['admin', 'user'], default: 'user' },

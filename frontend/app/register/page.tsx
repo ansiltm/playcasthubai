@@ -95,7 +95,7 @@ export default function RegisterPage() {
       }
 
       toast.success('Account created and verified successfully!');
-      router.push('/');
+      router.push('/orders');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Registration failed. Please check your details.');
     } finally {

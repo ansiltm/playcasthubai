@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../store/useAuthStore';
 import api from '../../lib/api';
+import VerifyOrderEmail from '../../components/VerifyOrderEmail';
 import { 
   Package, 
   Clock, 
@@ -189,6 +190,7 @@ export default function OrdersPage() {
         </Link>
       </div>
 
+      <VerifyOrderEmail />
       {loading ? (
         <div className="flex flex-col justify-center items-center h-64 space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>

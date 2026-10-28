@@ -89,7 +89,7 @@ test('password reset invalidates previous sessions',async()=>{
 test('guests can order, retry safely and appear in admin orders without an account',async()=>{
  const toy=await Product.create({name:'Guest toy',description:'Test',category:'Toys',price:125,stock:3});
  const key=randomUUID(),userCount=await User.countDocuments();
- const body={items:[{productId:toy.id,quantity:1,price:1}],name:'Guest Buyer',phone:'9876543210',addressLine1:'Guest delivery street',city:'Kochi',state:'Kerala',pincode:'682001',userId:admin.id,role:'admin'};
+ const body={items:[{productId:toy.id,quantity:1,price:1}],name:'Guest Buyer',email:'guest@example.com',phone:'9876543210',addressLine1:'Guest delivery street',city:'Kochi',state:'Kerala',pincode:'682001',userId:admin.id,role:'admin'};
  const submit=()=>request(app).post('/api/orders').set('Idempotency-Key',key).send(body);
  const r=await submit();assert.equal(r.status,201);assert.equal(r.body.userId,null);assert.equal(r.body.totalAmount,125);assert.equal(r.body.customerName,'Guest Buyer');
  assert.equal(r.body.OrderItems[0].Product.wholesalePrice,undefined);assert.equal(r.body.checkoutKey,undefined);

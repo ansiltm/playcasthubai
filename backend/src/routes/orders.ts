@@ -26,6 +26,7 @@ async function createOrder(req: any, manual: boolean) {
     seen.add(itemKey);
     return { productId, color, quantity: v.quantity(item.quantity), customPrice: manual && item.price !== undefined ? v.money(item.price) : undefined };
   });
+  const customerEmail = manual ? '' : v.email(req.user?.email || input.email);
   const name = v.text(manual ? input.customerName : input.name, 'customer name', 100);
   const phone = v.phone(manual ? input.customerPhone : input.phone);
   const address = v.text(manual ? input.customerAddress : input.addressLine1, 'address', 300);
@@ -57,7 +58,7 @@ async function createOrder(req: any, manual: boolean) {
       const [created] = await Order.create([{
         checkoutKey, userId: req.user?.id || null, orderType: manual ? 'custom' : 'online', totalAmount: totalCents / 100,
         status: initialStatus, paymentMethod: manual ? 'Custom / Cash' : 'COD', paymentStatus: 'pending',
-        customerName: name, customerPhone: phone, customerEmail: manual ? '' : (req.user?.email || ''),
+        customerName: name, customerPhone: phone, customerEmail,
         shippingAddressLine1: address, shippingAddressLine2: manual ? '' : v.text(input.addressLine2, 'address line 2', 300, false),
         shippingCity: city, shippingState: state, shippingPincode: pincode, OrderItems: orderItems,
       }], { session });
@@ -86,6 +87,9 @@ router.post('/manual', authorizeAdmin, asyncRoute(async (req, res) => {
   res.status(created ? 201 : 200).json(order);
 }));
 router.get('/', asyncRoute(async (req, res) => {
+  if (req.user.emailVerified === true) {
+    await Order.updateMany({ userId: null, orderType: 'online', customerEmail: v.email(req.user.email) }, { $set: { userId: req.user.id } });
+  }
   const orders = await Order.find({ userId: req.user.id }).sort({ createdAt: -1 });
   res.json(orders.map(customerOrder));
 }));
