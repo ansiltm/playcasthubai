@@ -57,7 +57,7 @@ export default function AdminPage() {
   // Form State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '', ageLabel: 'Not specified', safetyNotes: '', colors: ''
+    packedWeightKg: '', packageLengthCm: '', packageWidthCm: '', packageHeightCm: '', name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '', ageLabel: 'Not specified', safetyNotes: '', colors: ''
   });
   type ColorMediaItem = {
     existingUrls: string[];
@@ -242,6 +242,11 @@ export default function AdminPage() {
     data.append('grade', formData.grade);
     data.append('description', formData.description);
     data.append('stock', formData.stock);
+    data.append('packedWeightKg', formData.packedWeightKg);
+    data.append('packageLengthCm', formData.packageLengthCm);
+    data.append('packageWidthCm', formData.packageWidthCm);
+    data.append('packageHeightCm', formData.packageHeightCm);
+
     data.append('ageLabel', formData.ageLabel);
     data.append('safetyNotes', formData.safetyNotes);
     data.append('colors', formData.colors);
@@ -411,7 +416,7 @@ export default function AdminPage() {
 
   const openAddModal = () => {
     setEditingId(null);
-    setFormData({ name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '', ageLabel: 'Not specified', safetyNotes: '', colors: '' });
+    setFormData({ packedWeightKg: '', packageLengthCm: '', packageWidthCm: '', packageHeightCm: '', name: '', price: '', wholesalePrice: '', category: '', grade: '', description: '', stock: '', ageLabel: 'Not specified', safetyNotes: '', colors: '' });
     setMediaFiles(null);
     setNewMediaPreviews([]);
     setExistingMedia([]);
@@ -423,6 +428,10 @@ export default function AdminPage() {
     setEditingId(p.id);
     const colorStr = Array.isArray(p.colors) ? p.colors.join(', ') : (p.colors || '');
     setFormData({
+      packedWeightKg: p.packedWeightKg?.toString() || '',
+      packageLengthCm: p.packageLengthCm?.toString() || '',
+      packageWidthCm: p.packageWidthCm?.toString() || '',
+      packageHeightCm: p.packageHeightCm?.toString() || '',
       name: p.name, price: p.price.toString(), wholesalePrice: p.wholesalePrice?.toString() || '0', category: p.category, 
       grade: p.grade, description: p.description, stock: p.stock.toString(), ageLabel: p.ageLabel || 'Not specified', safetyNotes: p.safetyNotes || '', colors: colorStr
     });
@@ -557,6 +566,10 @@ export default function AdminPage() {
     { header: 'Category', accessorKey: 'category' },
     { header: 'Grade', renderCell: (p) => <span className="px-3 py-1 bg-bubble-input rounded-full text-[10px] font-bold uppercase tracking-wider inline-block whitespace-nowrap">{p.grade}</span> },
     { header: 'Age', renderCell: (p) => <span className="px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full text-[10px] font-bold inline-block whitespace-nowrap border border-blue-500/20">{p.ageLabel || 'Not specified'}</span> },
+    { header: 'Packed parcel', renderCell: (p) => <div className="text-xs min-w-36">
+      <div>{p.packedWeightKg ? p.packedWeightKg + ' kg' : 'Weight not set'}</div>
+      <div>{p.packageLengthCm && p.packageWidthCm && p.packageHeightCm ? p.packageLengthCm + ' × ' + p.packageWidthCm + ' × ' + p.packageHeightCm + ' cm' : 'Box size not set'}</div>
+    </div> },
     { header: 'Cost (Wholesale)', renderCell: (p) => <span className="font-bold text-orange-500 whitespace-nowrap">₹{p.wholesalePrice?.toFixed(2) || '0.00'}</span> },
     { header: 'Selling Price', renderCell: (p) => <span className="font-bold text-primary whitespace-nowrap">₹{p.price.toFixed(2)}</span> },
     { header: 'Stock', renderCell: (p) => (
@@ -1073,6 +1086,7 @@ export default function AdminPage() {
                 </div>
               </div>
               
+<fieldset className="border border-border-main rounded-2xl p-5"><legend className="font-bold px-2">Shipping package — one packed item</legend><p className="text-sm text-text-muted mb-4">Measure the sealed parcel including packaging. Leave unknown values blank. These measurements do not set delivery prices.</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><label className="text-sm font-bold">Packed weight (kg)<input type="number" min="0.001" max="1000" step="any" placeholder="Not measured" className="bubble-input mt-2" value={formData.packedWeightKg} onChange={e => setFormData({...formData, packedWeightKg: e.target.value})} /></label><label className="text-sm font-bold">Box length (cm)<input type="number" min="0.001" max="1000" step="any" placeholder="Not measured" className="bubble-input mt-2" value={formData.packageLengthCm} onChange={e => setFormData({...formData, packageLengthCm: e.target.value})} /></label><label className="text-sm font-bold">Box width (cm)<input type="number" min="0.001" max="1000" step="any" placeholder="Not measured" className="bubble-input mt-2" value={formData.packageWidthCm} onChange={e => setFormData({...formData, packageWidthCm: e.target.value})} /></label><label className="text-sm font-bold">Box height (cm)<input type="number" min="0.001" max="1000" step="any" placeholder="Not measured" className="bubble-input mt-2" value={formData.packageHeightCm} onChange={e => setFormData({...formData, packageHeightCm: e.target.value})} /></label></div></fieldset>
               <div>
                 <label className="block text-sm font-bold text-text-main mb-2">Detailed Description</label>
                 <textarea required rows={4} className="bubble-input py-3" placeholder="Write a detailed description of the product..." value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />

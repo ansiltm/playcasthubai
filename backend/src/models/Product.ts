@@ -11,6 +11,11 @@ export interface IProduct extends Document {
   price: number;
   wholesalePrice: number;
   stock: number;
+  packedWeightKg?: number | null;
+  packageLengthCm?: number | null;
+  packageWidthCm?: number | null;
+  packageHeightCm?: number | null;
+
   imageUrl?: string;
   media: string[];
   colors: string[];
@@ -31,6 +36,10 @@ const ProductSchema = new Schema<IProduct>(
     price: { type: Number, required: true, min: 0 },
     wholesalePrice: { type: Number, default: 0, min: 0 },
     stock: { type: Number, required: true, default: 0, min: 0 },
+    packedWeightKg: { type: Number, default: null, min: 0.001 },
+    packageLengthCm: { type: Number, default: null, min: 0.001 },
+    packageWidthCm: { type: Number, default: null, min: 0.001 },
+    packageHeightCm: { type: Number, default: null, min: 0.001 },
     imageUrl: { type: String, default: '' },
     media: { type: [String], default: [] },
     colors: { type: [String], default: [] },

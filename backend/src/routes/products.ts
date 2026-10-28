@@ -62,6 +62,14 @@ export async function productData(req: any, product?: any) {
     if (!Number.isSafeInteger(stock) || stock < 0 || stock > 100000) throw new v.HttpError(400, 'Stock must be a whole number from 0 to 100000.');
     data.stock = stock;
   }
+  for (const field of ['packedWeightKg', 'packageLengthCm', 'packageWidthCm', 'packageHeightCm']) {
+    if (req.body[field] === undefined) continue;
+    const raw = req.body[field];
+    if (raw === null || (typeof raw === 'string' && !raw.trim())) { data[field] = null; continue; }
+    const value = Number(raw);
+    if (!['string', 'number'].includes(typeof raw) || !Number.isFinite(value) || value < 0.001 || value > 1000) throw new v.HttpError(400, 'Package measurements must be positive numbers between 0.001 and 1000.');
+    data[field] = value;
+  }
   if (req.body.ageLabel !== undefined) {
     if (!['Not specified','3+','6+','8+','14+','18+'].includes(req.body.ageLabel)) throw new v.HttpError(400, 'Choose a valid age recommendation.');
     data.ageLabel = req.body.ageLabel;
