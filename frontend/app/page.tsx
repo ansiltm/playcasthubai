@@ -27,9 +27,10 @@ export default function Home(): React.JSX.Element {
   }, []);
 
   return (
-    <div className="w-full">
+    <div className="w-full playcast-showcase">
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
-        <div className="bubble-card p-8 sm:p-12 bg-gradient-to-br from-primary/10 via-bubble-surface to-secondary/10">
+        <div className="playcast-hero bubble-card p-8 sm:p-12 bg-gradient-to-br from-primary/10 via-bubble-surface to-secondary/10">
+          <div className="playcast-orbit" aria-hidden="true"><span /><span /><span /></div>
           <p className="font-bold uppercase tracking-widest text-primary text-sm mb-4">Discover. Play. Collect.</p>
           <h1 className="text-4xl sm:text-6xl font-black text-text-main max-w-3xl leading-tight">Big adventures.<br />Little moments of joy.</h1>
           <p className="text-text-muted text-lg mt-5 max-w-2xl">Toys for curious kids, RC cars for weekend racers, and collectibles for lifelong fans. Find your next favourite at PlayCastHub.</p>
