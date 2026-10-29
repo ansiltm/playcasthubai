@@ -1499,7 +1499,7 @@ export default function AdminPage() {
                     </p>
                     <p className="text-sm flex justify-between">
                       <span className="text-text-muted">Payment:</span> 
-                      <span className="font-bold uppercase text-emerald-600">{selectedOrder.paymentStatus || 'pending'} ({selectedOrder.paymentMethod || 'COD / Cash'})</span>
+                      <span className="font-bold uppercase text-emerald-600">{selectedOrder.paymentStatus || 'pending'} ({selectedOrder.paymentMethod || 'Not recorded'})</span>
                     </p>
                     <p className="text-sm flex justify-between">
                       <span className="text-text-muted">Status:</span> 

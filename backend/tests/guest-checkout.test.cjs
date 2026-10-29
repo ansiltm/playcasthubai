@@ -27,7 +27,7 @@ test('guest checkout persists customer details, replays once and is admin-visibl
     const key = randomUUID();
     const body = { items: [{ productId: id, quantity: 1, price: 1 }], name: 'Guest Buyer', email: 'guest@example.com', phone: '9876543210', addressLine1: 'Test address', city: 'Kochi', state: 'Kerala', pincode: '682001', userId: id, role: 'admin' };
     const submit = () => request(app).post('/orders').set('Idempotency-Key', key).send(body);
-    let res = await submit(); assert.equal(res.status, 201); assert.equal(res.body.userId, null); assert.equal(res.body.customerName, 'Guest Buyer'); assert.equal(res.body.totalAmount, 125); assert.equal(res.body.checkoutKey, undefined); assert.equal(res.body.OrderItems[0].Product.wholesalePrice, undefined);
+    let res = await submit(); assert.equal(res.status, 201); assert.equal(res.body.userId, null); assert.equal(res.body.paymentMethod, 'Payment to be arranged'); assert.equal(res.body.paymentStatus, 'pending'); assert.equal(res.body.customerName, 'Guest Buyer'); assert.equal(res.body.totalAmount, 125); assert.equal(res.body.checkoutKey, undefined); assert.equal(res.body.OrderItems[0].Product.wholesalePrice, undefined);
     const orderId = res.body.id;
     res = await submit(); assert.equal(res.status, 200); assert.equal(res.body.id, orderId); assert.equal(records.length, 1); assert.equal(deductions, 1);
     assert.equal(records[0].customerPhone, body.phone); assert.equal(records[0].shippingAddressLine1, body.addressLine1);

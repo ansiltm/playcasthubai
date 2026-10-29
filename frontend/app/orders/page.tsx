@@ -463,7 +463,7 @@ export default function OrdersPage() {
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
                       <span className="text-text-muted">Payment Method:</span>
-                      <span className="font-bold text-text-main">{selectedOrder.paymentMethod || 'Cash on Delivery (COD)'}</span>
+                      <span className="font-bold text-text-main">{selectedOrder.paymentMethod || 'Not recorded'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-text-muted">Payment Status:</span>

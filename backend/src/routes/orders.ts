@@ -57,7 +57,7 @@ async function createOrder(req: any, manual: boolean) {
       }
       const [created] = await Order.create([{
         checkoutKey, userId: req.user?.id || null, orderType: manual ? 'custom' : 'online', totalAmount: totalCents / 100,
-        status: initialStatus, paymentMethod: manual ? 'Custom / Cash' : 'COD', paymentStatus: 'pending',
+        status: initialStatus, paymentMethod: manual ? 'Custom / Cash' : 'Payment to be arranged', paymentStatus: 'pending',
         customerName: name, customerPhone: phone, customerEmail,
         shippingAddressLine1: address, shippingAddressLine2: manual ? '' : v.text(input.addressLine2, 'address line 2', 300, false),
         shippingCity: city, shippingState: state, shippingPincode: pincode, OrderItems: orderItems,

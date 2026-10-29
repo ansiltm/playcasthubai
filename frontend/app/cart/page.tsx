@@ -285,8 +285,8 @@ export default function CartPage() {
               <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-start gap-3">
                 <PhoneCall className="text-primary w-6 h-6 shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  <span className="font-bold text-text-main block">Verification via Phone Call:</span>
-                  <span className="text-text-muted">No advance payment needed. When you click place order, our executive will contact you to verify details before shipping.</span>
+                  <span className="font-bold text-text-main block">Order & Payment Confirmation:</span>
+                  <span className="text-text-muted">Cash on delivery is currently unavailable. Our team will confirm delivery charges and payment instructions before dispatch. Placing an order does not complete payment.</span>
                 </div>
               </div>
             </div>
