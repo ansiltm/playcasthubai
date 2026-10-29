@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { SHOP_PHONE, SHOP_PHONE_DISPLAY, SHOP_WHATSAPP } from '../lib/contact';
+import { SHOP_EMAIL, SHOP_PHONE, SHOP_PHONE_DISPLAY, SHOP_WHATSAPP } from '../lib/contact';
 
 export default function Footer() {
   return (
@@ -44,6 +44,7 @@ export default function Footer() {
           <div>
             <h3 className="font-bold text-text-main mb-4"><a href="/contact">Contact Us</a></h3>
             <a className="block text-sm hover:text-primary mb-3" href={'tel:' + SHOP_PHONE}>{SHOP_PHONE_DISPLAY}</a>
+            <a className="block text-sm hover:text-primary mb-4 break-all" href={'mailto:' + SHOP_EMAIL}>{SHOP_EMAIL}</a>
             <a className="bubble-btn text-sm" href={SHOP_WHATSAPP} target="_blank" rel="noopener noreferrer">Chat on WhatsApp</a>
             <p className="text-xs text-text-muted mt-3">Order questions, delivery charges and payment assistance.</p>
           </div>

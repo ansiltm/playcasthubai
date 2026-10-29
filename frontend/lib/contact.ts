@@ -1,3 +1,4 @@
+export const SHOP_EMAIL = 'playcasthub@gmail.com';
 export const SHOP_PHONE = '+918907792898';
 export const SHOP_PHONE_DISPLAY = '+91 89077 92898';
 export const SHOP_WHATSAPP = 'https://wa.me/918907792898';
