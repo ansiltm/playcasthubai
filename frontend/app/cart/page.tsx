@@ -8,6 +8,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { Trash2, Plus, Minus, ArrowRight, MapPin, CheckCircle, PhoneCall, X, ShoppingBag, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
+import { orderWhatsAppLink, SHOP_PHONE_DISPLAY } from '../../lib/contact';
 import { externalApi } from '../../lib/externalApi';
 
 export default function CartPage() {
@@ -104,13 +105,14 @@ export default function CartPage() {
         pincode
       }, { headers: { 'Idempotency-Key': checkoutKey.current } });
       
-      const orderNumber = res.data.orderNumber;
+      const orderNumber = String(res.data.orderNumber || res.data.id);
       setConfirmedOrderNumber(orderNumber);
       clearCart();
       checkoutKey.current = null;
       setShowConfirmModal(false);
       setShowSuccessModal(true);
       toast.success('Order received!');
+      try { window.open(orderWhatsAppLink(orderNumber), '_blank', 'noopener,noreferrer'); } catch { /* The saved order remains successful; the customer can use the WhatsApp link. */ }
     } catch (err: any) {
       if (err.response?.status !== 401 && err.response?.status !== 403) {
         toast.error(err.response?.data?.message || 'Failed to place order. Please try again.');
@@ -352,7 +354,7 @@ export default function CartPage() {
 
             <h3 className="text-2xl font-black text-text-main mb-2">Confirm Your Order</h3>
             <p className="text-sm text-text-muted mb-6">
-              Please review your delivery and contact details before placing the order.
+              Please review your delivery and contact details. After the order is saved, WhatsApp will open with your order number addressed to PlayCastHub. Tap Send there to contact us.
             </p>
 
             <div className="space-y-4 bg-bubble-input p-4 rounded-2xl mb-6 text-sm">
@@ -379,7 +381,7 @@ export default function CartPage() {
             <div className="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 p-3 rounded-xl text-xs mb-6 flex items-center gap-2">
               <PhoneCall size={18} className="shrink-0" />
               <div>
-                <span>We will contact you on WhatsApp at <strong>{phone}</strong> to arrange payment after you place the order.</span>
+                <span>After ordering, send us the prepared WhatsApp message to arrange delivery and payment. Your contact number is <strong>{phone}</strong>.</span>
               </div>
             </div>
 
@@ -430,14 +432,16 @@ export default function CartPage() {
               <div className="flex items-start gap-3">
                 <PhoneCall className="text-primary w-6 h-6 shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-bold text-text-main text-sm">We Will Contact You on WhatsApp</p>
+                  <p className="font-bold text-text-main text-sm">Send Your Order on WhatsApp</p>
                   <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                    Our team will message <strong className="text-primary">{phone}</strong> on WhatsApp to confirm delivery charges and payment instructions. This order is not marked paid until payment is verified.
+                    Message PlayCastHub at <strong className="text-primary">{SHOP_PHONE_DISPLAY}</strong>. We will confirm delivery charges and payment instructions. Your order is already saved and payment remains pending.
                   </p>
                 </div>
               </div>
             </div>
 
+            <a href={orderWhatsAppLink(confirmedOrderNumber)} target="_blank" rel="noopener noreferrer" className="bubble-btn w-full mb-3">Send order on WhatsApp</a>
+            <p className="text-xs text-text-muted mb-3">If WhatsApp did not open, tap the button above. Review the message and tap Send in WhatsApp.</p>
             <p className="text-xs text-text-muted mb-6">
               Please save your order number. Register or log in with the same checkout email to track this order in My Orders.
             </p>

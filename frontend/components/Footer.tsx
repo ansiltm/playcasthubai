@@ -1,10 +1,11 @@
 import Image from 'next/image';
+import { SHOP_PHONE, SHOP_PHONE_DISPLAY, SHOP_WHATSAPP } from '../lib/contact';
 
 export default function Footer() {
   return (
     <footer className="bg-bubble-surface border-t border-border-main mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <div className="relative w-12 h-12 overflow-hidden rounded-[var(--radius-pill)] shadow-sm">
@@ -39,6 +40,12 @@ export default function Footer() {
               <li><a href="/products?grade=Institutional+%2F+Commercial+Grade" className="hover:text-primary">Commercial Grade</a></li>
               <li><a href="/products?grade=Artisan+%2F+Designer+Grade" className="hover:text-primary">Artisan Grade</a></li>
             </ul>
+          </div>
+          <div>
+            <h3 className="font-bold text-text-main mb-4"><a href="/contact">Contact Us</a></h3>
+            <a className="block text-sm hover:text-primary mb-3" href={'tel:' + SHOP_PHONE}>{SHOP_PHONE_DISPLAY}</a>
+            <a className="bubble-btn text-sm" href={SHOP_WHATSAPP} target="_blank" rel="noopener noreferrer">Chat on WhatsApp</a>
+            <p className="text-xs text-text-muted mt-3">Order questions, delivery charges and payment assistance.</p>
           </div>
         </div>
         <div className="mt-12 pt-8 border-t border-border-main text-center text-sm text-text-muted">
