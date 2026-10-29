@@ -12,6 +12,13 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { getColorSwatch } from '../../lib/colors';
 import { uploadProductMedia } from '../../lib/uploadMedia';
 
+function orderWhatsAppUrl(phone: unknown): string | null {
+  if (typeof phone !== 'string') return null;
+  let digits = phone.replace(/[\s()+-]/g, '');
+  if (/^[6-9]\d{9}$/.test(digits)) digits = '91' + digits;
+  return /^91[6-9]\d{9}$/.test(digits) ? 'https://wa.me/' + digits : null;
+}
+
 export default function AdminPage() {
   const { user, isAdmin, token } = useAuthStore();
   const router = useRouter();
@@ -1470,6 +1477,12 @@ export default function AdminPage() {
                     </p>
                     <p className="text-sm text-text-muted">{selectedOrder.customerEmail || selectedOrder.User?.email || 'Guest checkout — contact by phone'}</p>
                     <p className="text-sm text-text-muted">Contact Phone: <strong className="text-primary">{selectedOrder.customerPhone || selectedOrder.User?.phone || 'Not provided'}</strong></p>
+                    {orderWhatsAppUrl(selectedOrder.customerPhone || selectedOrder.User?.phone) && <a
+                      href={orderWhatsAppUrl(selectedOrder.customerPhone || selectedOrder.User?.phone)!}
+                      target="_blank" rel="noopener noreferrer"
+                      className="bubble-btn mt-3 text-sm"
+                    >Contact on WhatsApp ↗</a>}
+                    <p className="text-xs text-text-muted mt-2">Confirm the final amount with the customer. Mark payment as paid only after verifying that you received it.</p>
                     <div className="text-xs text-text-muted mt-2 pt-2 border-t border-border-main">
                       <span className="font-bold block text-text-main mb-0.5">Address / Note:</span>
                       {selectedOrder.shippingAddressLine1 ? (

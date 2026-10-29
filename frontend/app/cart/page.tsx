@@ -74,7 +74,7 @@ export default function CartPage() {
       return;
     }
     if (!/^[6-9]\d{9}$/.test(phone)) {
-      toast.error('Please provide a valid contact phone number');
+      toast.error('Please provide a valid WhatsApp number');
       return;
     }
     if (!addressLine1.trim() || !/^\d{6}$/.test(pincode) || !city.trim() || !state.trim()) {
@@ -188,7 +188,7 @@ export default function CartPage() {
                   <MapPin className="text-primary"/> Customer & Delivery Info
                 </h2>
                 <p className="text-sm text-text-muted">
-                  Our customer support team will call this phone number to verify and confirm your order before dispatch.
+                  Enter the WhatsApp number where you want us to contact you about delivery charges and payment.
                 </p>
               </div>
 
@@ -205,7 +205,7 @@ export default function CartPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-text-muted mb-2">Phone Number for Order Call *</label>
+                  <label className="block text-sm font-bold text-text-muted mb-2">WhatsApp Number *</label>
                   <input 
                     type="tel" 
                     value={phone} 
@@ -286,7 +286,7 @@ export default function CartPage() {
                 <PhoneCall className="text-primary w-6 h-6 shrink-0 mt-0.5" />
                 <div className="text-sm">
                   <span className="font-bold text-text-main block">Order & Payment Confirmation:</span>
-                  <span className="text-text-muted">Cash on delivery is currently unavailable. Our team will confirm delivery charges and payment instructions before dispatch. Placing an order does not complete payment.</span>
+                  <span className="text-text-muted">After you place the order, our team will contact you on WhatsApp to confirm availability, delivery charges and payment instructions. COD is unavailable. Your payment stays pending until we confirm receipt.</span>
                 </div>
               </div>
             </div>
@@ -361,7 +361,7 @@ export default function CartPage() {
                 <span className="font-bold text-text-main">{fullName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-text-muted">Contact Phone:</span>
+                <span className="text-text-muted">WhatsApp Number:</span>
                 <span className="font-bold text-primary">{phone}</span>
               </div>
               <div className="flex justify-between">
@@ -379,7 +379,7 @@ export default function CartPage() {
             <div className="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 p-3 rounded-xl text-xs mb-6 flex items-center gap-2">
               <PhoneCall size={18} className="shrink-0" />
               <div>
-                <span>Our support team will contact you at <strong>{phone}</strong> after placing the order.</span>
+                <span>We will contact you on WhatsApp at <strong>{phone}</strong> to arrange payment after you place the order.</span>
               </div>
             </div>
 
@@ -430,9 +430,9 @@ export default function CartPage() {
               <div className="flex items-start gap-3">
                 <PhoneCall className="text-primary w-6 h-6 shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-bold text-text-main text-sm">Support Team Will Contact You</p>
+                  <p className="font-bold text-text-main text-sm">We Will Contact You on WhatsApp</p>
                   <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                    Our support team will contact you on <strong className="text-primary">{phone}</strong> after placing the order to confirm your delivery details.
+                    Our team will message <strong className="text-primary">{phone}</strong> on WhatsApp to confirm delivery charges and payment instructions. This order is not marked paid until payment is verified.
                   </p>
                 </div>
               </div>

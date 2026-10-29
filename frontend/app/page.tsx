@@ -135,7 +135,7 @@ export default function Home(): React.JSX.Element {
                 </svg>
               </div>
               <h3 className="text-xl font-bold mb-2">Order with confidence</h3>
-              <p className="text-text-muted">Place your order request. Our team confirms delivery charges and payment instructions before dispatch. COD is currently unavailable.</p>
+              <p className="text-text-muted">Place your order request. Our team contacts you on WhatsApp to confirm delivery charges and payment instructions before dispatch. COD is currently unavailable.</p>
             </div>
           </div>
         </div>
